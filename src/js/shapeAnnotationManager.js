@@ -74,11 +74,17 @@ class ShapeAnnotationManager {
 
     /**
      * 図形タイプを選択
-     * @param {string} shapeType - 図形タイプ (rectangle, circle, arrow, line)
+     * @param {string} shapeType - 図形タイプ (rectangle, circle, arrow, line, none)
      */
     selectShape(shapeType) {
-        this.currentShapeType = shapeType;
-        this.canvas.style.cursor = 'crosshair';
+        if (shapeType === 'none') {
+            // 図形選択を解除
+            this.currentShapeType = null;
+            this.canvas.style.cursor = 'default';
+        } else {
+            this.currentShapeType = shapeType;
+            this.canvas.style.cursor = 'crosshair';
+        }
     }
 
     /**

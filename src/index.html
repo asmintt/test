@@ -105,6 +105,7 @@
                 <div class="video-container">
                     <video id="videoPlayer" controls></video>
                     <canvas id="annotationCanvas"></canvas>
+                    <div id="textAnnotationOverlay" class="text-annotation-overlay"></div>
                 </div>
 
                 <!-- 動画コントロール -->
@@ -169,6 +170,7 @@
 
                     <!-- 図形選択 -->
                     <div class="shape-selector">
+                        <button class="shape-btn" data-shape="none">✖ 図形なし</button>
                         <button class="shape-btn" data-shape="rectangle">◻ 四角</button>
                         <button class="shape-btn" data-shape="circle">⭕ 丸</button>
                         <button class="shape-btn" data-shape="arrow">→ 矢印</button>
