@@ -5,7 +5,7 @@ class FileHandler {
     constructor() {
         // DOM要素
         this.fileInput = document.getElementById('videoInput');
-        this.fileLabel = this.fileInput?.previousElementSibling;
+        this.fileLabel = this.fileInput?.nextElementSibling;
         this.fileNameDisplay = document.getElementById('fileName');
 
         // 選択された動画ファイル
