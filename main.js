@@ -72,15 +72,27 @@ app.on('window-all-closed', () => {
  * レンダラープロセスからのトリミングリクエストを受け取る
  */
 ipcMain.handle('trim-video', async (event, data) => {
+    const fs = require('fs');
+    const os = require('os');
+
     const {
-        inputPath,      // 入力動画ファイルのパス
-        outputPath,     // 出力動画ファイルのパス
+        videoData,      // 動画データ（ArrayBuffer）
         startTime,      // 開始時刻（秒）
         duration,       // 継続時間（秒）
-        speed,          // 再生速度（1.0 = 通常）
         includeAudio,   // 音声を含むか
-        annotations     // テキスト注釈データ（配列）
+        filename        // 出力ファイル名
     } = data;
+
+    // 一時ファイルパスを生成
+    const tempInputPath = path.join(os.tmpdir(), `input_${Date.now()}.mp4`);
+    const outputPath = path.join(app.getPath('downloads'), `${filename}_trimmed.mp4`);
+
+    try {
+        // ArrayBufferを一時ファイルに書き込み
+        const buffer = Buffer.from(videoData);
+        fs.writeFileSync(tempInputPath, buffer);
+
+        const inputPath = tempInputPath;
 
     return new Promise((resolve, reject) => {
         try {
@@ -94,17 +106,7 @@ ipcMain.handle('trim-video', async (event, data) => {
                 command = command.noAudio();
             }
 
-            // 再生速度の調整
-            if (Math.abs(speed - 1.0) > 0.01) {
-                const ptsMultiplier = 1.0 / speed;
-                command = command.videoFilters(`setpts=${ptsMultiplier}*PTS`);
-
-                if (includeAudio) {
-                    // 音声の速度も調整
-                    const atempoFilter = buildAtempoFilter(speed);
-                    command = command.audioFilters(atempoFilter);
-                }
-            }
+            // 再生速度は固定（通常速度）
 
             // 出力設定
             command
@@ -126,18 +128,43 @@ ipcMain.handle('trim-video', async (event, data) => {
                 })
                 .on('end', () => {
                     console.log('トリミング完了');
+                    // 一時ファイルを削除
+                    try {
+                        fs.unlinkSync(tempInputPath);
+                    } catch (e) {
+                        console.error('一時ファイル削除エラー:', e);
+                    }
                     resolve({ success: true, outputPath });
                 })
                 .on('error', (err) => {
                     console.error('FFmpegエラー:', err);
+                    // 一時ファイルを削除
+                    try {
+                        fs.unlinkSync(tempInputPath);
+                    } catch (e) {
+                        console.error('一時ファイル削除エラー:', e);
+                    }
                     reject(err);
                 })
                 .save(outputPath);
 
         } catch (error) {
+            // 一時ファイルを削除
+            try {
+                if (fs.existsSync(tempInputPath)) {
+                    fs.unlinkSync(tempInputPath);
+                }
+            } catch (e) {
+                console.error('一時ファイル削除エラー:', e);
+            }
             reject(error);
         }
     });
+
+    } catch (error) {
+        console.error('トリミングエラー:', error);
+        return { success: false, error: error.message };
+    }
 });
 
 /**
