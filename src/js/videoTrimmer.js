@@ -77,7 +77,14 @@ class VideoTrimmer {
             const startTime = rangeSelector.getStartTime();
             const endTime = rangeSelector.getEndTime();
             const includeAudio = this.includeAudio.checked;
+            const includeAnnotations = this.includeVideoAnnotations.checked;
             const projectTitle = videoPlayer.projectTitleInput?.value || fileHandler.getCurrentFileName();
+
+            // 注釈データを取得
+            let annotations = [];
+            if (includeAnnotations && annotationManager) {
+                annotations = annotationManager.getAnnotations();
+            }
 
             // ファイルをArrayBufferとして読み込む
             const arrayBuffer = await this.readFileAsArrayBuffer(fileHandler.currentFile);
@@ -88,6 +95,8 @@ class VideoTrimmer {
                 startTime: startTime,
                 duration: endTime - startTime,
                 includeAudio: includeAudio,
+                includeAnnotations: includeAnnotations,
+                annotations: annotations,
                 filename: projectTitle
             });
 

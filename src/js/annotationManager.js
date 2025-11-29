@@ -225,6 +225,39 @@ class AnnotationManager {
     }
 
     /**
+     * 現在時刻で有効な注釈を取得（継続表示用）
+     * 現在時刻以前の最も近い注釈から、次の注釈または「注釈なし」まで継続表示
+     * @param {number} currentTime - 現在時刻（秒）
+     * @returns {Object|null} 有効な注釈オブジェクトまたはnull
+     */
+    getActiveAnnotationAtTime(currentTime) {
+        if (this.annotations.length === 0) return null;
+
+        // 現在時刻以前の注釈を取得
+        const previousAnnotations = this.annotations.filter(ann => ann.time <= currentTime);
+
+        if (previousAnnotations.length === 0) return null;
+
+        // 最も近い注釈を取得
+        const activeAnnotation = previousAnnotations[previousAnnotations.length - 1];
+
+        // 次の注釈を取得
+        const nextAnnotation = this.annotations.find(ann => ann.time > currentTime);
+
+        // 次の注釈が「注釈なし」（text が空）の場合は表示しない
+        if (nextAnnotation && nextAnnotation.text === '' && nextAnnotation.time <= currentTime) {
+            return null;
+        }
+
+        // 現在の注釈が「注釈なし」の場合は表示しない
+        if (activeAnnotation.text === '') {
+            return null;
+        }
+
+        return activeAnnotation;
+    }
+
+    /**
      * 注釈変更時のコールバックを設定
      * @param {Function} callback - コールバック関数
      */

@@ -165,8 +165,8 @@ class VideoPlayer {
     updateTextAnnotationDisplay(currentTime) {
         if (!this.textAnnotationDisplay || !annotationManager) return;
 
-        // 現在時刻の注釈を取得（許容誤差0.5秒）
-        const annotation = annotationManager.getAnnotationAtTime(currentTime, 0.5);
+        // 現在時刻で有効な注釈を取得（継続表示）
+        const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
 
         if (annotation && annotation.text) {
             // 注釈がある場合は表示
