@@ -8,7 +8,7 @@ class VideoPlayer {
         this.currentTimeDisplay = document.getElementById('currentTime');
         this.playbackSpeedInput = document.getElementById('playbackSpeed');
         this.projectTitleInput = document.getElementById('projectTitle');
-        this.textAnnotationOverlay = document.getElementById('textAnnotationOverlay');
+        this.textAnnotationDisplay = document.getElementById('textAnnotationDisplay');
 
         // 動画の状態
         this.isLoaded = false;
@@ -163,20 +163,21 @@ class VideoPlayer {
      * @param {number} currentTime - 現在時刻（秒）
      */
     updateTextAnnotationDisplay(currentTime) {
-        if (!this.textAnnotationOverlay || !annotationManager) return;
+        if (!this.textAnnotationDisplay || !annotationManager) return;
 
         // 現在時刻の注釈を取得（許容誤差0.5秒）
         const annotation = annotationManager.getAnnotationAtTime(currentTime, 0.5);
 
         if (annotation && annotation.text) {
             // 注釈がある場合は表示
-            this.textAnnotationOverlay.textContent = annotation.text;
-            this.textAnnotationOverlay.style.color = annotation.textColor;
-            this.textAnnotationOverlay.style.backgroundColor = annotation.bgColor;
-            this.textAnnotationOverlay.classList.add('visible');
+            this.textAnnotationDisplay.textContent = annotation.text;
+            this.textAnnotationDisplay.style.color = annotation.textColor;
+            this.textAnnotationDisplay.style.backgroundColor = annotation.bgColor;
+            this.textAnnotationDisplay.classList.add('visible');
         } else {
             // 注釈がない場合は非表示
-            this.textAnnotationOverlay.classList.remove('visible');
+            this.textAnnotationDisplay.textContent = '';
+            this.textAnnotationDisplay.classList.remove('visible');
         }
     }
 }
