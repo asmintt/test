@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieFrameSnap Lite</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- メインコンテナ -->
+    <div class="container">
+
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <h1>MovieFrameSnap Lite</h1>
+            <p class="subtitle">動画の切り抜き＆画像抽出ツール</p>
+        </header>
+
+        <!-- メインコンテンツエリア -->
+        <main class="main-content">
+
+            <!-- 左サイドバー: コントロールパネル -->
+            <aside class="sidebar">
+
+                <!-- 1. 動画ファイル選択 -->
+                <section class="control-section">
+                    <h2>1. 動画ファイルを選択</h2>
+                    <div class="file-input-area">
+                        <input type="file" id="videoInput" accept="video/*" class="file-input">
+                        <label for="videoInput" class="file-label">
+                            ファイルを選択 / ドロップ
+                        </label>
+                    </div>
+                    <p id="fileName" class="file-name"></p>
+                </section>
+
+                <!-- 2. 動画の範囲を指定 -->
+                <section class="control-section">
+                    <details open>
+                        <summary><h2>2. 動画の範囲を指定</h2></summary>
+                        <div class="range-controls">
+                            <!-- 範囲スライダー -->
+                            <div class="range-slider">
+                                <input type="range" id="startSlider" min="0" max="100" value="0" step="0.1" disabled>
+                                <input type="range" id="endSlider" min="0" max="100" value="100" step="0.1" disabled>
+                            </div>
+
+                            <!-- 開始時刻 -->
+                            <div class="time-input-group">
+                                <label>開始:</label>
+                                <input type="text" id="startTime" value="00:00:00" disabled>
+                                <button id="setStartBtn" class="btn-small" disabled>現在位置</button>
+                            </div>
+
+                            <!-- 終了時刻 -->
+                            <div class="time-input-group">
+                                <label>終了:</label>
+                                <input type="text" id="endTime" value="00:00:00" disabled>
+                                <button id="setEndBtn" class="btn-small" disabled>現在位置</button>
+                            </div>
+
+                            <!-- 範囲情報 -->
+                            <p class="range-info">選択範囲: <span id="rangeDisplay">00:00:00</span></p>
+
+                            <!-- 範囲操作ボタン -->
+                            <div class="range-buttons">
+                                <button id="playRangeBtn" class="btn" disabled>範囲を再生</button>
+                                <button id="resetRangeBtn" class="btn" disabled>全範囲</button>
+                            </div>
+                        </div>
+                    </details>
+                </section>
+
+                <!-- 3. 画像抽出（手動） -->
+                <section class="control-section">
+                    <h2>3. 画像抽出（手動）</h2>
+                    <div class="extract-controls">
+                        <!-- オプション -->
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeTimestamp" checked>
+                            タイムスタンプを表示
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeShapes">
+                            図形アノテーションを含める
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeTextAnnotations">
+                            テキスト注釈を含める
+                        </label>
+
+                        <!-- 抽出ボタン -->
+                        <button id="extractFrameBtn" class="btn-primary" disabled>
+                            📸 現在位置の画像を抽出
+                        </button>
+                    </div>
+                </section>
+
+            </aside>
+
+            <!-- 中央: 動画プレビューエリア -->
+            <div class="video-area">
+
+                <!-- 動画プレビュー -->
+                <div class="video-container">
+                    <video id="videoPlayer" controls></video>
+                    <canvas id="annotationCanvas"></canvas>
+                </div>
+
+                <!-- 動画コントロール -->
+                <div class="video-controls">
+                    <div class="control-row">
+                        <label>タイトル:</label>
+                        <input type="text" id="projectTitle" placeholder="動画ファイル名から自動入力" disabled>
+                    </div>
+                    <div class="control-row">
+                        <label>再生速度:</label>
+                        <input type="number" id="playbackSpeed" value="1.0" min="0.25" max="4.0" step="0.25" disabled>
+                        <span>×</span>
+                    </div>
+                    <div class="control-row">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeAudio" checked disabled>
+                            音声を含む
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeVideoAnnotations" disabled>
+                            テキスト注釈を含む
+                        </label>
+                    </div>
+                    <button id="downloadVideoBtn" class="btn-primary" disabled>
+                        ⬇ トリミング動画をダウンロード
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- 右サイドバー: 注釈エリア -->
+            <aside class="sidebar-right">
+
+                <!-- テキスト注釈 -->
+                <section class="annotation-section">
+                    <h2>テキスト注釈</h2>
+
+                    <!-- 現在位置 -->
+                    <div class="current-time-display">
+                        現在位置: <span id="currentTime">00:00:00.0</span>
+                    </div>
+
+                    <!-- テキスト入力＋カラーピッカー -->
+                    <div class="annotation-input-row">
+                        <input type="text" id="annotationText" placeholder="注釈テキスト" disabled>
+                        <input type="color" id="textColor" value="#000000" title="文字色" disabled>
+                        <input type="color" id="bgColor" value="#ffffff" title="背景色" disabled>
+                    </div>
+
+                    <button id="addAnnotationBtn" class="btn" disabled>📌 追加</button>
+                    <button id="addBlankAnnotationBtn" class="btn" disabled>注釈なし</button>
+
+                    <!-- 注釈リスト -->
+                    <div id="annotationList" class="annotation-list">
+                        <p class="empty-message">注釈が登録されていません</p>
+                    </div>
+                </section>
+
+                <!-- 図形アノテーション -->
+                <section class="annotation-section">
+                    <h2>図形アノテーション</h2>
+
+                    <!-- 図形選択 -->
+                    <div class="shape-selector">
+                        <button class="shape-btn" data-shape="rectangle">◻ 四角</button>
+                        <button class="shape-btn" data-shape="circle">⭕ 丸</button>
+                        <button class="shape-btn" data-shape="arrow">→ 矢印</button>
+                        <button class="shape-btn" data-shape="line">─ 線</button>
+                    </div>
+
+                    <!-- 色選択 -->
+                    <div class="color-picker-row">
+                        <label>枠線色:</label>
+                        <input type="color" id="shapeColor" value="#ff0000" disabled>
+                    </div>
+
+                    <p class="help-text">図形を追加するには、動画プレビュー上でドラッグしてください</p>
+
+                    <!-- 図形リスト -->
+                    <div id="shapeList" class="shape-list">
+                        <p class="empty-message">図形が登録されていません</p>
+                    </div>
+                </section>
+
+            </aside>
+
+        </main>
+
+        <!-- フッター: 抽出画像ギャラリー -->
+        <footer class="gallery-footer">
+            <h3>抽出画像ギャラリー</h3>
+            <div id="imageGallery" class="image-gallery">
+                <p class="empty-message">画像が抽出されていません</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- JavaScriptファイルの読み込み -->
+    <script src="js/utils.js"></script>
+    <script src="js/fileHandler.js"></script>
+    <script src="js/videoPlayer.js"></script>
+    <script src="js/rangeSelector.js"></script>
+    <script src="js/annotationManager.js"></script>
+    <script src="js/shapeAnnotationManager.js"></script>
+    <script src="js/frameExtractor.js"></script>
+    <script src="js/videoTrimmer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
