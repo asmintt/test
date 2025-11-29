@@ -1,0 +1,643 @@
+/* MovieFrameSnap Lite - スタイルシート */
+/* シンプルで使いやすいUIデザイン */
+
+/* ========================================
+   基本設定
+   ======================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ========================================
+   コンテナ
+   ======================================== */
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* ========================================
+   ヘッダー
+   ======================================== */
+.app-header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+}
+
+.app-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* ========================================
+   メインコンテンツエリア
+   ======================================== */
+.main-content {
+    display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* ========================================
+   サイドバー
+   ======================================== */
+.sidebar,
+.sidebar-right {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.control-section,
+.annotation-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.control-section:last-child,
+.annotation-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.control-section h2,
+.annotation-section h2 {
+    font-size: 1.1rem;
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+/* 折りたたみセクション */
+details summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+details summary h2::before {
+    content: '▼ ';
+    font-size: 0.8em;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+details:not([open]) summary h2::before {
+    content: '▶ ';
+}
+
+/* ========================================
+   ファイル入力エリア
+   ======================================== */
+.file-input-area {
+    position: relative;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-label {
+    display: block;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.file-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.file-label.drag-over {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: scale(1.02);
+}
+
+.file-name {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+}
+
+/* ========================================
+   範囲コントロール
+   ======================================== */
+.range-controls {
+    padding-top: 15px;
+}
+
+.range-slider {
+    position: relative;
+    height: 40px;
+    margin-bottom: 20px;
+}
+
+.range-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 8px;
+    background: transparent;
+    pointer-events: none;
+    -webkit-appearance: none;
+}
+
+.range-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    pointer-events: all;
+    width: 20px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.range-slider input[type="range"]::-moz-range-thumb {
+    pointer-events: all;
+    width: 20px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.range-slider input[type="range"]:first-child::-webkit-slider-thumb {
+    background: #48bb78;
+}
+
+.range-slider input[type="range"]:first-child::-moz-range-thumb {
+    background: #48bb78;
+}
+
+.range-slider input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+}
+
+.range-slider input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+}
+
+.time-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.time-input-group label {
+    min-width: 50px;
+    font-weight: 600;
+    color: #555;
+}
+
+.time-input-group input[type="text"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.95rem;
+}
+
+.range-info {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #666;
+    margin: 15px 0;
+}
+
+.range-info span {
+    font-weight: 700;
+    color: #667eea;
+}
+
+.range-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* ========================================
+   抽出コントロール
+   ======================================== */
+.extract-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* ========================================
+   動画エリア
+   ======================================== */
+.video-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.video-container {
+    position: relative;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+#videoPlayer {
+    width: 100%;
+    display: block;
+}
+
+#annotationCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.video-container:has(#annotationCanvas[style*="cursor: crosshair"]) #annotationCanvas {
+    pointer-events: all;
+}
+
+.video-controls {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.control-row:last-child {
+    margin-bottom: 0;
+}
+
+.control-row label {
+    min-width: 80px;
+    font-weight: 600;
+    color: #555;
+}
+
+.control-row input[type="text"],
+.control-row input[type="number"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.control-row input[type="number"] {
+    max-width: 100px;
+}
+
+/* ========================================
+   注釈エリア
+   ======================================== */
+.current-time-display {
+    background: #f5f5f5;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.annotation-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.annotation-input-row input[type="text"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.annotation-input-row input[type="color"] {
+    width: 50px;
+    height: 38px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.annotation-list,
+.shape-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.annotation-item,
+.shape-item {
+    background: #f8f8f8;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.annotation-time {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #667eea;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.annotation-time:hover {
+    text-decoration: underline;
+}
+
+.annotation-text {
+    font-size: 0.95rem;
+}
+
+/* 図形アノテーション */
+.shape-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.shape-btn {
+    padding: 10px;
+    background: #f5f5f5;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+}
+
+.shape-btn:hover {
+    background: #e8e8e8;
+}
+
+.shape-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.color-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.color-picker-row input[type="color"] {
+    flex: 1;
+    height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.help-text {
+    font-size: 0.85rem;
+    color: #999;
+    line-height: 1.4;
+    margin: 10px 0;
+}
+
+/* ========================================
+   ボタン
+   ======================================== */
+.btn,
+.btn-small,
+.btn-primary {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+}
+
+.btn {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn:hover:not(:disabled) {
+    background: #e0e0e0;
+    transform: translateY(-1px);
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    background: #667eea;
+    color: white;
+}
+
+.btn-small:hover:not(:disabled) {
+    background: #5568d3;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn:disabled,
+.btn-small:disabled,
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-delete,
+.btn-download {
+    padding: 4px 12px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: #cc0000;
+}
+
+.btn-download {
+    background: #48bb78;
+}
+
+.btn-download:hover {
+    background: #38a169;
+}
+
+/* ========================================
+   ギャラリー
+   ======================================== */
+.gallery-footer {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.gallery-footer h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.gallery-item {
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 10px;
+    transition: all 0.2s;
+}
+
+.gallery-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.gallery-caption {
+    text-align: center;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.empty-message {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* ========================================
+   レスポンシブデザイン
+   ======================================== */
+@media (max-width: 1400px) {
+    .main-content {
+        grid-template-columns: 280px 1fr 280px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar-right {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-header h1 {
+        font-size: 2rem;
+    }
+
+    .image-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}

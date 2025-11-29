@@ -1,0 +1,159 @@
+// videoPlayer.js - 動画再生制御
+// 動画の再生、一時停止、シーク、速度変更などを管理
+
+class VideoPlayer {
+    constructor() {
+        // DOM要素
+        this.video = document.getElementById('videoPlayer');
+        this.currentTimeDisplay = document.getElementById('currentTime');
+        this.playbackSpeedInput = document.getElementById('playbackSpeed');
+        this.projectTitleInput = document.getElementById('projectTitle');
+
+        // 動画の状態
+        this.isLoaded = false;
+        this.duration = 0;
+
+        // コールバック
+        this.onLoadedCallback = null;
+        this.onTimeUpdateCallback = null;
+    }
+
+    /**
+     * 初期化
+     */
+    init() {
+        if (!this.video) {
+            console.error('動画要素が見つかりません');
+            return;
+        }
+
+        // 動画イベントの設定
+        this.setupVideoEvents();
+
+        // 再生速度変更
+        if (this.playbackSpeedInput) {
+            this.playbackSpeedInput.addEventListener('change', () => {
+                this.setPlaybackSpeed(parseFloat(this.playbackSpeedInput.value));
+            });
+        }
+    }
+
+    /**
+     * 動画イベントを設定
+     */
+    setupVideoEvents() {
+        // メタデータ読み込み完了
+        this.video.addEventListener('loadedmetadata', () => {
+            this.duration = this.video.duration;
+            this.isLoaded = true;
+
+            // UIを有効化
+            setEnabled(this.playbackSpeedInput, true);
+
+            // コールバック実行
+            if (this.onLoadedCallback) {
+                this.onLoadedCallback(this.duration);
+            }
+        });
+
+        // 時刻更新
+        this.video.addEventListener('timeupdate', () => {
+            const currentTime = this.video.currentTime;
+
+            // 現在時刻を表示
+            if (this.currentTimeDisplay) {
+                this.currentTimeDisplay.textContent = formatTimeWithDecimal(currentTime);
+            }
+
+            // コールバック実行
+            if (this.onTimeUpdateCallback) {
+                this.onTimeUpdateCallback(currentTime);
+            }
+        });
+    }
+
+    /**
+     * 動画ソースを設定
+     * @param {string} url - 動画URL
+     */
+    loadVideo(url) {
+        this.video.src = url;
+        this.video.load();
+    }
+
+    /**
+     * 再生
+     */
+    play() {
+        this.video.play();
+    }
+
+    /**
+     * 一時停止
+     */
+    pause() {
+        this.video.pause();
+    }
+
+    /**
+     * 現在時刻を取得
+     * @returns {number} 現在時刻（秒）
+     */
+    getCurrentTime() {
+        return this.video.currentTime;
+    }
+
+    /**
+     * 現在時刻を設定
+     * @param {number} time - 時刻（秒）
+     */
+    setCurrentTime(time) {
+        this.video.currentTime = Math.max(0, Math.min(time, this.duration));
+    }
+
+    /**
+     * 再生速度を設定
+     * @param {number} speed - 再生速度
+     */
+    setPlaybackSpeed(speed) {
+        this.video.playbackRate = speed;
+    }
+
+    /**
+     * 動画の長さを取得
+     * @returns {number} 長さ（秒）
+     */
+    getDuration() {
+        return this.duration;
+    }
+
+    /**
+     * 動画読み込み完了時のコールバックを設定
+     * @param {Function} callback - コールバック関数
+     */
+    onLoaded(callback) {
+        this.onLoadedCallback = callback;
+    }
+
+    /**
+     * 時刻更新時のコールバックを設定
+     * @param {Function} callback - コールバック関数
+     */
+    onTimeUpdate(callback) {
+        this.onTimeUpdateCallback = callback;
+    }
+
+    /**
+     * プロジェクトタイトルを設定
+     * @param {string} title - タイトル
+     */
+    setProjectTitle(title) {
+        if (this.projectTitleInput) {
+            this.projectTitleInput.value = title;
+            setEnabled(this.projectTitleInput, true);
+        }
+    }
+}
+
+// グローバルインスタンス
+const videoPlayer = new VideoPlayer();
