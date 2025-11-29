@@ -89,15 +89,16 @@ ipcMain.handle('trim-video', async (event, data) => {
 
     try {
         // ArrayBufferを一時ファイルに書き込み
+        console.log('動画データサイズ:', videoData ? videoData.byteLength : 'undefined');
         const buffer = Buffer.from(videoData);
         fs.writeFileSync(tempInputPath, buffer);
+        console.log('一時ファイル作成:', tempInputPath);
 
-        const inputPath = tempInputPath;
-
-    return new Promise((resolve, reject) => {
-        try {
-            // FFmpegコマンドを構築
-            let command = ffmpeg(inputPath)
+        // FFmpegでトリミング処理を実行
+        return new Promise((resolve, reject) => {
+            try {
+                // FFmpegコマンドを構築
+                let command = ffmpeg(tempInputPath)
                 .setStartTime(startTime)
                 .setDuration(duration);
 
