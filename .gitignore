@@ -25,3 +25,6 @@ npm-debug.log*
 # Temporary files
 tmp/
 temp/
+
+# Generated icons (except main icon.png)
+icon-*.png

@@ -23,6 +23,7 @@ function createWindow() {
         minWidth: 1200,
         minHeight: 700,
         title: 'MovieFrameSnap Lite',
+        icon: path.join(__dirname, 'icon.png'),
         webPreferences: {
             preload: path.join(__dirname, 'src', 'preload.js'),
             contextIsolation: true, // セキュリティ強化

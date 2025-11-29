@@ -21,9 +21,15 @@
   "build": {
     "appId": "com.movieframesnap.lite",
     "productName": "MovieFrameSnap Lite",
+    "files": [
+      "**/*",
+      "!create-icon.js",
+      "!icon-*.png"
+    ],
     "mac": {
       "category": "public.app-category.video",
-      "target": ["dmg", "zip"]
+      "target": ["dmg", "zip"],
+      "icon": "icon.png"
     }
   }
 }
