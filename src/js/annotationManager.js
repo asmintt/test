@@ -141,11 +141,11 @@ class AnnotationManager {
             return;
         }
 
-        // 各注釈を描画
-        this.annotations.forEach((annotation, index) => {
-            const item = this.createAnnotationItem(annotation, index);
+        // 各注釈を降順で描画
+        for (let i = this.annotations.length - 1; i >= 0; i--) {
+            const item = this.createAnnotationItem(this.annotations[i], i);
             this.annotationList.appendChild(item);
-        });
+        }
     }
 
     /**
@@ -178,6 +178,14 @@ class AnnotationManager {
         textLabel.style.padding = '2px 6px';
         textLabel.style.borderRadius = '3px';
 
+        // 修正ボタン
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.textContent = '修正';
+        editBtn.addEventListener('click', () => {
+            this.editAnnotation(index);
+        });
+
         // 削除ボタン
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn-delete';
@@ -189,9 +197,36 @@ class AnnotationManager {
         // 要素を組み立て
         item.appendChild(timeLabel);
         item.appendChild(textLabel);
+        item.appendChild(editBtn);
         item.appendChild(deleteBtn);
 
         return item;
+    }
+
+    /**
+     * 注釈を編集
+     * @param {number} index - 編集する注釈のインデックス
+     */
+    editAnnotation(index) {
+        const annotation = this.annotations[index];
+
+        // 入力フィールドに現在の値を設定
+        this.annotationText.value = annotation.text;
+        this.textColor.value = annotation.textColor;
+        this.bgColor.value = annotation.bgColor;
+
+        // 注釈を削除（再追加するため）
+        this.annotations.splice(index, 1);
+        this.renderAnnotationList();
+        this.notifyChange();
+
+        // 動画の時刻を設定
+        if (videoPlayer) {
+            videoPlayer.setCurrentTime(annotation.time);
+        }
+
+        // 入力フィールドにフォーカス
+        this.annotationText.focus();
     }
 
     /**

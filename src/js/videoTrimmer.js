@@ -82,9 +82,22 @@ class VideoTrimmer {
 
             // 注釈データを取得
             let annotations = [];
+            let shapes = [];
             if (includeAnnotations && annotationManager) {
                 annotations = annotationManager.getAnnotations();
             }
+            if (includeAnnotations && shapeAnnotationManager) {
+                shapes = shapeAnnotationManager.getShapes();
+            }
+
+            // 動画の実際のサイズと表示サイズを取得（座標変換用）
+            const video = videoPlayer.video;
+            const videoScale = {
+                actualWidth: video.videoWidth,
+                actualHeight: video.videoHeight,
+                displayWidth: video.offsetWidth,
+                displayHeight: video.offsetHeight
+            };
 
             // ファイルをArrayBufferとして読み込む
             const arrayBuffer = await this.readFileAsArrayBuffer(fileHandler.currentFile);
@@ -97,6 +110,8 @@ class VideoTrimmer {
                 includeAudio: includeAudio,
                 includeAnnotations: includeAnnotations,
                 annotations: annotations,
+                shapes: shapes,
+                videoScale: videoScale,
                 filename: projectTitle
             });
 

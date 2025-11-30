@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "clean": "rm -rf dist",
+    "build": "npm run clean && electron-builder"
   },
   "keywords": ["video", "frame", "extraction", "electron"],
   "author": "",
@@ -25,6 +26,9 @@
       "**/*",
       "!create-icon.js",
       "!icon-*.png"
+    ],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**/*"
     ],
     "mac": {
       "category": "public.app-category.video",

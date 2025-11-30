@@ -1,5 +1,5 @@
 // shapeAnnotationManager.js - 図形アノテーション管理
-// 動画上に図形（四角、丸、矢印、線）を描画する機能
+// 動画上に時刻ベースで図形（四角、矢印）を描画する機能
 
 class ShapeAnnotationManager {
     constructor() {
@@ -9,6 +9,9 @@ class ShapeAnnotationManager {
         this.shapeButtons = document.querySelectorAll('.shape-btn');
         this.shapeColorInput = document.getElementById('shapeColor');
         this.shapeList = document.getElementById('shapeList');
+        this.addShapeBtn = document.getElementById('addShapeBtn');
+        this.addNoShapeBtn = document.getElementById('addNoShapeBtn');
+        this.shapeCurrentTime = document.getElementById('shapeCurrentTime');
 
         // 現在の図形タイプ
         this.currentShapeType = null;
@@ -18,9 +21,15 @@ class ShapeAnnotationManager {
         this.startX = 0;
         this.startY = 0;
 
+        // 一時的な図形（追加前のプレビュー）
+        this.pendingShape = null;
+
         // 図形データ（配列）
-        // 各図形: { type, x1, y1, x2, y2, color }
+        // 各図形: { time, type, x1, y1, x2, y2, color }
         this.shapes = [];
+
+        // テキスト注釈エリアの高さ
+        this.textAreaHeight = 150;
 
         // コールバック
         this.onShapesChangeCallback = null;
@@ -39,6 +48,23 @@ class ShapeAnnotationManager {
                 this.updateButtonStates(btn);
             });
         });
+
+        // 「追加」ボタン
+        if (this.addShapeBtn) {
+            this.addShapeBtn.addEventListener('click', () => {
+                console.log('追加ボタンがクリックされました');
+                this.confirmPendingShape();
+            });
+        } else {
+            console.error('addShapeBtn要素が見つかりません');
+        }
+
+        // 「図形描画終了」ボタン
+        if (this.addNoShapeBtn) {
+            this.addNoShapeBtn.addEventListener('click', () => {
+                this.addNoShape();
+            });
+        }
 
         // マウスイベント
         this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
@@ -59,14 +85,15 @@ class ShapeAnnotationManager {
     }
 
     /**
-     * キャンバスを動画のサイズに合わせる
+     * キャンバスを動画のサイズ + テキスト注釈エリアに合わせる
      */
     resizeCanvas() {
         if (!videoPlayer || !videoPlayer.video) return;
 
         const video = videoPlayer.video;
         this.canvas.width = video.offsetWidth;
-        this.canvas.height = video.offsetHeight;
+        // テキスト注釈エリアを含めて拡張
+        this.canvas.height = video.offsetHeight + this.textAreaHeight;
 
         // リサイズ後に図形を再描画
         this.redrawShapes();
@@ -74,7 +101,7 @@ class ShapeAnnotationManager {
 
     /**
      * 図形タイプを選択
-     * @param {string} shapeType - 図形タイプ (rectangle, circle, arrow, line, none)
+     * @param {string} shapeType - 図形タイプ (rectangle, arrow, none)
      */
     selectShape(shapeType) {
         if (shapeType === 'none') {
@@ -133,7 +160,7 @@ class ShapeAnnotationManager {
     }
 
     /**
-     * マウスアップ時の処理（図形確定）
+     * マウスアップ時の処理（図形を一時保存）
      * @param {MouseEvent} e - マウスイベント
      */
     onMouseUp(e) {
@@ -145,12 +172,20 @@ class ShapeAnnotationManager {
         const endX = e.clientX - rect.left;
         const endY = e.clientY - rect.top;
 
-        // 図形が小さすぎる場合は追加しない
+        // 図形が小さすぎる場合はキャンセル
         const distance = Math.sqrt(Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2));
-        if (distance < 10) return;
+        if (distance < 10) {
+            this.pendingShape = null;
+            this.redrawShapes();
+            return;
+        }
 
-        // 図形を配列に追加
-        const shape = {
+        // 現在の動画時刻を取得
+        const currentTime = videoPlayer ? videoPlayer.getCurrentTime() : 0;
+
+        // 一時的な図形として保存（まだ確定しない）
+        this.pendingShape = {
+            time: currentTime,
             type: this.currentShapeType,
             x1: this.startX,
             y1: this.startY,
@@ -159,16 +194,83 @@ class ShapeAnnotationManager {
             color: this.shapeColorInput.value
         };
 
-        this.shapes.push(shape);
+        console.log('図形を描画しました（未確定）:', this.pendingShape);
+
+        // 「追加」ボタンを有効化
+        if (this.addShapeBtn) {
+            setEnabled(this.addShapeBtn, true);
+            console.log('追加ボタンを有効化しました');
+        }
+
+        // プレビュー表示を維持（redrawShapesで一時図形も描画される）
+        this.redrawShapes();
+    }
+
+    /**
+     * 一時保存された図形を確定して追加
+     */
+    confirmPendingShape() {
+        console.log('confirmPendingShape呼び出し - pendingShape:', this.pendingShape);
+
+        if (!this.pendingShape) {
+            console.log('pendingShapeがnullのため処理を中断');
+            return;
+        }
+
+        // 図形を配列に追加
+        this.shapes.push(this.pendingShape);
+        console.log('図形を配列に追加しました。現在の図形数:', this.shapes.length);
+        this.pendingShape = null;
+
+        // 「追加」ボタンを無効化
+        if (this.addShapeBtn) {
+            setEnabled(this.addShapeBtn, false);
+        }
+
+        // 時刻順にソート
+        this.sortShapes();
 
         // 再描画
         this.redrawShapes();
 
         // リストを更新
         this.updateShapeList();
+        console.log('図形リストを更新しました');
 
         // コールバック実行
         this.notifyChange();
+    }
+
+    /**
+     * 「図形なし」を追加（図形の終了ポイント）
+     */
+    addNoShape() {
+        if (!videoPlayer) return;
+
+        const currentTime = videoPlayer.getCurrentTime();
+
+        // 空のタイプで図形なしを追加
+        const shape = {
+            time: currentTime,
+            type: '',
+            x1: 0,
+            y1: 0,
+            x2: 0,
+            y2: 0,
+            color: '#000000'
+        };
+
+        this.shapes.push(shape);
+        this.sortShapes();
+        this.updateShapeList();
+        this.notifyChange();
+    }
+
+    /**
+     * 図形を時刻順にソート
+     */
+    sortShapes() {
+        this.shapes.sort((a, b) => a.time - b.time);
     }
 
     /**
@@ -190,28 +292,14 @@ class ShapeAnnotationManager {
                 this.ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 break;
 
-            case 'circle':
-                const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                this.ctx.beginPath();
-                this.ctx.arc(x1, y1, radius, 0, 2 * Math.PI);
-                this.ctx.stroke();
-                break;
-
             case 'arrow':
                 this.drawArrow(x1, y1, x2, y2, color);
-                break;
-
-            case 'line':
-                this.ctx.beginPath();
-                this.ctx.moveTo(x1, y1);
-                this.ctx.lineTo(x2, y2);
-                this.ctx.stroke();
                 break;
         }
     }
 
     /**
-     * 矢印を描画
+     * 矢印を描画（→記号のみ）
      * @param {number} x1 - 開始X座標
      * @param {number} y1 - 開始Y座標
      * @param {number} x2 - 終了X座標
@@ -219,28 +307,43 @@ class ShapeAnnotationManager {
      * @param {string} color - 色
      */
     drawArrow(x1, y1, x2, y2, color) {
-        const headLength = 20; // 矢印の頭の長さ
-        const angle = Math.atan2(y2 - y1, x2 - x1);
+        // →記号を描画
+        this.ctx.font = '40px sans-serif';
+        this.ctx.fillStyle = color;
+        this.ctx.fillText('→', x2 - 20, y2 + 10);
+    }
 
-        // 線を描画
-        this.ctx.beginPath();
-        this.ctx.moveTo(x1, y1);
-        this.ctx.lineTo(x2, y2);
-        this.ctx.stroke();
+    /**
+     * 現在時刻で有効な図形を取得
+     * @param {number} currentTime - 現在時刻（秒）
+     * @returns {Array} 有効な図形の配列
+     */
+    getActiveShapesAtTime(currentTime) {
+        if (this.shapes.length === 0) return [];
 
-        // 矢印の頭を描画
-        this.ctx.beginPath();
-        this.ctx.moveTo(x2, y2);
-        this.ctx.lineTo(
-            x2 - headLength * Math.cos(angle - Math.PI / 6),
-            y2 - headLength * Math.sin(angle - Math.PI / 6)
-        );
-        this.ctx.moveTo(x2, y2);
-        this.ctx.lineTo(
-            x2 - headLength * Math.cos(angle + Math.PI / 6),
-            y2 - headLength * Math.sin(angle + Math.PI / 6)
-        );
-        this.ctx.stroke();
+        const activeShapes = [];
+
+        // 現在時刻以前の図形を取得
+        for (let i = 0; i < this.shapes.length; i++) {
+            const shape = this.shapes[i];
+
+            if (shape.time > currentTime) break;
+
+            // 次の図形を確認
+            const nextShape = this.shapes[i + 1];
+
+            if (nextShape && nextShape.time <= currentTime) {
+                // 次の図形がすでに開始している場合はスキップ
+                continue;
+            }
+
+            // 現在の図形が「図形なし」でない場合は追加
+            if (shape.type !== '') {
+                activeShapes.push(shape);
+            }
+        }
+
+        return activeShapes;
     }
 
     /**
@@ -250,10 +353,27 @@ class ShapeAnnotationManager {
         // キャンバスをクリア
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // すべての図形を描画
-        this.shapes.forEach(shape => {
-            this.drawShape(shape.type, shape.x1, shape.y1, shape.x2, shape.y2, shape.color);
-        });
+        // 現在時刻の図形を取得して描画
+        if (videoPlayer) {
+            const currentTime = videoPlayer.getCurrentTime();
+            const activeShapes = this.getActiveShapesAtTime(currentTime);
+
+            activeShapes.forEach(shape => {
+                this.drawShape(shape.type, shape.x1, shape.y1, shape.x2, shape.y2, shape.color);
+            });
+        }
+
+        // 一時図形（未確定）も描画
+        if (this.pendingShape) {
+            this.drawShape(
+                this.pendingShape.type,
+                this.pendingShape.x1,
+                this.pendingShape.y1,
+                this.pendingShape.x2,
+                this.pendingShape.y2,
+                this.pendingShape.color
+            );
+        }
     }
 
     /**
@@ -272,10 +392,11 @@ class ShapeAnnotationManager {
             return;
         }
 
-        this.shapes.forEach((shape, index) => {
-            const item = this.createShapeItem(shape, index);
+        // 降順で表示
+        for (let i = this.shapes.length - 1; i >= 0; i--) {
+            const item = this.createShapeItem(this.shapes[i], i);
             this.shapeList.appendChild(item);
-        });
+        }
     }
 
     /**
@@ -286,18 +407,41 @@ class ShapeAnnotationManager {
      */
     createShapeItem(shape, index) {
         const item = document.createElement('div');
-        item.className = 'shape-item';
+        item.className = 'annotation-item';
+
+        // 時刻表示
+        const timeLabel = document.createElement('div');
+        timeLabel.className = 'annotation-time';
+        timeLabel.textContent = formatTimeWithDecimal(shape.time);
+        timeLabel.style.cursor = 'pointer';
+        timeLabel.addEventListener('click', () => {
+            if (videoPlayer) {
+                videoPlayer.setCurrentTime(shape.time);
+            }
+        });
 
         // 図形タイプの日本語名
         const typeNames = {
             rectangle: '四角',
-            circle: '丸',
             arrow: '矢印',
-            line: '線'
+            '': '図形なし'
         };
 
-        const typeLabel = document.createElement('span');
-        typeLabel.textContent = typeNames[shape.type] || shape.type;
+        // テキスト表示
+        const textLabel = document.createElement('div');
+        textLabel.className = 'annotation-text';
+        textLabel.textContent = typeNames[shape.type] || shape.type;
+        if (shape.type !== '') {
+            textLabel.style.color = shape.color;
+        }
+
+        // 修正ボタン
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.textContent = '修正';
+        editBtn.addEventListener('click', () => {
+            this.editShape(index);
+        });
 
         // 削除ボタン
         const deleteBtn = document.createElement('button');
@@ -307,10 +451,44 @@ class ShapeAnnotationManager {
             this.deleteShape(index);
         });
 
-        item.appendChild(typeLabel);
+        // 要素を組み立て
+        item.appendChild(timeLabel);
+        item.appendChild(textLabel);
+        if (shape.type !== '') {
+            item.appendChild(editBtn);
+        }
         item.appendChild(deleteBtn);
 
         return item;
+    }
+
+    /**
+     * 図形を編集
+     * @param {number} index - 編集する図形のインデックス
+     */
+    editShape(index) {
+        const shape = this.shapes[index];
+
+        // 色の値を設定
+        this.shapeColorInput.value = shape.color;
+
+        // 図形タイプを選択
+        const shapeBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === shape.type);
+        if (shapeBtn) {
+            this.selectShape(shape.type);
+            this.updateButtonStates(shapeBtn);
+        }
+
+        // 図形を削除（再描画するため）
+        this.shapes.splice(index, 1);
+        this.redrawShapes();
+        this.updateShapeList();
+        this.notifyChange();
+
+        // 動画の時刻を設定
+        if (videoPlayer) {
+            videoPlayer.setCurrentTime(shape.time);
+        }
     }
 
     /**
@@ -349,13 +527,29 @@ class ShapeAnnotationManager {
         // キャンバスをリサイズ
         this.resizeCanvas();
 
-        // 色選択を有効化
+        // UIを有効化
         if (this.shapeColorInput) {
             setEnabled(this.shapeColorInput, true);
+        }
+        if (this.addNoShapeBtn) {
+            setEnabled(this.addNoShapeBtn, true);
         }
 
         // 図形をクリア
         this.clearShapes();
+    }
+
+    /**
+     * 現在時刻の更新（videoPlayerから呼ばれる）
+     * @param {number} currentTime - 現在時刻（秒）
+     */
+    updateCurrentTime(currentTime) {
+        if (this.shapeCurrentTime) {
+            this.shapeCurrentTime.textContent = formatTimeWithDecimal(currentTime);
+        }
+
+        // 図形を再描画（時刻に応じて表示/非表示）
+        this.redrawShapes();
     }
 
     /**

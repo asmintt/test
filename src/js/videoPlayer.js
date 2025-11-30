@@ -69,6 +69,11 @@ class VideoPlayer {
             // テキスト注釈を表示
             this.updateTextAnnotationDisplay(currentTime);
 
+            // 図形アノテーションの時刻を更新
+            if (shapeAnnotationManager) {
+                shapeAnnotationManager.updateCurrentTime(currentTime);
+            }
+
             // コールバック実行
             if (this.onTimeUpdateCallback) {
                 this.onTimeUpdateCallback(currentTime);

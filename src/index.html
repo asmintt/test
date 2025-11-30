@@ -10,17 +10,16 @@
     <!-- メインコンテナ -->
     <div class="container">
 
-        <!-- ヘッダー -->
-        <header class="app-header">
-            <h1>MovieFrameSnap Lite</h1>
-            <p class="subtitle">動画の切り抜き＆画像抽出ツール</p>
-        </header>
-
         <!-- メインコンテンツエリア -->
         <main class="main-content">
 
             <!-- 左サイドバー: コントロールパネル -->
             <aside class="sidebar">
+
+                <!-- アプリ名 -->
+                <div class="app-title">
+                    <h1>MovieFrameSnap Lite</h1>
+                </div>
 
                 <!-- 1. 動画ファイル選択 -->
                 <section class="control-section">
@@ -170,13 +169,16 @@
                 <section class="annotation-section">
                     <h2>図形アノテーション</h2>
 
+                    <!-- 現在位置 -->
+                    <div class="current-time-display">
+                        現在位置: <span id="shapeCurrentTime">00:00:00.0</span>
+                    </div>
+
                     <!-- 図形選択 -->
                     <div class="shape-selector">
-                        <button class="shape-btn" data-shape="none">✖ 図形なし</button>
+                        <button class="shape-btn" data-shape="none">✖ 選択解除</button>
                         <button class="shape-btn" data-shape="rectangle">◻ 四角</button>
-                        <button class="shape-btn" data-shape="circle">⭕ 丸</button>
                         <button class="shape-btn" data-shape="arrow">→ 矢印</button>
-                        <button class="shape-btn" data-shape="line">─ 線</button>
                     </div>
 
                     <!-- 色選択 -->
@@ -185,7 +187,10 @@
                         <input type="color" id="shapeColor" value="#ff0000" disabled>
                     </div>
 
-                    <p class="help-text">図形を追加するには、動画プレビュー上でドラッグしてください</p>
+                    <p class="help-text">図形を追加するには、動画プレビュー上でドラッグした後、「追加」ボタンをクリックしてください</p>
+
+                    <button id="addShapeBtn" class="btn" disabled>📌 追加</button>
+                    <button id="addNoShapeBtn" class="btn" disabled>図形描画終了</button>
 
                     <!-- 図形リスト -->
                     <div id="shapeList" class="shape-list">

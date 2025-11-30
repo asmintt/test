@@ -29,27 +29,19 @@ body {
 }
 
 /* ========================================
-   ヘッダー
+   アプリ名（サイドバー上部）
    ======================================== */
-.app-header {
+.app-title {
     text-align: center;
-    color: white;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #667eea;
 }
 
-.app-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
+.app-title h1 {
+    font-size: 1.3rem;
+    color: #667eea;
+    font-weight: 600;
 }
 
 /* ========================================
@@ -89,9 +81,10 @@ body {
 
 .control-section h2,
 .annotation-section h2 {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     color: #667eea;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    font-weight: 600;
 }
 
 /* 折りたたみセクション */
@@ -562,6 +555,7 @@ details:not([open]) summary h2::before {
     transform: none;
 }
 
+.btn-edit,
 .btn-delete,
 .btn-download {
     padding: 4px 12px;
@@ -572,6 +566,15 @@ details:not([open]) summary h2::before {
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.2s;
+}
+
+.btn-edit {
+    background: #667eea;
+    margin-right: 5px;
+}
+
+.btn-edit:hover {
+    background: #5568d3;
 }
 
 .btn-delete:hover {

@@ -6,8 +6,10 @@ const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegStatic = require('ffmpeg-static');
 
-// FFmpegのパスを設定（ローカルで動作するようにする）
-ffmpeg.setFfmpegPath(ffmpegStatic);
+// FFmpegのパスを設定（パッケージ化対応）
+// asarUnpackされたパスを正しく解決
+const ffmpegPath = ffmpegStatic.replace('app.asar', 'app.asar.unpacked');
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 // メインウィンドウへの参照を保持
 let mainWindow;
@@ -18,10 +20,10 @@ let mainWindow;
 function createWindow() {
     // ブラウザウィンドウを作成
     mainWindow = new BrowserWindow({
-        width: 1400,
-        height: 900,
-        minWidth: 1200,
-        minHeight: 700,
+        width: 1800,
+        height: 1000,
+        minWidth: 1400,
+        minHeight: 800,
         title: 'MovieFrameSnap Lite',
         icon: path.join(__dirname, 'icon.png'),
         webPreferences: {
@@ -35,7 +37,7 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
     // 開発者ツールを開く（開発時のみ）
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     // ウィンドウが閉じられたときの処理
     mainWindow.on('closed', () => {
@@ -82,6 +84,8 @@ ipcMain.handle('trim-video', async (event, data) => {
         includeAudio,       // 音声を含むか
         includeAnnotations, // テキスト注釈を含むか
         annotations,        // 注釈データ
+        shapes,             // 図形アノテーションデータ
+        videoScale,         // 動画のスケール情報
         filename            // 出力ファイル名
     } = data;
 
@@ -109,22 +113,30 @@ ipcMain.handle('trim-video', async (event, data) => {
                 command = command.noAudio();
             }
 
-            // テキスト注釈を含める場合
-            if (includeAnnotations && annotations && annotations.length > 0) {
-                // 注釈表示用のフィルタチェーンを構築
-                const filters = buildAnnotationFilters(annotations, startTime, duration);
+            // テキスト注釈または図形を含める場合
+            if (includeAnnotations && (annotations?.length > 0 || shapes?.length > 0)) {
+                // フィルタチェーンを構築（テキスト注釈と図形を統合）
+                const filters = buildCombinedFilters(annotations, shapes, startTime, duration, videoScale);
                 if (filters) {
                     command = command.complexFilter(filters);
                 }
             }
 
             // 出力設定
-            command
-                .outputOptions([
-                    '-c:v libx264',
-                    '-preset ultrafast',
-                    '-crf 28'
-                ])
+            const outputOpts = [
+                '-c:v libx264',
+                '-preset ultrafast',
+                '-crf 28',
+                '-pix_fmt yuv420p'  // QuickTime互換性のため
+            ];
+
+            // 音声を含める場合は音声コーデックを指定
+            if (includeAudio) {
+                outputOpts.push('-c:a aac');
+                outputOpts.push('-b:a 128k');
+            }
+
+            command.outputOptions(outputOpts)
                 .on('start', (commandLine) => {
                     console.log('FFmpeg開始:', commandLine);
                 })
@@ -215,13 +227,23 @@ function buildAtempoFilter(speed) {
  * @param {Array} annotations - 注釈データの配列
  * @param {number} trimStartTime - トリミング開始時刻
  * @param {number} trimDuration - トリミング継続時間
- * @returns {Array} FFmpegのcomplexFilterに渡すフィルタ配列
+ * @returns {Array|null} FFmpegのcomplexFilterに渡すフィルタ配列、または null
  */
 function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
-    const filters = [];
-    const textAreaHeight = 60; // テキスト表示エリアの高さ
+    // テキストがある注釈のみをフィルタリング
+    const textAnnotations = annotations.filter(ann => ann.text && ann.text.trim() !== '');
 
-    // 1. 動画の下に黒い領域を追加
+    // テキスト注釈がない場合は null を返す
+    if (textAnnotations.length === 0) {
+        console.log('テキスト注釈がないため、フィルタを適用しません');
+        return null;
+    }
+
+    const filters = [];
+    // テキスト表示エリアの高さ（固定値）
+    const textAreaHeight = 150;
+
+    // 1. 動画の下に白い領域を追加
     filters.push({
         filter: 'pad',
         options: {
@@ -229,28 +251,29 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
             height: `ih+${textAreaHeight}`,
             x: 0,
             y: 0,
-            color: 'black'
+            color: 'white'
         },
         outputs: 'padded'
     });
 
     let currentInput = 'padded';
+    let filterIndex = 0;
 
     // 2. 各注釈に対してdrawtextフィルターを追加
-    annotations.forEach((ann, index) => {
-        // 「注釈なし」はスキップ
-        if (!ann.text) return;
-
+    textAnnotations.forEach((ann, index) => {
         // 注釈の表示開始時刻（トリミング開始時刻を基準とした相対時刻）
         const displayStartTime = Math.max(0, ann.time - trimStartTime);
 
         // 次の注釈または動画終了までの時間を計算
         let displayEndTime = trimDuration;
-        for (let i = index + 1; i < annotations.length; i++) {
+
+        // 元の配列から次の注釈を探す
+        const currentIndex = annotations.indexOf(ann);
+        for (let i = currentIndex + 1; i < annotations.length; i++) {
             if (annotations[i].time > ann.time) {
                 // 次の注釈が「注釈なし」の場合、そこで終了
-                if (!annotations[i].text) {
-                    displayEndTime = Math.min(trimDuration, annotations[i].time - trimStartTime);
+                if (!annotations[i].text || annotations[i].text.trim() === '') {
+                    displayEndTime = Math.max(displayStartTime, Math.min(trimDuration, annotations[i].time - trimStartTime));
                     break;
                 }
                 // 次の注釈がテキストありの場合、そこまで継続
@@ -260,32 +283,218 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
 
         // テキストを安全にエスケープ
         const escapedText = ann.text
-            .replace(/\\/g, '\\\\')
-            .replace(/'/g, "\\'")
-            .replace(/:/g, '\\:');
+            .replace(/\\/g, '\\\\\\\\')
+            .replace(/'/g, "\\\\'")
+            .replace(/:/g, '\\\\:');
 
-        const outputLabel = `ann${index}`;
-
-        filters.push({
+        // 最後のフィルター以外は出力ラベルを設定
+        const isLastFilter = index === textAnnotations.length - 1;
+        const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
                 fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
-                fontsize: 30,
+                fontsize: 70,
                 fontcolor: ann.textColor || '#000000',
                 box: 1,
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                boxborderw: 15,
+                boxborderw: 20,
                 x: '(w-text_w)/2',
                 y: `h-${textAreaHeight/2}-text_h/2`,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },
-            inputs: currentInput,
-            outputs: outputLabel
-        });
+            inputs: currentInput
+        };
 
-        currentInput = outputLabel;
+        // 最後のフィルター以外は出力ラベルを設定
+        if (!isLastFilter) {
+            const outputLabel = `ann${filterIndex}`;
+            filterObj.outputs = outputLabel;
+            currentInput = outputLabel;
+        }
+
+        filters.push(filterObj);
+        filterIndex++;
     });
 
+    console.log('フィルタチェーン構築完了:', filters.length, 'フィルタ');
+    return filters;
+}
+
+/**
+ * テキスト注釈と図形アノテーションを統合したフィルタチェーンを構築
+ * @param {Array} annotations - テキスト注釈データの配列
+ * @param {Array} shapes - 図形アノテーションデータの配列
+ * @param {number} trimStartTime - トリミング開始時刻
+ * @param {number} trimDuration - トリミング継続時間
+ * @param {Object} videoScale - 動画のスケール情報 { actualWidth, actualHeight, displayWidth, displayHeight }
+ * @returns {Array|null} FFmpegのcomplexFilterに渡すフィルタ配列、または null
+ */
+function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, videoScale) {
+    // テキストがある注釈のみをフィルタリング
+    const textAnnotations = annotations ? annotations.filter(ann => ann.text && ann.text.trim() !== '') : [];
+
+    // 図形がある注釈のみをフィルタリング
+    const validShapes = shapes ? shapes.filter(s => s.type !== '') : [];
+
+    // 両方ともない場合は null を返す
+    if (textAnnotations.length === 0 && validShapes.length === 0) {
+        console.log('テキスト注釈も図形もないため、フィルタを適用しません');
+        return null;
+    }
+
+    // 座標変換のためのスケール比率を計算
+    const scaleX = videoScale ? (videoScale.actualWidth / videoScale.displayWidth) : 1;
+    const scaleY = videoScale ? (videoScale.actualHeight / videoScale.displayHeight) : 1;
+    console.log(`座標スケール: X=${scaleX.toFixed(2)}, Y=${scaleY.toFixed(2)}`);
+
+    const filters = [];
+    // テキスト表示エリアの高さ（固定値）
+    const textAreaHeight = 150;
+
+    // 1. 動画の下に白い領域を追加
+    filters.push({
+        filter: 'pad',
+        options: {
+            width: 'iw',
+            height: `ih+${textAreaHeight}`,
+            x: 0,
+            y: 0,
+            color: 'white'
+        },
+        outputs: 'padded'
+    });
+
+    let currentInput = 'padded';
+    let filterIndex = 0;
+
+    // 2. 図形アノテーションを追加（テキストより先に描画 = 背面）
+    validShapes.forEach((shape, index) => {
+        // 図形の表示開始時刻（トリミング開始時刻を基準とした相対時刻）
+        const displayStartTime = Math.max(0, shape.time - trimStartTime);
+
+        // 次の図形または動画終了までの時間を計算
+        let displayEndTime = trimDuration;
+
+        // 元の配列から次の図形を探す
+        const currentIndex = shapes.indexOf(shape);
+        for (let i = currentIndex + 1; i < shapes.length; i++) {
+            if (shapes[i].time > shape.time) {
+                // 時刻が異なる次の図形が来たら、そこで終了
+                // （同じ時刻の図形は同時表示される）
+                displayEndTime = Math.max(displayStartTime, Math.min(trimDuration, shapes[i].time - trimStartTime));
+                break;
+            }
+        }
+
+        // 図形タイプに応じてフィルターを構築
+        let filterObj = null;
+
+        if (shape.type === 'rectangle') {
+            // 四角: drawbox フィルター
+            // 座標をスケール変換
+            const x = Math.round(Math.min(shape.x1, shape.x2) * scaleX);
+            const y = Math.round(Math.min(shape.y1, shape.y2) * scaleY);
+            const w = Math.round(Math.abs(shape.x2 - shape.x1) * scaleX);
+            const h = Math.round(Math.abs(shape.y2 - shape.y1) * scaleY);
+
+            filterObj = {
+                filter: 'drawbox',
+                options: {
+                    x: x,
+                    y: y,
+                    w: w,
+                    h: h,
+                    color: shape.color,
+                    t: Math.round(3 * scaleX),  // 線の太さもスケール
+                    enable: `between(t,${displayStartTime},${displayEndTime})`
+                },
+                inputs: currentInput
+            };
+        } else if (shape.type === 'arrow') {
+            // 矢印: →記号のみで描画（プレビューと統一）
+            // 座標をスケール変換
+            const x2 = Math.round(shape.x2 * scaleX);
+            const y2 = Math.round(shape.y2 * scaleY);
+
+            // →記号を描画
+            filterObj = {
+                filter: 'drawtext',
+                options: {
+                    text: '→',
+                    fontsize: Math.round(40 * Math.min(scaleX, scaleY)),
+                    fontcolor: shape.color,
+                    x: x2 - Math.round(20 * scaleX),
+                    y: y2 - Math.round(10 * scaleY),
+                    enable: `between(t,${displayStartTime},${displayEndTime})`
+                },
+                inputs: currentInput
+            };
+        }
+
+        if (filterObj) {
+            const outputLabel = `shape${filterIndex}`;
+            filterObj.outputs = outputLabel;
+            filters.push(filterObj);
+            currentInput = outputLabel;
+            filterIndex++;
+        }
+    });
+
+    // 3. テキスト注釈を追加（図形の上 = 前面）
+    textAnnotations.forEach((ann, index) => {
+        // 注釈の表示開始時刻（トリミング開始時刻を基準とした相対時刻）
+        const displayStartTime = Math.max(0, ann.time - trimStartTime);
+
+        // 次の注釈または動画終了までの時間を計算
+        let displayEndTime = trimDuration;
+
+        // 元の配列から次の注釈を探す
+        const currentIndex = annotations.indexOf(ann);
+        for (let i = currentIndex + 1; i < annotations.length; i++) {
+            if (annotations[i].time > ann.time) {
+                // 次の注釈（テキストあり・なし問わず）でこのテキストを終了
+                displayEndTime = Math.max(displayStartTime, Math.min(trimDuration, annotations[i].time - trimStartTime));
+                break;
+            }
+        }
+
+        // テキストを安全にエスケープ
+        const escapedText = ann.text
+            .replace(/\\/g, '\\\\\\\\')
+            .replace(/'/g, "\\\\'")
+            .replace(/:/g, '\\\\:');
+
+        // 最後のフィルター以外は出力ラベルを設定
+        const isLastFilter = index === textAnnotations.length - 1;
+        const filterObj = {
+            filter: 'drawtext',
+            options: {
+                text: escapedText,
+                fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
+                fontsize: 70,
+                fontcolor: ann.textColor || '#000000',
+                box: 1,
+                boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
+                boxborderw: 20,
+                x: '(w-text_w)/2',
+                y: `h-${textAreaHeight/2}-text_h/2`,
+                enable: `between(t,${displayStartTime},${displayEndTime})`
+            },
+            inputs: currentInput
+        };
+
+        // 最後のフィルター以外は出力ラベルを設定
+        if (!isLastFilter) {
+            const outputLabel = `text${filterIndex}`;
+            filterObj.outputs = outputLabel;
+            currentInput = outputLabel;
+        }
+
+        filters.push(filterObj);
+        filterIndex++;
+    });
+
+    console.log('統合フィルタチェーン構築完了:', filters.length, 'フィルタ');
     return filters;
 }
