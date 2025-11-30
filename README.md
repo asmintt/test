@@ -2,7 +2,7 @@
 
 動画から手動でフレームを抽出し、注釈を追加できるデスクトップアプリケーション
 
-![MovieFrameSnap Lite インターフェース](screenshots/app-interface.png)
+![MovieFrameSnap Lite インターフェース](screenshots/app-screenshot.png)
 
 ## 機能
 
