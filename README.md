@@ -145,23 +145,25 @@ cp -R "dist/mac-arm64/MovieFrameSnap Lite.app" /Applications/
 
 ```
 MovieFrameSnap-Lite/
-├── main.js                 # Electronメインプロセス
-├── package.json            # プロジェクト設定
+├── main.js                 # Electronメインプロセス (500行)
+├── package.json            # プロジェクト設定 (39行)
 ├── src/
-│   ├── index.html          # メインHTML
-│   ├── style.css           # スタイルシート
-│   ├── preload.js          # Electronプリロードスクリプト
+│   ├── index.html          # メインHTML (226行)
+│   ├── style.css           # スタイルシート (676行)
+│   ├── preload.js          # Electronプリロードスクリプト (38行)
 │   └── js/
-│       ├── utils.js                    # 共通ユーティリティ関数
-│       ├── fileHandler.js              # ファイル選択・読み込み
-│       ├── videoPlayer.js              # 動画再生制御
-│       ├── rangeSelector.js            # 範囲選択
-│       ├── annotationManager.js        # テキスト注釈管理
-│       ├── shapeAnnotationManager.js   # 図形アノテーション管理
-│       ├── frameExtractor.js           # フレーム抽出
-│       ├── videoTrimmer.js             # 動画トリミング
-│       └── app.js                      # アプリケーション初期化
-└── README.md               # このファイル
+│       ├── utils.js                    # 共通ユーティリティ関数 (116行)
+│       ├── fileHandler.js              # ファイル選択・読み込み (130行)
+│       ├── videoPlayer.js              # 動画再生制御 (191行)
+│       ├── rangeSelector.js            # 範囲選択 (348行)
+│       ├── annotationManager.js        # テキスト注釈管理 (314行)
+│       ├── shapeAnnotationManager.js   # 図形アノテーション管理 (574行)
+│       ├── frameExtractor.js           # フレーム抽出 (315行)
+│       ├── videoTrimmer.js             # 動画トリミング (174行)
+│       └── app.js                      # アプリケーション初期化 (176行)
+└── README.md               # このファイル (233行)
+
+総コード行数: 約4,050行
 ```
 
 ## 開発者向け情報
