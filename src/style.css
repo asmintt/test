@@ -229,6 +229,7 @@ details:not([open]) summary h2::before {
 
 .time-input-group input[type="text"] {
     flex: 1;
+    max-width: 90px;
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -393,6 +394,46 @@ details:not([open]) summary h2::before {
     font-size: 1.1rem;
 }
 
+/* 時刻調整ボタン */
+.time-adjust-controls {
+    margin-bottom: 15px;
+}
+
+.time-adjust-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.time-adjust-row:last-child {
+    margin-bottom: 0;
+}
+
+.btn-tiny {
+    flex: 1;
+    padding: 6px 8px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.btn-tiny:hover:not(:disabled) {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-1px);
+}
+
+.btn-tiny:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .annotation-input-row {
     display: flex;
     gap: 8px;
@@ -406,12 +447,49 @@ details:not([open]) summary h2::before {
     border-radius: 6px;
 }
 
-.annotation-input-row input[type="color"] {
-    width: 50px;
-    height: 38px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+/* カラーパレット */
+.color-palette-section {
+    margin-bottom: 12px;
+}
+
+.color-palette-section label {
+    display: block;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.color-btn {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 2px solid transparent;
+    border-radius: 4px;
     cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-btn.active {
+    border-color: #667eea;
+    border-width: 3px;
+    transform: scale(1.05);
+}
+
+.color-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .annotation-list,
@@ -483,13 +561,7 @@ details:not([open]) summary h2::before {
     margin-bottom: 12px;
 }
 
-.color-picker-row input[type="color"] {
-    flex: 1;
-    height: 40px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-}
+/* color-picker-rowは削除（カラーパレットに置き換え） */
 
 .help-text {
     font-size: 0.85rem;

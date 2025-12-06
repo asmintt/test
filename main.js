@@ -37,7 +37,7 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
     // 開発者ツールを開く（開発時のみ）
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools(); // 本番環境では無効化
 
     // ウィンドウが閉じられたときの処理
     mainWindow.on('closed', () => {
@@ -433,10 +433,7 @@ function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, 
         }
 
         if (filterObj) {
-            const outputLabel = `shape${filterIndex}`;
-            filterObj.outputs = outputLabel;
             filters.push(filterObj);
-            currentInput = outputLabel;
             filterIndex++;
         }
     });
@@ -465,8 +462,6 @@ function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, 
             .replace(/'/g, "\\\\'")
             .replace(/:/g, '\\\\:');
 
-        // 最後のフィルター以外は出力ラベルを設定
-        const isLastFilter = index === textAnnotations.length - 1;
         const filterObj = {
             filter: 'drawtext',
             options: {
@@ -484,16 +479,29 @@ function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, 
             inputs: currentInput
         };
 
-        // 最後のフィルター以外は出力ラベルを設定
-        if (!isLastFilter) {
-            const outputLabel = `text${filterIndex}`;
-            filterObj.outputs = outputLabel;
-            currentInput = outputLabel;
-        }
-
         filters.push(filterObj);
         filterIndex++;
     });
+
+    // 4. 全フィルターに対して、最後以外に出力ラベルを設定
+    for (let i = 0; i < filters.length; i++) {
+        if (i === 0) {
+            // 最初のフィルター（pad）は既に出力ラベルを持っている
+            continue;
+        }
+
+        if (i < filters.length - 1) {
+            // 最後以外のフィルターに出力ラベルを設定
+            const outputLabel = `filter${i}`;
+            filters[i].outputs = outputLabel;
+
+            // 次のフィルターの入力を設定
+            if (i + 1 < filters.length) {
+                filters[i + 1].inputs = outputLabel;
+            }
+        }
+        // 最後のフィルターは出力ラベルなし（デフォルトの出力ストリーム）
+    }
 
     console.log('統合フィルタチェーン構築完了:', filters.length, 'フィルタ');
     return filters;

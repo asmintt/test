@@ -7,11 +7,19 @@ class ShapeAnnotationManager {
         this.canvas = document.getElementById('annotationCanvas');
         this.ctx = this.canvas?.getContext('2d');
         this.shapeButtons = document.querySelectorAll('.shape-btn');
-        this.shapeColorInput = document.getElementById('shapeColor');
+        this.shapeColorPalette = document.getElementById('shapeColorPalette');
         this.shapeList = document.getElementById('shapeList');
         this.addShapeBtn = document.getElementById('addShapeBtn');
         this.addNoShapeBtn = document.getElementById('addNoShapeBtn');
         this.shapeCurrentTime = document.getElementById('shapeCurrentTime');
+
+        // 時刻調整ボタン
+        this.timeAdjustShapeButtons = document.querySelectorAll('[data-adjust-shape]');
+        this.syncShapeTimeBtn = document.getElementById('syncShapeTime');
+        this.resetShapeTimeBtn = document.getElementById('resetShapeTime');
+
+        // 選択された色
+        this.selectedShapeColor = '#FF0000'; // デフォルト: 赤
 
         // 現在の図形タイプ
         this.currentShapeType = null;
@@ -66,6 +74,28 @@ class ShapeAnnotationManager {
             });
         }
 
+        // 時刻調整ボタン
+        this.timeAdjustShapeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const offset = parseFloat(button.getAttribute('data-adjust-shape'));
+                this.adjustTime(offset);
+            });
+        });
+
+        // 現在位置ボタン
+        if (this.syncShapeTimeBtn) {
+            this.syncShapeTimeBtn.addEventListener('click', () => {
+                // 何もしない（既に動画の現在位置が表示されているため）
+            });
+        }
+
+        // リセットボタン
+        if (this.resetShapeTimeBtn) {
+            this.resetShapeTimeBtn.addEventListener('click', () => {
+                this.resetTime();
+            });
+        }
+
         // マウスイベント
         this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -82,18 +112,51 @@ class ShapeAnnotationManager {
                 this.resizeCanvas();
             });
         }
+
+        // カラーパレットの初期化
+        this.initColorPalette();
     }
 
     /**
-     * キャンバスを動画のサイズ + テキスト注釈エリアに合わせる
+     * カラーパレットの初期化
+     */
+    initColorPalette() {
+        if (this.shapeColorPalette) {
+            const colorButtons = this.shapeColorPalette.querySelectorAll('.color-btn');
+            colorButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const color = button.getAttribute('data-color');
+                    this.selectShapeColor(color, button);
+                });
+            });
+        }
+    }
+
+    /**
+     * 図形色を選択
+     * @param {string} color - 選択された色
+     * @param {HTMLElement} button - クリックされたボタン
+     */
+    selectShapeColor(color, button) {
+        this.selectedShapeColor = color;
+
+        // すべてのボタンからactiveクラスを削除
+        const allButtons = this.shapeColorPalette.querySelectorAll('.color-btn');
+        allButtons.forEach(btn => btn.classList.remove('active'));
+
+        // クリックされたボタンにactiveクラスを追加
+        button.classList.add('active');
+    }
+
+    /**
+     * キャンバスを動画のサイズに合わせる
      */
     resizeCanvas() {
         if (!videoPlayer || !videoPlayer.video) return;
 
         const video = videoPlayer.video;
         this.canvas.width = video.offsetWidth;
-        // テキスト注釈エリアを含めて拡張
-        this.canvas.height = video.offsetHeight + this.textAreaHeight;
+        this.canvas.height = video.offsetHeight;
 
         // リサイズ後に図形を再描画
         this.redrawShapes();
@@ -155,8 +218,7 @@ class ShapeAnnotationManager {
         this.redrawShapes();
 
         // プレビュー図形を描画
-        const color = this.shapeColorInput.value;
-        this.drawShape(this.currentShapeType, this.startX, this.startY, currentX, currentY, color);
+        this.drawShape(this.currentShapeType, this.startX, this.startY, currentX, currentY, this.selectedShapeColor);
     }
 
     /**
@@ -191,7 +253,7 @@ class ShapeAnnotationManager {
             y1: this.startY,
             x2: endX,
             y2: endY,
-            color: this.shapeColorInput.value
+            color: this.selectedShapeColor
         };
 
         console.log('図形を描画しました（未確定）:', this.pendingShape);
@@ -469,8 +531,20 @@ class ShapeAnnotationManager {
     editShape(index) {
         const shape = this.shapes[index];
 
-        // 色の値を設定
-        this.shapeColorInput.value = shape.color;
+        // 色を設定してボタンの状態を更新
+        this.selectedShapeColor = shape.color;
+
+        // 枠線色パレットのアクティブ状態を更新
+        if (this.shapeColorPalette) {
+            const colorButtons = this.shapeColorPalette.querySelectorAll('.color-btn');
+            colorButtons.forEach(btn => {
+                if (btn.getAttribute('data-color') === shape.color) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
 
         // 図形タイプを選択
         const shapeBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === shape.type);
@@ -528,15 +602,39 @@ class ShapeAnnotationManager {
         this.resizeCanvas();
 
         // UIを有効化
-        if (this.shapeColorInput) {
-            setEnabled(this.shapeColorInput, true);
-        }
         if (this.addNoShapeBtn) {
             setEnabled(this.addNoShapeBtn, true);
         }
 
+        // 時刻調整ボタンを有効化
+        this.timeAdjustShapeButtons.forEach(button => {
+            button.disabled = false;
+        });
+        if (this.syncShapeTimeBtn) this.syncShapeTimeBtn.disabled = false;
+        if (this.resetShapeTimeBtn) this.resetShapeTimeBtn.disabled = false;
+
         // 図形をクリア
         this.clearShapes();
+    }
+
+    /**
+     * 時刻を調整
+     * @param {number} offset - 調整する秒数（正または負）
+     */
+    adjustTime(offset) {
+        if (!videoPlayer) return;
+
+        const currentTime = videoPlayer.getCurrentTime();
+        const newTime = currentTime + offset;
+        videoPlayer.setCurrentTime(newTime);
+    }
+
+    /**
+     * 時刻をリセット
+     */
+    resetTime() {
+        if (!videoPlayer) return;
+        videoPlayer.setCurrentTime(0);
     }
 
     /**

@@ -5,11 +5,20 @@ class AnnotationManager {
     constructor() {
         // DOM要素
         this.annotationText = document.getElementById('annotationText');
-        this.textColor = document.getElementById('textColor');
-        this.bgColor = document.getElementById('bgColor');
+        this.textColorPalette = document.getElementById('textColorPalette');
+        this.bgColorPalette = document.getElementById('bgColorPalette');
         this.addAnnotationBtn = document.getElementById('addAnnotationBtn');
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
         this.annotationList = document.getElementById('annotationList');
+
+        // 時刻調整ボタン
+        this.timeAdjustButtons = document.querySelectorAll('[data-adjust]');
+        this.syncAnnotationTimeBtn = document.getElementById('syncAnnotationTime');
+        this.resetAnnotationTimeBtn = document.getElementById('resetAnnotationTime');
+
+        // 選択された色
+        this.selectedTextColor = '#000000'; // デフォルト: 黒
+        this.selectedBgColor = '#FFFFFF';   // デフォルト: 白
 
         // 注釈データ（配列）
         // 各注釈: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色 }
@@ -36,6 +45,91 @@ class AnnotationManager {
                 this.addBlankAnnotation();
             });
         }
+
+        // 時刻調整ボタン
+        this.timeAdjustButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const offset = parseFloat(button.getAttribute('data-adjust'));
+                this.adjustTime(offset);
+            });
+        });
+
+        // 現在位置ボタン
+        if (this.syncAnnotationTimeBtn) {
+            this.syncAnnotationTimeBtn.addEventListener('click', () => {
+                // 何もしない（既に動画の現在位置が表示されているため）
+                // このボタンは主に視覚的な確認のため
+            });
+        }
+
+        // リセットボタン
+        if (this.resetAnnotationTimeBtn) {
+            this.resetAnnotationTimeBtn.addEventListener('click', () => {
+                this.resetTime();
+            });
+        }
+
+        // カラーパレットのイベントハンドラ
+        this.initColorPalettes();
+    }
+
+    /**
+     * カラーパレットの初期化
+     */
+    initColorPalettes() {
+        // 文字色パレット
+        if (this.textColorPalette) {
+            const textColorButtons = this.textColorPalette.querySelectorAll('.color-btn');
+            textColorButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const color = button.getAttribute('data-color');
+                    this.selectTextColor(color, button);
+                });
+            });
+        }
+
+        // 背景色パレット
+        if (this.bgColorPalette) {
+            const bgColorButtons = this.bgColorPalette.querySelectorAll('.color-btn');
+            bgColorButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const color = button.getAttribute('data-color');
+                    this.selectBgColor(color, button);
+                });
+            });
+        }
+    }
+
+    /**
+     * 文字色を選択
+     * @param {string} color - 選択された色
+     * @param {HTMLElement} button - クリックされたボタン
+     */
+    selectTextColor(color, button) {
+        this.selectedTextColor = color;
+
+        // すべてのボタンからactiveクラスを削除
+        const allButtons = this.textColorPalette.querySelectorAll('.color-btn');
+        allButtons.forEach(btn => btn.classList.remove('active'));
+
+        // クリックされたボタンにactiveクラスを追加
+        button.classList.add('active');
+    }
+
+    /**
+     * 背景色を選択
+     * @param {string} color - 選択された色
+     * @param {HTMLElement} button - クリックされたボタン
+     */
+    selectBgColor(color, button) {
+        this.selectedBgColor = color;
+
+        // すべてのボタンからactiveクラスを削除
+        const allButtons = this.bgColorPalette.querySelectorAll('.color-btn');
+        allButtons.forEach(btn => btn.classList.remove('active'));
+
+        // クリックされたボタンにactiveクラスを追加
+        button.classList.add('active');
     }
 
     /**
@@ -45,15 +139,40 @@ class AnnotationManager {
         // UIを有効化
         setEnabledMultiple([
             this.annotationText,
-            this.textColor,
-            this.bgColor,
             this.addAnnotationBtn,
             this.addBlankAnnotationBtn
         ], true);
 
+        // 時刻調整ボタンを有効化
+        this.timeAdjustButtons.forEach(button => {
+            button.disabled = false;
+        });
+        if (this.syncAnnotationTimeBtn) this.syncAnnotationTimeBtn.disabled = false;
+        if (this.resetAnnotationTimeBtn) this.resetAnnotationTimeBtn.disabled = false;
+
         // 注釈リストをクリア
         this.annotations = [];
         this.renderAnnotationList();
+    }
+
+    /**
+     * 時刻を調整
+     * @param {number} offset - 調整する秒数（正または負）
+     */
+    adjustTime(offset) {
+        if (!videoPlayer) return;
+
+        const currentTime = videoPlayer.getCurrentTime();
+        const newTime = currentTime + offset;
+        videoPlayer.setCurrentTime(newTime);
+    }
+
+    /**
+     * 時刻をリセット
+     */
+    resetTime() {
+        if (!videoPlayer) return;
+        videoPlayer.setCurrentTime(0);
     }
 
     /**
@@ -69,15 +188,13 @@ class AnnotationManager {
         }
 
         const currentTime = videoPlayer.getCurrentTime();
-        const textColor = this.textColor.value;
-        const bgColor = this.bgColor.value;
 
         // 注釈オブジェクトを作成
         const annotation = {
             time: currentTime,
             text: text,
-            textColor: textColor,
-            bgColor: bgColor
+            textColor: this.selectedTextColor,
+            bgColor: this.selectedBgColor
         };
 
         // 配列に追加して時刻順にソート
@@ -212,8 +329,34 @@ class AnnotationManager {
 
         // 入力フィールドに現在の値を設定
         this.annotationText.value = annotation.text;
-        this.textColor.value = annotation.textColor;
-        this.bgColor.value = annotation.bgColor;
+
+        // 色を設定してボタンの状態を更新
+        this.selectedTextColor = annotation.textColor;
+        this.selectedBgColor = annotation.bgColor;
+
+        // 文字色パレットのアクティブ状態を更新
+        if (this.textColorPalette) {
+            const textColorButtons = this.textColorPalette.querySelectorAll('.color-btn');
+            textColorButtons.forEach(btn => {
+                if (btn.getAttribute('data-color') === annotation.textColor) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // 背景色パレットのアクティブ状態を更新
+        if (this.bgColorPalette) {
+            const bgColorButtons = this.bgColorPalette.querySelectorAll('.color-btn');
+            bgColorButtons.forEach(btn => {
+                if (btn.getAttribute('data-color') === annotation.bgColor) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
 
         // 注釈を削除（再追加するため）
         this.annotations.splice(index, 1);
