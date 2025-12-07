@@ -18,12 +18,12 @@ let mainWindow;
  * メインウィンドウを作成する関数
  */
 function createWindow() {
-    // ブラウザウィンドウを作成
+    // ブラウザウィンドウを作成（MacBook Air 13インチに最適化）
     mainWindow = new BrowserWindow({
-        width: 1800,
-        height: 1000,
-        minWidth: 1400,
-        minHeight: 800,
+        width: 1400,
+        height: 850,
+        minWidth: 1200,
+        minHeight: 700,
         title: 'MovieFrameSnap Lite',
         icon: path.join(__dirname, 'icon.png'),
         webPreferences: {
@@ -289,17 +289,21 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
 
         // 最後のフィルター以外は出力ラベルを設定
         const isLastFilter = index === textAnnotations.length - 1;
+
+        // テキストが画面からはみ出さないようにパディングを確保
+        const padding = 40; // 左右のパディング
+
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
                 fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
-                fontsize: 70,
+                fontsize: 60, // サイズを少し小さく
                 fontcolor: ann.textColor || '#000000',
                 box: 1,
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                boxborderw: 20,
-                x: '(w-text_w)/2',
+                boxborderw: 15, // ボーダーを少し薄く
+                x: `if(lt(text_w,w-${padding*2}),(w-text_w)/2,${padding})`, // テキストが長い場合は左寄せ
                 y: `h-${textAreaHeight/2}-text_h/2`,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },
@@ -462,17 +466,20 @@ function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, 
             .replace(/'/g, "\\\\'")
             .replace(/:/g, '\\\\:');
 
+        // テキストが画面からはみ出さないようにパディングを確保
+        const padding = 40; // 左右のパディング
+
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
                 fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
-                fontsize: 70,
+                fontsize: 60, // サイズを少し小さく
                 fontcolor: ann.textColor || '#000000',
                 box: 1,
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                boxborderw: 20,
-                x: '(w-text_w)/2',
+                boxborderw: 15, // ボーダーを少し薄く
+                x: `if(lt(text_w,w-${padding*2}),(w-text_w)/2,${padding})`, // テキストが長い場合は左寄せ
                 y: `h-${textAreaHeight/2}-text_h/2`,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },

@@ -14,8 +14,9 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #333;
-    line-height: 1.6;
+    line-height: 1.5;
     overflow-x: hidden;
+    font-size: 13px; /* MacBook Air用に縮小 */
 }
 
 /* ========================================
@@ -49,7 +50,7 @@ body {
    ======================================== */
 .main-content {
     display: grid;
-    grid-template-columns: 320px 1fr 320px;
+    grid-template-columns: 200px 1fr 400px;
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -63,6 +64,46 @@ body {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* 左サイドバー：よりコンパクトに */
+.sidebar {
+    padding: 15px 12px;
+}
+
+.sidebar .app-title {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+}
+
+.sidebar .app-title h1 {
+    font-size: 1.1rem;
+}
+
+.sidebar .control-section {
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+}
+
+.sidebar .control-section h2 {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.sidebar .file-label {
+    font-size: 0.85rem;
+    padding: 12px;
+}
+
+.sidebar .btn,
+.sidebar .btn-small {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+}
+
+.sidebar input[type="text"],
+.sidebar input[type="number"] {
+    font-size: 0.85rem;
 }
 
 .control-section,
@@ -96,6 +137,63 @@ details summary {
 
 details summary::-webkit-details-marker {
     display: none;
+}
+
+/* ========================================
+   タブナビゲーション
+   ======================================== */
+.tab-navigation {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #666;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* スクリーンリーダー用（視覚的に非表示） */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }
 
 details summary h2::before {
@@ -216,25 +314,38 @@ details:not([open]) summary h2::before {
 
 .time-input-group {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 6px;
     margin-bottom: 10px;
 }
 
-.time-input-group label {
-    min-width: 50px;
+.time-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.time-label-row label {
     font-weight: 600;
     color: #555;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.time-label-row .btn-tiny {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    flex-shrink: 0;
 }
 
 .time-input-group input[type="text"] {
-    flex: 1;
-    max-width: 90px;
-    padding: 8px 12px;
+    width: 100%;
+    padding: 6px 10px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-family: monospace;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 
 .range-info {
@@ -294,6 +405,9 @@ details:not([open]) summary h2::before {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    position: sticky;
+    top: 20px;
+    z-index: 10;
 }
 
 .video-container {
@@ -494,36 +608,82 @@ details:not([open]) summary h2::before {
 
 .annotation-list,
 .shape-list {
-    max-height: 300px;
+    max-height: 450px;
     overflow-y: auto;
     margin-top: 15px;
+    padding-right: 8px;
+}
+
+/* スクロールバーのスタイル（Webkit） */
+.annotation-list::-webkit-scrollbar,
+.shape-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.annotation-list::-webkit-scrollbar-track,
+.shape-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.annotation-list::-webkit-scrollbar-thumb,
+.shape-list::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+
+.annotation-list::-webkit-scrollbar-thumb:hover,
+.shape-list::-webkit-scrollbar-thumb:hover {
+    background: #5568d3;
 }
 
 .annotation-item,
 .shape-item {
     background: #f8f8f8;
-    padding: 10px;
-    border-radius: 6px;
-    margin-bottom: 8px;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    min-height: 80px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.annotation-item:hover,
+.shape-item:hover {
+    background: #f0f0f0;
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
 }
 
 .annotation-time {
     font-family: monospace;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     color: #667eea;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.annotation-time::before {
+    content: '⏰';
+    font-size: 1.1rem;
 }
 
 .annotation-time:hover {
     text-decoration: underline;
+    color: #5568d3;
 }
 
 .annotation-text {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: #333;
+    font-weight: 500;
 }
 
 /* 図形アノテーション */
@@ -630,27 +790,45 @@ details:not([open]) summary h2::before {
 .btn-edit,
 .btn-delete,
 .btn-download {
-    padding: 4px 12px;
+    padding: 10px 18px;
     background: #ff4444;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 600;
     transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .btn-edit {
     background: #667eea;
-    margin-right: 5px;
+    margin-right: 8px;
+}
+
+.btn-edit::before {
+    content: '✏️';
+    font-size: 1rem;
 }
 
 .btn-edit:hover {
     background: #5568d3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-delete::before {
+    content: '🗑';
+    font-size: 1rem;
 }
 
 .btn-delete:hover {
     background: #cc0000;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
 }
 
 .btn-download {

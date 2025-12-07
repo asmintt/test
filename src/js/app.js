@@ -41,6 +41,9 @@ class App {
      * 各モジュールを初期化
      */
     initializeModules() {
+        // タブ切り替え機能を初期化
+        this.initializeTabs();
+
         // ファイルハンドラー
         if (typeof fileHandler !== 'undefined') {
             fileHandler.init();
@@ -82,6 +85,35 @@ class App {
             videoTrimmer.init();
             console.log('✓ VideoTrimmer initialized');
         }
+    }
+
+    /**
+     * タブ切り替え機能を初期化
+     */
+    initializeTabs() {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+
+                // すべてのタブボタンとコンテンツから active クラスを削除
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // クリックされたタブボタンとコンテンツに active クラスを追加
+                button.classList.add('active');
+                const targetContent = document.getElementById(targetTab + 'Tab');
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+
+                console.log('タブ切り替え:', targetTab);
+            });
+        });
+
+        console.log('✓ Tab navigation initialized');
     }
 
     /**

@@ -46,16 +46,20 @@
 
                             <!-- 開始時刻 -->
                             <div class="time-input-group">
-                                <label>開始:</label>
+                                <div class="time-label-row">
+                                    <label>開始:</label>
+                                    <button id="setStartBtn" class="btn-tiny" disabled>現在位置</button>
+                                </div>
                                 <input type="text" id="startTime" value="00:00:00" disabled>
-                                <button id="setStartBtn" class="btn-small" disabled>現在位置</button>
                             </div>
 
                             <!-- 終了時刻 -->
                             <div class="time-input-group">
-                                <label>終了:</label>
+                                <div class="time-label-row">
+                                    <label>終了:</label>
+                                    <button id="setEndBtn" class="btn-tiny" disabled>現在位置</button>
+                                </div>
                                 <input type="text" id="endTime" value="00:00:00" disabled>
-                                <button id="setEndBtn" class="btn-small" disabled>現在位置</button>
                             </div>
 
                             <!-- 範囲情報 -->
@@ -140,9 +144,16 @@
             <!-- 右サイドバー: 注釈エリア -->
             <aside class="sidebar-right">
 
-                <!-- テキスト注釈 -->
-                <section class="annotation-section">
-                    <h2>テキスト注釈</h2>
+                <!-- タブナビゲーション -->
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-tab="text">テキスト注釈</button>
+                    <button class="tab-btn" data-tab="shape">図形アノテーション</button>
+                </div>
+
+                <!-- テキスト注釈タブ -->
+                <div class="tab-content active" id="textTab">
+                    <section class="annotation-section">
+                        <h2 class="sr-only">テキスト注釈</h2>
 
                     <!-- 現在位置 -->
                     <div class="current-time-display">
@@ -213,11 +224,13 @@
                     <div id="annotationList" class="annotation-list">
                         <p class="empty-message">注釈が登録されていません</p>
                     </div>
-                </section>
+                    </section>
+                </div>
 
-                <!-- 図形アノテーション -->
-                <section class="annotation-section">
-                    <h2>図形アノテーション</h2>
+                <!-- 図形アノテーションタブ -->
+                <div class="tab-content" id="shapeTab">
+                    <section class="annotation-section">
+                        <h2 class="sr-only">図形アノテーション</h2>
 
                     <!-- 現在位置 -->
                     <div class="current-time-display">
@@ -275,7 +288,8 @@
                     <div id="shapeList" class="shape-list">
                         <p class="empty-message">図形が登録されていません</p>
                     </div>
-                </section>
+                    </section>
+                </div>
 
             </aside>
 
