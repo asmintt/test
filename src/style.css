@@ -934,10 +934,40 @@ details:not([open]) summary h2::before {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
+.gallery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
 .gallery-footer h3 {
     color: #667eea;
-    margin-bottom: 15px;
+    margin-bottom: 0;
     font-size: 1.3rem;
+}
+
+.btn-clear-all {
+    padding: 8px 16px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(255, 68, 68, 0.2);
+}
+
+.btn-clear-all:hover {
+    background: #cc0000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 68, 68, 0.3);
+}
+
+.btn-clear-all:active {
+    transform: translateY(0);
 }
 
 .image-gallery {

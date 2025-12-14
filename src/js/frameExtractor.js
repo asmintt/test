@@ -9,6 +9,7 @@ class FrameExtractor {
         this.includeShapes = document.getElementById('includeShapes');
         this.includeTextAnnotations = document.getElementById('includeTextAnnotations');
         this.imageGallery = document.getElementById('imageGallery');
+        this.clearAllImagesBtn = document.getElementById('clearAllImagesBtn');
 
         // 抽出した画像データ
         // 各画像: { url: Blob URL, time: 秒数, timestamp: フォーマット済み時刻 }
@@ -27,6 +28,13 @@ class FrameExtractor {
         if (this.extractFrameBtn) {
             this.extractFrameBtn.addEventListener('click', () => {
                 this.extractCurrentFrame();
+            });
+        }
+
+        // すべてクリアボタン
+        if (this.clearAllImagesBtn) {
+            this.clearAllImagesBtn.addEventListener('click', () => {
+                this.confirmAndClearAll();
             });
         }
     }
@@ -275,6 +283,9 @@ class FrameExtractor {
         item.appendChild(downloadBtn);
 
         this.imageGallery.appendChild(item);
+
+        // クリアボタンの表示を更新
+        this.updateClearButtonVisibility();
     }
 
     /**
@@ -308,6 +319,34 @@ class FrameExtractor {
 
         // DOMをクリア
         this.imageGallery.innerHTML = '<p class="empty-message">画像が抽出されていません</p>';
+
+        // クリアボタンの表示を更新
+        this.updateClearButtonVisibility();
+    }
+
+    /**
+     * 確認ダイアログを表示してすべてクリア
+     */
+    confirmAndClearAll() {
+        if (this.extractedImages.length === 0) return;
+
+        const confirmed = confirm(`抽出した画像 ${this.extractedImages.length} 枚をすべて削除しますか？`);
+        if (confirmed) {
+            this.clearGallery();
+        }
+    }
+
+    /**
+     * クリアボタンの表示/非表示を更新
+     */
+    updateClearButtonVisibility() {
+        if (!this.clearAllImagesBtn) return;
+
+        if (this.extractedImages.length > 0) {
+            this.clearAllImagesBtn.style.display = 'block';
+        } else {
+            this.clearAllImagesBtn.style.display = 'none';
+        }
     }
 }
 

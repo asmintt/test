@@ -14,6 +14,7 @@ class VideoPlayer {
         // 動画の状態
         this.isLoaded = false;
         this.duration = 0;
+        this.currentVideoUrl = null; // 現在の動画URL
 
         // コールバック
         this.onLoadedCallback = null;
@@ -52,9 +53,13 @@ class VideoPlayer {
             // UIを有効化
             setEnabled(this.playbackSpeedInput, true);
 
-            // コールバック実行
-            if (this.onLoadedCallback) {
+            // コールバック実行（新しい動画の場合のみ）
+            if (this.isNewVideo && this.onLoadedCallback) {
+                console.log('新しい動画を読み込みました:', this.currentVideoUrl);
                 this.onLoadedCallback(this.duration);
+                this.isNewVideo = false; // フラグをリセット
+            } else {
+                console.log('同じ動画のloadedmetadataイベント（データクリアをスキップ）');
             }
         });
 
@@ -95,6 +100,10 @@ class VideoPlayer {
      * @param {string} url - 動画URL
      */
     loadVideo(url) {
+        // URLが変わった場合のみ、新しい動画としてフラグを立てる
+        this.isNewVideo = (url !== this.currentVideoUrl);
+        this.currentVideoUrl = url;
+
         this.video.src = url;
         this.video.load();
     }
