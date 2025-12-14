@@ -111,6 +111,7 @@
                         <canvas id="annotationCanvas"></canvas>
                     </div>
                     <div id="textAnnotationDisplay" class="text-annotation-display"></div>
+                    <div id="detailTextDisplay" class="detail-text-display"></div>
                 </div>
 
                 <!-- 動画コントロール -->
@@ -148,6 +149,7 @@
                 <div class="tab-navigation">
                     <button class="tab-btn active" data-tab="text">テキスト注釈</button>
                     <button class="tab-btn" data-tab="shape">図形アノテーション</button>
+                    <button class="tab-btn" data-tab="detail">詳細テキスト</button>
                 </div>
 
                 <!-- テキスト注釈タブ -->
@@ -291,6 +293,85 @@
                     </section>
                 </div>
 
+                <!-- 詳細テキストタブ -->
+                <div class="tab-content" id="detailTab">
+                    <section class="annotation-section">
+                        <h2 class="sr-only">詳細テキスト</h2>
+
+                    <!-- 現在位置 -->
+                    <div class="current-time-display">
+                        現在位置: <span id="detailCurrentTime">00:00:00.0</span>
+                    </div>
+
+                    <!-- 時刻調整ボタン -->
+                    <div class="time-adjust-controls">
+                        <div class="time-adjust-row">
+                            <button class="btn-tiny" data-adjust-detail="10" disabled>+10秒</button>
+                            <button class="btn-tiny" data-adjust-detail="1" disabled>+1秒</button>
+                            <button class="btn-tiny" data-adjust-detail="0.1" disabled>+0.1秒</button>
+                            <button class="btn-tiny" id="syncDetailTime" disabled>現在位置</button>
+                        </div>
+                        <div class="time-adjust-row">
+                            <button class="btn-tiny" data-adjust-detail="-10" disabled>-10秒</button>
+                            <button class="btn-tiny" data-adjust-detail="-1" disabled>-1秒</button>
+                            <button class="btn-tiny" data-adjust-detail="-0.1" disabled>-0.1秒</button>
+                            <button class="btn-tiny" id="resetDetailTime" disabled>リセット</button>
+                        </div>
+                    </div>
+
+                    <!-- テキスト入力 -->
+                    <input type="text" id="detailText" placeholder="詳細テキスト" disabled>
+
+                    <!-- 文字色選択 -->
+                    <div class="color-palette-section">
+                        <label>文字色:</label>
+                        <div class="color-palette" id="detailTextColorPalette">
+                            <button class="color-btn active" data-color="#000000" style="background-color: #000000;" title="黒"></button>
+                            <button class="color-btn" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
+                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
+                            <button class="color-btn" data-color="#FF8800" style="background-color: #FF8800;" title="オレンジ"></button>
+                            <button class="color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
+                            <button class="color-btn" data-color="#00BB00" style="background-color: #00BB00;" title="緑"></button>
+                            <button class="color-btn" data-color="#0088FF" style="background-color: #0088FF;" title="青"></button>
+                            <button class="color-btn" data-color="#8800FF" style="background-color: #8800FF;" title="紫"></button>
+                            <button class="color-btn" data-color="#FF0088" style="background-color: #FF0088;" title="ピンク"></button>
+                            <button class="color-btn" data-color="#8B4513" style="background-color: #8B4513;" title="茶色"></button>
+                            <button class="color-btn" data-color="#808080" style="background-color: #808080;" title="グレー"></button>
+                            <button class="color-btn" data-color="#00DDDD" style="background-color: #00DDDD;" title="水色"></button>
+                        </div>
+                    </div>
+
+                    <!-- 背景色選択 -->
+                    <div class="color-palette-section">
+                        <label>背景色:</label>
+                        <div class="color-palette" id="detailBgColorPalette">
+                            <button class="color-btn" data-color="#000000" style="background-color: #000000;" title="黒"></button>
+                            <button class="color-btn active" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
+                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
+                            <button class="color-btn" data-color="#FF8800" style="background-color: #FF8800;" title="オレンジ"></button>
+                            <button class="color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
+                            <button class="color-btn" data-color="#00BB00" style="background-color: #00BB00;" title="緑"></button>
+                            <button class="color-btn" data-color="#0088FF" style="background-color: #0088FF;" title="青"></button>
+                            <button class="color-btn" data-color="#8800FF" style="background-color: #8800FF;" title="紫"></button>
+                            <button class="color-btn" data-color="#FF0088" style="background-color: #FF0088;" title="ピンク"></button>
+                            <button class="color-btn" data-color="#8B4513" style="background-color: #8B4513;" title="茶色"></button>
+                            <button class="color-btn" data-color="#808080" style="background-color: #808080;" title="グレー"></button>
+                            <button class="color-btn" data-color="#00DDDD" style="background-color: #00DDDD;" title="水色"></button>
+                        </div>
+                    </div>
+
+                    <div class="detail-button-row">
+                        <button id="addDetailTextBtn" class="btn-compact" disabled>📌 追加</button>
+                        <button id="addNoDetailTextBtn" class="btn-compact" disabled>詳細テキストなし</button>
+                    </div>
+
+                    <!-- 詳細テキストリスト -->
+                    <div id="detailTextList" class="detail-text-list">
+                        <p class="empty-message">詳細テキストが登録されていません</p>
+                    </div>
+                    </section>
+                </div>
+
             </aside>
 
         </main>
@@ -312,6 +393,7 @@
     <script src="js/rangeSelector.js"></script>
     <script src="js/annotationManager.js"></script>
     <script src="js/shapeAnnotationManager.js"></script>
+    <script src="js/detailTextManager.js"></script>
     <script src="js/frameExtractor.js"></script>
     <script src="js/videoTrimmer.js"></script>
     <script src="js/app.js"></script>

@@ -136,6 +136,17 @@ class AnnotationManager {
      * 動画読み込み時の設定
      */
     onVideoLoaded() {
+        // 最大文字数を計算してプレースホルダーを設定
+        if (videoPlayer && videoPlayer.video) {
+            const videoWidth = videoPlayer.video.videoWidth;
+            const maxCharacters = Math.floor((videoWidth - 110) / 60);
+
+            if (this.annotationText) {
+                this.annotationText.placeholder = `文字数：${maxCharacters}文字まで`;
+                this.annotationText.maxLength = maxCharacters;
+            }
+        }
+
         // UIを有効化
         setEnabledMultiple([
             this.annotationText,

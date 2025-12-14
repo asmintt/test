@@ -83,11 +83,15 @@ class VideoTrimmer {
             // 注釈データを取得
             let annotations = [];
             let shapes = [];
+            let detailTexts = [];
             if (includeAnnotations && annotationManager) {
                 annotations = annotationManager.getAnnotations();
             }
             if (includeAnnotations && shapeAnnotationManager) {
                 shapes = shapeAnnotationManager.getShapes();
+            }
+            if (includeAnnotations && detailTextManager) {
+                detailTexts = detailTextManager.getDetailTexts();
             }
 
             // 動画の実際のサイズと表示サイズを取得（座標変換用）
@@ -111,6 +115,7 @@ class VideoTrimmer {
                 includeAnnotations: includeAnnotations,
                 annotations: annotations,
                 shapes: shapes,
+                detailTexts: detailTexts,
                 videoScale: videoScale,
                 filename: projectTitle
             });

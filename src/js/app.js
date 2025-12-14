@@ -74,6 +74,12 @@ class App {
             console.log('✓ ShapeAnnotationManager initialized');
         }
 
+        // 詳細テキストマネージャー
+        if (typeof detailTextManager !== 'undefined') {
+            detailTextManager.init();
+            console.log('✓ DetailTextManager initialized');
+        }
+
         // フレーム抽出
         if (typeof frameExtractor !== 'undefined') {
             frameExtractor.init();
@@ -178,6 +184,11 @@ class App {
         // 図形アノテーションマネージャーを有効化
         if (shapeAnnotationManager) {
             shapeAnnotationManager.onVideoLoaded();
+        }
+
+        // 詳細テキストマネージャーを有効化
+        if (detailTextManager) {
+            detailTextManager.onVideoLoaded();
         }
 
         // フレーム抽出を有効化

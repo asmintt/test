@@ -101,9 +101,12 @@ body {
     padding: 8px 12px;
 }
 
-.sidebar input[type="text"],
-.sidebar input[type="number"] {
-    font-size: 0.85rem;
+.sidebar-right input[type="text"],
+.sidebar-right input[type="number"] {
+    font-size: 1.0rem;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
 }
 
 .control-section,
@@ -334,9 +337,10 @@ details:not([open]) summary h2::before {
 }
 
 .time-label-row .btn-tiny {
-    font-size: 0.75rem;
-    padding: 4px 8px;
+    font-size: 0.65rem;
+    padding: 3px 4px;
     flex-shrink: 0;
+    min-height: 28px;
 }
 
 .time-input-group input[type="text"] {
@@ -418,6 +422,8 @@ details:not([open]) summary h2::before {
 #videoPlayer {
     width: 100%;
     display: block;
+    max-height: 60vh; /* ビューポートの60%に制限 */
+    object-fit: contain; /* 縦横比を維持しながら収める */
 }
 
 #annotationCanvas {
@@ -455,6 +461,37 @@ details:not([open]) summary h2::before {
 
 .text-annotation-display:empty {
     opacity: 0;
+}
+
+/* 詳細テキスト表示エリア */
+.detail-text-display {
+    min-height: 35px;
+    display: flex;
+    align-items: center;
+    padding: 8px 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: left;
+    font-family: "Hiragino Sans", sans-serif;
+    background: #1a1a1a;
+    border-top: 1px solid #333;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.detail-text-display.visible {
+    opacity: 1;
+}
+
+.detail-text-display:empty {
+    opacity: 0;
+}
+
+/* 詳細テキストの内側ボックス */
+.detail-text-display .detail-text-box {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
 }
 
 .video-controls {
@@ -525,15 +562,16 @@ details:not([open]) summary h2::before {
 
 .btn-tiny {
     flex: 1;
-    padding: 6px 8px;
+    padding: 3px 4px;
     background: #f0f0f0;
     border: 1px solid #ddd;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     font-weight: 600;
     color: #333;
     transition: all 0.2s;
+    min-height: 28px;
 }
 
 .btn-tiny:hover:not(:disabled) {
@@ -614,31 +652,73 @@ details:not([open]) summary h2::before {
     padding-right: 8px;
 }
 
+/* 詳細テキストボタン行 */
+.detail-button-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.btn-compact {
+    flex: 1;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.75rem;
+    background: #f0f0f0;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.btn-compact:hover:not(:disabled) {
+    background: #e0e0e0;
+    transform: translateY(-1px);
+}
+
+.btn-compact:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.detail-text-list {
+    max-height: 450px;
+    overflow-y: auto;
+    margin-top: 15px;
+    padding-right: 8px;
+}
+
 /* スクロールバーのスタイル（Webkit） */
 .annotation-list::-webkit-scrollbar,
-.shape-list::-webkit-scrollbar {
+.shape-list::-webkit-scrollbar,
+.detail-text-list::-webkit-scrollbar {
     width: 8px;
 }
 
 .annotation-list::-webkit-scrollbar-track,
-.shape-list::-webkit-scrollbar-track {
+.shape-list::-webkit-scrollbar-track,
+.detail-text-list::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
 }
 
 .annotation-list::-webkit-scrollbar-thumb,
-.shape-list::-webkit-scrollbar-thumb {
+.shape-list::-webkit-scrollbar-thumb,
+.detail-text-list::-webkit-scrollbar-thumb {
     background: #667eea;
     border-radius: 4px;
 }
 
 .annotation-list::-webkit-scrollbar-thumb:hover,
-.shape-list::-webkit-scrollbar-thumb:hover {
+.shape-list::-webkit-scrollbar-thumb:hover,
+.detail-text-list::-webkit-scrollbar-thumb:hover {
     background: #5568d3;
 }
 
 .annotation-item,
-.shape-item {
+.shape-item,
+.detail-text-item {
     background: #f8f8f8;
     padding: 16px;
     border-radius: 8px;
@@ -652,13 +732,15 @@ details:not([open]) summary h2::before {
 }
 
 .annotation-item:hover,
-.shape-item:hover {
+.shape-item:hover,
+.detail-text-item:hover {
     background: #f0f0f0;
     border-color: #667eea;
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
 }
 
-.annotation-time {
+.annotation-time,
+.detail-text-time {
     font-family: monospace;
     font-size: 1.05rem;
     color: #667eea;
@@ -669,17 +751,20 @@ details:not([open]) summary h2::before {
     gap: 6px;
 }
 
-.annotation-time::before {
+.annotation-time::before,
+.detail-text-time::before {
     content: '⏰';
     font-size: 1.1rem;
 }
 
-.annotation-time:hover {
+.annotation-time:hover,
+.detail-text-time:hover {
     text-decoration: underline;
     color: #5568d3;
 }
 
-.annotation-text {
+.annotation-text,
+.detail-text-content {
     font-size: 1.05rem;
     line-height: 1.5;
     color: #333;

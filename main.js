@@ -29,15 +29,21 @@ function createWindow() {
         webPreferences: {
             preload: path.join(__dirname, 'src', 'preload.js'),
             contextIsolation: true, // セキュリティ強化
-            nodeIntegration: false   // セキュリティ強化
+            nodeIntegration: false,  // セキュリティ強化
+            cache: false             // 開発モード: キャッシュを無効化
         }
+    });
+
+    // 開発モード: キャッシュをクリア
+    mainWindow.webContents.session.clearCache().then(() => {
+        console.log('キャッシュをクリアしました');
     });
 
     // index.htmlを読み込む
     mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
     // 開発者ツールを開く（開発時のみ）
-    // mainWindow.webContents.openDevTools(); // 本番環境では無効化
+    mainWindow.webContents.openDevTools(); // 開発モード: 自動的に開発者ツールを開く
 
     // ウィンドウが閉じられたときの処理
     mainWindow.on('closed', () => {
@@ -85,6 +91,7 @@ ipcMain.handle('trim-video', async (event, data) => {
         includeAnnotations, // テキスト注釈を含むか
         annotations,        // 注釈データ
         shapes,             // 図形アノテーションデータ
+        detailTexts,        // 詳細テキストデータ
         videoScale,         // 動画のスケール情報
         filename            // 出力ファイル名
     } = data;
@@ -113,10 +120,10 @@ ipcMain.handle('trim-video', async (event, data) => {
                 command = command.noAudio();
             }
 
-            // テキスト注釈または図形を含める場合
-            if (includeAnnotations && (annotations?.length > 0 || shapes?.length > 0)) {
-                // フィルタチェーンを構築（テキスト注釈と図形を統合）
-                const filters = buildCombinedFilters(annotations, shapes, startTime, duration, videoScale);
+            // テキスト注釈、図形、または詳細テキストを含める場合
+            if (includeAnnotations && (annotations?.length > 0 || shapes?.length > 0 || detailTexts?.length > 0)) {
+                // フィルタチェーンを構築（テキスト注釈、図形、詳細テキストを統合）
+                const filters = buildCombinedFilters(annotations, shapes, detailTexts, startTime, duration, videoScale);
                 if (filters) {
                     command = command.complexFilter(filters);
                 }
@@ -290,20 +297,17 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
         // 最後のフィルター以外は出力ラベルを設定
         const isLastFilter = index === textAnnotations.length - 1;
 
-        // テキストが画面からはみ出さないようにパディングを確保
-        const padding = 40; // 左右のパディング
-
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
                 fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
-                fontsize: 60, // サイズを少し小さく
+                fontsize: 60,
                 fontcolor: ann.textColor || '#000000',
                 box: 1,
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                boxborderw: 15, // ボーダーを少し薄く
-                x: `if(lt(text_w,w-${padding*2}),(w-text_w)/2,${padding})`, // テキストが長い場合は左寄せ
+                boxborderw: 15,
+                x: '(w-text_w)/2', // 常に中央揃え
                 y: `h-${textAreaHeight/2}-text_h/2`,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },
@@ -326,24 +330,28 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
 }
 
 /**
- * テキスト注釈と図形アノテーションを統合したフィルタチェーンを構築
+ * テキスト注釈、図形アノテーション、詳細テキストを統合したフィルタチェーンを構築
  * @param {Array} annotations - テキスト注釈データの配列
  * @param {Array} shapes - 図形アノテーションデータの配列
+ * @param {Array} detailTexts - 詳細テキストデータの配列
  * @param {number} trimStartTime - トリミング開始時刻
  * @param {number} trimDuration - トリミング継続時間
  * @param {Object} videoScale - 動画のスケール情報 { actualWidth, actualHeight, displayWidth, displayHeight }
  * @returns {Array|null} FFmpegのcomplexFilterに渡すフィルタ配列、または null
  */
-function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, videoScale) {
+function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, trimDuration, videoScale) {
     // テキストがある注釈のみをフィルタリング
     const textAnnotations = annotations ? annotations.filter(ann => ann.text && ann.text.trim() !== '') : [];
 
     // 図形がある注釈のみをフィルタリング
     const validShapes = shapes ? shapes.filter(s => s.type !== '') : [];
 
-    // 両方ともない場合は null を返す
-    if (textAnnotations.length === 0 && validShapes.length === 0) {
-        console.log('テキスト注釈も図形もないため、フィルタを適用しません');
+    // 詳細テキストがある注釈のみをフィルタリング
+    const validDetailTexts = detailTexts ? detailTexts.filter(dt => dt.text && dt.text.trim() !== '') : [];
+
+    // すべてない場合は null を返す
+    if (textAnnotations.length === 0 && validShapes.length === 0 && validDetailTexts.length === 0) {
+        console.log('テキスト注釈、図形、詳細テキストともにないため、フィルタを適用しません');
         return null;
     }
 
@@ -466,20 +474,17 @@ function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, 
             .replace(/'/g, "\\\\'")
             .replace(/:/g, '\\\\:');
 
-        // テキストが画面からはみ出さないようにパディングを確保
-        const padding = 40; // 左右のパディング
-
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
                 fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
-                fontsize: 60, // サイズを少し小さく
+                fontsize: 60,
                 fontcolor: ann.textColor || '#000000',
                 box: 1,
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                boxborderw: 15, // ボーダーを少し薄く
-                x: `if(lt(text_w,w-${padding*2}),(w-text_w)/2,${padding})`, // テキストが長い場合は左寄せ
+                boxborderw: 15,
+                x: '(w-text_w)/2', // 常に中央揃え
                 y: `h-${textAreaHeight/2}-text_h/2`,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },
@@ -490,7 +495,51 @@ function buildCombinedFilters(annotations, shapes, trimStartTime, trimDuration, 
         filterIndex++;
     });
 
-    // 4. 全フィルターに対して、最後以外に出力ラベルを設定
+    // 4. 詳細テキストを追加（メインテキストの下、最下部）
+    validDetailTexts.forEach((detail, index) => {
+        // 詳細テキストの表示開始時刻（トリミング開始時刻を基準とした相対時刻）
+        const displayStartTime = Math.max(0, detail.time - trimStartTime);
+
+        // 次の詳細テキストまたは動画終了までの時間を計算
+        let displayEndTime = trimDuration;
+
+        // 元の配列から次の詳細テキストを探す
+        const currentIndex = detailTexts.indexOf(detail);
+        for (let i = currentIndex + 1; i < detailTexts.length; i++) {
+            if (detailTexts[i].time > detail.time) {
+                displayEndTime = Math.max(displayStartTime, Math.min(trimDuration, detailTexts[i].time - trimStartTime));
+                break;
+            }
+        }
+
+        // テキストを安全にエスケープ
+        const escapedText = detail.text
+            .replace(/\\/g, '\\\\\\\\')
+            .replace(/'/g, "\\\\'")
+            .replace(/:/g, '\\\\:');
+
+        const filterObj = {
+            filter: 'drawtext',
+            options: {
+                text: escapedText,
+                fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc', // W4 → W6 (太字)
+                fontsize: 16, // 12 → 16 に変更（数字の歪みを防ぐ）
+                fontcolor: detail.textColor || '#000000',
+                box: 1,
+                boxcolor: `${detail.bgColor || '#ffffff'}@1.0`,
+                boxborderw: 3,
+                x: '40', // 左寄せ（左から40px）
+                y: 'h-15-text_h/2', // 最下部（メインテキストと重ならないように調整）
+                enable: `between(t,${displayStartTime},${displayEndTime})`
+            },
+            inputs: currentInput
+        };
+
+        filters.push(filterObj);
+        filterIndex++;
+    });
+
+    // 5. 全フィルターに対して、最後以外に出力ラベルを設定
     for (let i = 0; i < filters.length; i++) {
         if (i === 0) {
             // 最初のフィルター（pad）は既に出力ラベルを持っている
