@@ -462,6 +462,26 @@ class AnnotationManager {
             this.onAnnotationsChangeCallback(this.annotations);
         }
     }
+
+    /**
+     * アノテーションデータを読み込み
+     * @param {Array} annotations - 読み込むアノテーションデータ
+     */
+    loadAnnotations(annotations) {
+        if (!Array.isArray(annotations)) return;
+
+        this.annotations = annotations;
+        this.renderAnnotationList();
+        console.log(`テキスト注釈を${annotations.length}件読み込みました`);
+    }
+
+    /**
+     * アノテーションデータを取得
+     * @returns {Array} アノテーションデータ
+     */
+    getAnnotations() {
+        return this.annotations;
+    }
 }
 
 // グローバルインスタンス

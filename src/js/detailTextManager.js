@@ -347,6 +347,26 @@ class DetailTextManager {
             detailCurrentTime.textContent = formatTimeWithDecimal(currentTime);
         }
     }
+
+    /**
+     * 詳細テキストデータを読み込み
+     * @param {Array} detailTexts - 読み込む詳細テキストデータ
+     */
+    loadDetailTexts(detailTexts) {
+        if (!Array.isArray(detailTexts)) return;
+
+        this.detailTexts = detailTexts;
+        this.renderDetailTextList();
+        console.log(`詳細テキストを${detailTexts.length}件読み込みました`);
+    }
+
+    /**
+     * 詳細テキストデータを取得
+     * @returns {Array} 詳細テキストデータ
+     */
+    getDetailTexts() {
+        return this.detailTexts;
+    }
 }
 
 // グローバルインスタンス

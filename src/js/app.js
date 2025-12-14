@@ -91,6 +91,12 @@ class App {
             videoTrimmer.init();
             console.log('✓ VideoTrimmer initialized');
         }
+
+        // プロジェクトマネージャー
+        if (typeof projectManager !== 'undefined') {
+            projectManager.init();
+            console.log('✓ ProjectManager initialized');
+        }
     }
 
     /**
@@ -199,6 +205,12 @@ class App {
         // 動画トリミングを有効化
         if (videoTrimmer) {
             videoTrimmer.onVideoLoaded();
+        }
+
+        // プロジェクトマネージャーを有効化
+        if (projectManager && fileHandler) {
+            const fileName = fileHandler.getCurrentFile().name;
+            projectManager.onVideoLoaded(fileName);
         }
     }
 

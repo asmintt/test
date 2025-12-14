@@ -342,6 +342,27 @@ class RangeSelector {
     getEndTime() {
         return this.endTime;
     }
+
+    /**
+     * 範囲を設定
+     * @param {number} startTime - 開始時刻（秒）
+     * @param {number} endTime - 終了時刻（秒）
+     */
+    setRange(startTime, endTime) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+
+        if (this.startSlider) {
+            this.startSlider.value = startTime;
+        }
+        if (this.endSlider) {
+            this.endSlider.value = endTime;
+        }
+
+        this.updateTimeInputs();
+        this.updateRangeDisplay();
+        console.log(`範囲を設定しました: ${formatTime(startTime)} - ${formatTime(endTime)}`);
+    }
 }
 
 // グローバルインスタンス

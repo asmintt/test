@@ -1,7 +1,7 @@
 // main.js - Electronのメインプロセス
 // アプリケーションのライフサイクルとウィンドウ管理を担当
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegStatic = require('ffmpeg-static');
@@ -562,3 +562,88 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
     console.log('統合フィルタチェーン構築完了:', filters.length, 'フィルタ');
     return filters;
 }
+
+/**
+ * IPC通信: プロジェクトファイルの保存
+ * レンダラープロセスからのプロジェクト保存リクエストを受け取る
+ */
+ipcMain.handle('save-project-file', async (event, data) => {
+    const fs = require('fs');
+
+    const {
+        jsonContent,      // JSONデータ（文字列）
+        defaultFileName,  // デフォルトのファイル名
+        videoFilePath     // 動画ファイルのパス（保存先のデフォルトに使用）
+    } = data;
+
+    try {
+        // 保存ダイアログを表示
+        const result = await dialog.showSaveDialog(mainWindow, {
+            title: 'プロジェクトを保存',
+            defaultPath: path.join(
+                videoFilePath ? path.dirname(videoFilePath) : app.getPath('downloads'),
+                defaultFileName
+            ),
+            filters: [
+                { name: 'MovieFrameSnap Project', extensions: ['mfs.json'] },
+                { name: 'JSON Files', extensions: ['json'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+
+        // キャンセルされた場合
+        if (result.canceled) {
+            return { success: false, canceled: true };
+        }
+
+        // ファイルに書き込み
+        const filePath = result.filePath;
+        fs.writeFileSync(filePath, jsonContent, 'utf8');
+
+        console.log('プロジェクトを保存しました:', filePath);
+        return { success: true, filePath: filePath };
+
+    } catch (error) {
+        console.error('プロジェクト保存エラー:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+/**
+ * IPC通信: プロジェクトファイルの読み込み
+ * レンダラープロセスからのプロジェクト読み込みリクエストを受け取る
+ */
+ipcMain.handle('load-project-file', async (event) => {
+    const fs = require('fs');
+
+    try {
+        // ファイル選択ダイアログを表示
+        const result = await dialog.showOpenDialog(mainWindow, {
+            title: 'プロジェクトを開く',
+            defaultPath: app.getPath('downloads'),
+            filters: [
+                { name: 'MovieFrameSnap Project', extensions: ['mfs.json'] },
+                { name: 'JSON Files', extensions: ['json'] },
+                { name: 'All Files', extensions: ['*'] }
+            ],
+            properties: ['openFile']
+        });
+
+        // キャンセルされた場合
+        if (result.canceled || result.filePaths.length === 0) {
+            return { success: false, canceled: true };
+        }
+
+        // ファイルを読み込み
+        const filePath = result.filePaths[0];
+        const jsonContent = fs.readFileSync(filePath, 'utf8');
+        const projectData = JSON.parse(jsonContent);
+
+        console.log('プロジェクトを読み込みました:', filePath);
+        return { success: true, filePath: filePath, projectData: projectData };
+
+    } catch (error) {
+        console.error('プロジェクト読み込みエラー:', error);
+        return { success: false, error: error.message };
+    }
+});

@@ -26,6 +26,19 @@ contextBridge.exposeInMainWorld('electronApi', {
     },
 
     /**
+     * プロジェクトファイルを保存
+     * @param {Object} data - プロジェクトデータとファイル情報
+     * @returns {Promise} 保存結果
+     */
+    saveProjectFile: (data) => ipcRenderer.invoke('save-project-file', data),
+
+    /**
+     * プロジェクトファイルを読み込み
+     * @returns {Promise} 読み込み結果
+     */
+    loadProjectFile: () => ipcRenderer.invoke('load-project-file'),
+
+    /**
      * Node.jsのpathモジュールの機能を提供
      * （ファイルパスの処理に使用）
      */

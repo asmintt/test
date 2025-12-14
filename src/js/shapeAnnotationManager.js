@@ -666,6 +666,27 @@ class ShapeAnnotationManager {
             this.onShapesChangeCallback(this.shapes);
         }
     }
+
+    /**
+     * 図形データを読み込み
+     * @param {Array} shapes - 読み込む図形データ
+     */
+    loadShapes(shapes) {
+        if (!Array.isArray(shapes)) return;
+
+        this.shapes = shapes;
+        this.updateShapeList();
+        this.redrawShapes();
+        console.log(`図形アノテーションを${shapes.length}件読み込みました`);
+    }
+
+    /**
+     * 図形データを取得
+     * @returns {Array} 図形データ
+     */
+    getShapes() {
+        return this.shapes;
+    }
 }
 
 // グローバルインスタンス
