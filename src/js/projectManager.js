@@ -9,6 +9,9 @@ class ProjectManager {
 
         // 現在のプロジェクト情報
         this.currentVideoFileName = null;
+
+        // プロジェクト読み込み中フラグ
+        this.isLoadingProject = false;
     }
 
     /**
@@ -66,16 +69,25 @@ class ProjectManager {
         // テキスト注釈を取得
         if (annotationManager) {
             projectData.annotations = annotationManager.getAnnotations();
+            console.log('[DEBUG] テキスト注釈を収集:', projectData.annotations.length, '件', projectData.annotations);
+        } else {
+            console.warn('[DEBUG] annotationManager が存在しません');
         }
 
         // 図形アノテーションを取得
         if (shapeAnnotationManager) {
             projectData.shapes = shapeAnnotationManager.getShapes();
+            console.log('[DEBUG] 図形アノテーションを収集:', projectData.shapes.length, '件', projectData.shapes);
+        } else {
+            console.warn('[DEBUG] shapeAnnotationManager が存在しません');
         }
 
         // 詳細テキストを取得
         if (detailTextManager) {
             projectData.detailTexts = detailTextManager.getDetailTexts();
+            console.log('[DEBUG] 詳細テキストを収集:', projectData.detailTexts.length, '件', projectData.detailTexts);
+        } else {
+            console.warn('[DEBUG] detailTextManager が存在しません');
         }
 
         // 範囲情報を取得
@@ -84,9 +96,40 @@ class ProjectManager {
                 startTime: rangeSelector.getStartTime(),
                 endTime: rangeSelector.getEndTime()
             };
+            console.log('[DEBUG] 範囲情報を収集:', projectData.range);
+        } else {
+            console.warn('[DEBUG] rangeSelector が存在しません');
         }
 
+        console.log('[DEBUG] プロジェクトデータ収集完了:', projectData);
         return projectData;
+    }
+
+    /**
+     * プロジェクト名を自動生成
+     * @returns {string} プロジェクト名（タイトル_日付）
+     */
+    generateProjectName() {
+        // タイトルを取得（videoPlayerから）
+        let baseFileName = '';
+        if (videoPlayer) {
+            baseFileName = videoPlayer.getProjectTitle();
+        }
+
+        // タイトルが空の場合は動画ファイル名を使用
+        if (!baseFileName && this.currentVideoFileName) {
+            baseFileName = this.currentVideoFileName.replace(/\.[^.]+$/, '');
+        }
+
+        // 現在の日付を取得（YYYY-MM-DD形式）
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+
+        // プロジェクト名を生成
+        return `${baseFileName}_${dateString}`;
     }
 
     /**
@@ -99,8 +142,22 @@ class ProjectManager {
         }
 
         // Electron APIが利用可能かチェック
-        if (!window.electronApi || !window.electronApi.saveProjectFile) {
+        if (!window.electronApi || !window.electronApi.saveProjectAsFolder) {
             alert('この機能はデスクトップアプリ版でのみ利用できます');
+            return;
+        }
+
+        // 動画ファイルを取得
+        const videoFile = fileHandler ? fileHandler.getCurrentFile() : null;
+        if (!videoFile) {
+            alert('動画ファイルが見つかりません');
+            return;
+        }
+
+        // プロジェクトタイトルを取得
+        const projectTitle = videoPlayer ? videoPlayer.getProjectTitle() : '';
+        if (!projectTitle) {
+            alert('プロジェクトタイトルを入力してください');
             return;
         }
 
@@ -110,29 +167,33 @@ class ProjectManager {
         // JSONに変換
         const jsonString = JSON.stringify(projectData, null, 2);
 
-        // ファイル名を生成（拡張子を.mfs.jsonに変更）
-        const baseFileName = this.currentVideoFileName.replace(/\.[^.]+$/, '');
-        const projectFileName = `${baseFileName}.mfs.json`;
+        // プロジェクト名を自動生成（タイトル_日付）
+        const projectName = this.generateProjectName();
 
-        // 動画ファイルのパスを取得
-        let videoFilePath = null;
-        if (fileHandler && fileHandler.getCurrentFile()) {
-            // Fileオブジェクトからはフルパスにアクセスできないためnullのまま
-            // ダイアログのデフォルトはDownloadsフォルダになります
-            videoFilePath = null;
-        }
+        // 元の動画ファイルの拡張子を取得
+        const originalExtension = this.currentVideoFileName.match(/\.[^.]+$/);
+        const extension = originalExtension ? originalExtension[0] : '.mp4';
+
+        // 新しい動画ファイル名を生成（タイトル + 拡張子）
+        const newVideoFileName = `${projectTitle}${extension}`;
 
         try {
-            // IPC通信でファイル保存ダイアログを表示
-            const result = await window.electronApi.saveProjectFile({
-                jsonContent: jsonString,
-                defaultFileName: projectFileName,
-                videoFilePath: videoFilePath
+            // 動画ファイルをArrayBufferとして読み込み
+            const videoArrayBuffer = await videoFile.arrayBuffer();
+
+            // IPC通信でプロジェクトフォルダ保存を実行
+            const result = await window.electronApi.saveProjectAsFolder({
+                projectName: projectName,
+                projectTitle: projectTitle,
+                originalVideoFileName: this.currentVideoFileName,
+                videoFileName: newVideoFileName,
+                videoData: videoArrayBuffer,
+                jsonContent: jsonString
             });
 
             if (result.success) {
-                console.log('プロジェクトを保存しました:', result.filePath);
-                alert(`プロジェクトを保存しました:\n${result.filePath}`);
+                console.log('プロジェクトを保存しました:', result.folderPath);
+                alert(`プロジェクトを保存しました:\n${result.folderPath}`);
             } else if (result.canceled) {
                 console.log('プロジェクトの保存がキャンセルされました');
             } else {
@@ -150,29 +211,41 @@ class ProjectManager {
      * @param {Object} projectData - プロジェクトデータ
      */
     loadProject(projectData) {
-        console.log('プロジェクトを読み込み中...', projectData);
+        console.log('[DEBUG] プロジェクトを読み込み中...', projectData);
 
         // テキスト注釈を復元
         if (projectData.annotations && annotationManager) {
+            console.log('[DEBUG] テキスト注釈を復元:', projectData.annotations.length, '件', projectData.annotations);
             annotationManager.loadAnnotations(projectData.annotations);
+        } else {
+            console.warn('[DEBUG] テキスト注釈のデータがないか、annotationManagerが存在しません');
         }
 
         // 図形アノテーションを復元
         if (projectData.shapes && shapeAnnotationManager) {
+            console.log('[DEBUG] 図形アノテーションを復元:', projectData.shapes.length, '件', projectData.shapes);
             shapeAnnotationManager.loadShapes(projectData.shapes);
+        } else {
+            console.warn('[DEBUG] 図形アノテーションのデータがないか、shapeAnnotationManagerが存在しません');
         }
 
         // 詳細テキストを復元
         if (projectData.detailTexts && detailTextManager) {
+            console.log('[DEBUG] 詳細テキストを復元:', projectData.detailTexts.length, '件', projectData.detailTexts);
             detailTextManager.loadDetailTexts(projectData.detailTexts);
+        } else {
+            console.warn('[DEBUG] 詳細テキストのデータがないか、detailTextManagerが存在しません');
         }
 
         // 範囲情報を復元
         if (projectData.range && rangeSelector) {
+            console.log('[DEBUG] 範囲情報を復元:', projectData.range);
             rangeSelector.setRange(projectData.range.startTime, projectData.range.endTime);
+        } else {
+            console.warn('[DEBUG] 範囲情報のデータがないか、rangeSelectorが存在しません');
         }
 
-        console.log('プロジェクトの読み込みが完了しました');
+        console.log('[DEBUG] プロジェクトの読み込みが完了しました');
     }
 
     /**
@@ -192,8 +265,51 @@ class ProjectManager {
             if (result.success && result.projectData) {
                 console.log('プロジェクトファイルを読み込みました:', result.filePath);
 
+                // プロジェクト読み込みフラグをON
+                this.isLoadingProject = true;
+                console.log('[DEBUG] プロジェクト読み込みフラグをONにしました');
+
+                // 動画ファイルが見つかった場合、自動的に読み込む
+                if (result.videoData && result.videoFileName) {
+                    console.log('動画ファイルを読み込み中...', result.videoFileName);
+
+                    // ArrayBufferからBlobを作成
+                    const videoBlob = new Blob([result.videoData], { type: 'video/mp4' });
+                    const videoFile = new File([videoBlob], result.videoFileName, { type: videoBlob.type });
+
+                    // 動画ファイルを読み込み（fileHandlerを使用）
+                    if (fileHandler) {
+                        // ファイル名を表示
+                        const fileNameDisplay = document.getElementById('fileName');
+                        if (fileNameDisplay) {
+                            fileNameDisplay.textContent = `選択中: ${result.videoFileName}`;
+                        }
+
+                        // 現在のファイルを保存
+                        fileHandler.currentFile = videoFile;
+
+                        // 動画を読み込み
+                        const videoUrl = createBlobUrl(videoFile);
+                        if (fileHandler.onFileLoadedCallback) {
+                            fileHandler.onFileLoadedCallback(videoUrl, videoFile);
+                        }
+
+                        console.log('動画ファイルを読み込みました');
+                    }
+
+                    // 動画の読み込みが完了するまで少し待つ
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } else {
+                    console.warn('動画ファイルが見つかりませんでした。手動で読み込んでください。');
+                    alert('動画ファイルが見つかりませんでした。\n動画ファイルを手動で読み込んでください。');
+                }
+
                 // プロジェクトデータを適用
                 this.loadProject(result.projectData);
+
+                // プロジェクト読み込みフラグをOFF
+                this.isLoadingProject = false;
+                console.log('[DEBUG] プロジェクト読み込みフラグをOFFにしました');
 
                 alert(`プロジェクトを読み込みました:\n${result.filePath}`);
             } else if (result.canceled) {
@@ -205,6 +321,8 @@ class ProjectManager {
         } catch (error) {
             console.error('プロジェクト読み込みエラー:', error);
             alert(`プロジェクトの読み込み中にエラーが発生しました:\n${error.message}`);
+            // エラー時もフラグをOFF
+            this.isLoadingProject = false;
         }
     }
 }

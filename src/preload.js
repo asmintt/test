@@ -26,14 +26,21 @@ contextBridge.exposeInMainWorld('electronApi', {
     },
 
     /**
-     * プロジェクトファイルを保存
+     * プロジェクトをフォルダとして保存
+     * @param {Object} data - プロジェクトデータとファイル情報
+     * @returns {Promise} 保存結果
+     */
+    saveProjectAsFolder: (data) => ipcRenderer.invoke('save-project-as-folder', data),
+
+    /**
+     * プロジェクトファイルを保存（旧版）
      * @param {Object} data - プロジェクトデータとファイル情報
      * @returns {Promise} 保存結果
      */
     saveProjectFile: (data) => ipcRenderer.invoke('save-project-file', data),
 
     /**
-     * プロジェクトファイルを読み込み
+     * プロジェクトファイルを読み込み（動画ファイルも自動検索）
      * @returns {Promise} 読み込み結果
      */
     loadProjectFile: () => ipcRenderer.invoke('load-project-file'),

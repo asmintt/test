@@ -564,7 +564,89 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
 }
 
 /**
- * IPC通信: プロジェクトファイルの保存
+ * IPC通信: プロジェクトをフォルダとして保存
+ * レンダラープロセスからのプロジェクト保存リクエストを受け取る
+ */
+ipcMain.handle('save-project-as-folder', async (event, data) => {
+    const fs = require('fs');
+
+    const {
+        projectName,           // プロジェクト名（フォルダ名に使用）
+        projectTitle,          // プロジェクトタイトル（ファイル名に使用）
+        originalVideoFileName, // 元の動画ファイル名（JSONに保存用）
+        videoFileName,         // 新しい動画ファイル名（タイトルベース）
+        videoData,             // 動画データ（ArrayBuffer）
+        jsonContent            // JSONデータ（文字列）
+    } = data;
+
+    try {
+        // デフォルトのプロジェクト保存先
+        const defaultProjectsPath = path.join(app.getPath('documents'), 'MovieFrameSnap', 'Projects');
+
+        // プロジェクトフォルダのデフォルトパス
+        const defaultFolderPath = path.join(defaultProjectsPath, projectName);
+
+        // フォルダ選択ダイアログを表示
+        const result = await dialog.showSaveDialog(mainWindow, {
+            title: 'プロジェクトの保存場所を選択',
+            defaultPath: defaultFolderPath,
+            properties: ['createDirectory'],
+            buttonLabel: '保存'
+        });
+
+        // キャンセルされた場合
+        if (result.canceled) {
+            return { success: false, canceled: true };
+        }
+
+        const folderPath = result.filePath;
+
+        // フォルダが既に存在する場合、上書き確認
+        if (fs.existsSync(folderPath)) {
+            const overwriteResult = await dialog.showMessageBox(mainWindow, {
+                type: 'warning',
+                buttons: ['キャンセル', '上書き'],
+                defaultId: 0,
+                title: '確認',
+                message: 'このフォルダは既に存在します。',
+                detail: '上書きしますか？既存のファイルは削除されます。'
+            });
+
+            // キャンセルされた場合
+            if (overwriteResult.response === 0) {
+                return { success: false, canceled: true };
+            }
+
+            // 既存のフォルダを削除
+            fs.rmSync(folderPath, { recursive: true, force: true });
+        }
+
+        // プロジェクトフォルダを作成
+        fs.mkdirSync(folderPath, { recursive: true });
+
+        // 動画ファイルを保存（タイトルベースのファイル名）
+        const videoFilePath = path.join(folderPath, videoFileName);
+        const videoBuffer = Buffer.from(videoData);
+        fs.writeFileSync(videoFilePath, videoBuffer);
+
+        // プロジェクトファイル（JSON）を保存（タイトルベースのファイル名）
+        const jsonFileName = `${projectTitle}.mfs.json`;
+        const jsonFilePath = path.join(folderPath, jsonFileName);
+        fs.writeFileSync(jsonFilePath, jsonContent, 'utf8');
+
+        console.log('プロジェクトを保存しました:', folderPath);
+        console.log('  - 動画ファイル:', videoFileName);
+        console.log('  - JSONファイル:', jsonFileName);
+        return { success: true, folderPath: folderPath };
+
+    } catch (error) {
+        console.error('プロジェクト保存エラー:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+/**
+ * IPC通信: プロジェクトファイルの保存（旧版・互換性のため残す）
  * レンダラープロセスからのプロジェクト保存リクエストを受け取る
  */
 ipcMain.handle('save-project-file', async (event, data) => {
@@ -617,10 +699,13 @@ ipcMain.handle('load-project-file', async (event) => {
     const fs = require('fs');
 
     try {
+        // デフォルトのプロジェクト保存先
+        const defaultProjectsPath = path.join(app.getPath('documents'), 'MovieFrameSnap', 'Projects');
+
         // ファイル選択ダイアログを表示
         const result = await dialog.showOpenDialog(mainWindow, {
             title: 'プロジェクトを開く',
-            defaultPath: app.getPath('downloads'),
+            defaultPath: defaultProjectsPath,
             filters: [
                 { name: 'MovieFrameSnap Project', extensions: ['mfs.json'] },
                 { name: 'JSON Files', extensions: ['json'] },
@@ -639,8 +724,35 @@ ipcMain.handle('load-project-file', async (event) => {
         const jsonContent = fs.readFileSync(filePath, 'utf8');
         const projectData = JSON.parse(jsonContent);
 
+        // 同じフォルダ内の動画ファイルを検索
+        const projectDir = path.dirname(filePath);
+        const videoFileName = projectData.videoFileName;
+        let videoFilePath = null;
+        let videoData = null;
+
+        if (videoFileName) {
+            const expectedVideoPath = path.join(projectDir, videoFileName);
+
+            // 動画ファイルが存在するかチェック
+            if (fs.existsSync(expectedVideoPath)) {
+                videoFilePath = expectedVideoPath;
+                // 動画ファイルを読み込み
+                videoData = fs.readFileSync(videoFilePath);
+                console.log('動画ファイルを検出しました:', videoFilePath);
+            } else {
+                console.warn('動画ファイルが見つかりません:', expectedVideoPath);
+            }
+        }
+
         console.log('プロジェクトを読み込みました:', filePath);
-        return { success: true, filePath: filePath, projectData: projectData };
+        return {
+            success: true,
+            filePath: filePath,
+            projectData: projectData,
+            videoFilePath: videoFilePath,
+            videoData: videoData ? videoData.buffer : null,
+            videoFileName: videoFileName
+        };
 
     } catch (error) {
         console.error('プロジェクト読み込みエラー:', error);

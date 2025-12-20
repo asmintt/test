@@ -161,8 +161,13 @@ class AnnotationManager {
         if (this.syncAnnotationTimeBtn) this.syncAnnotationTimeBtn.disabled = false;
         if (this.resetAnnotationTimeBtn) this.resetAnnotationTimeBtn.disabled = false;
 
-        // 注釈リストをクリア
-        this.annotations = [];
+        // プロジェクト読み込み中でない場合のみ注釈リストをクリア
+        if (projectManager && !projectManager.isLoadingProject) {
+            console.log('[DEBUG] annotationManager: 注釈リストをクリアします');
+            this.annotations = [];
+        } else {
+            console.log('[DEBUG] annotationManager: プロジェクト読み込み中のため注釈リストをクリアしません');
+        }
         this.renderAnnotationList();
     }
 

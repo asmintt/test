@@ -613,8 +613,13 @@ class ShapeAnnotationManager {
         if (this.syncShapeTimeBtn) this.syncShapeTimeBtn.disabled = false;
         if (this.resetShapeTimeBtn) this.resetShapeTimeBtn.disabled = false;
 
-        // 図形をクリア
-        this.clearShapes();
+        // プロジェクト読み込み中でない場合のみ図形をクリア
+        if (projectManager && !projectManager.isLoadingProject) {
+            console.log('[DEBUG] shapeAnnotationManager: 図形をクリアします');
+            this.clearShapes();
+        } else {
+            console.log('[DEBUG] shapeAnnotationManager: プロジェクト読み込み中のため図形をクリアしません');
+        }
     }
 
     /**

@@ -182,6 +182,18 @@ class VideoPlayer {
     }
 
     /**
+     * プロジェクトタイトルを取得
+     * @returns {string} タイトル
+     */
+    getProjectTitle() {
+        if (this.projectTitleInput) {
+            const title = this.projectTitleInput.value.trim();
+            return title || this.projectTitleInput.placeholder;
+        }
+        return '';
+    }
+
+    /**
      * テキスト注釈の表示を更新
      * @param {number} currentTime - 現在時刻（秒）
      */
