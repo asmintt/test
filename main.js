@@ -474,11 +474,19 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
             .replace(/'/g, "\\\\'")
             .replace(/:/g, '\\\\:');
 
+        // フォント名からシステムフォントファイルパスへのマッピング
+        const fontMapping = {
+            'Noto Sans JP': '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
+            'M PLUS Rounded 1c': '/System/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc',
+            'Zen Kaku Gothic New': '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc'
+        };
+        const fontFile = fontMapping[ann.font] || '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc';
+
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
-                fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
+                fontfile: fontFile,
                 fontsize: 60,
                 fontcolor: ann.textColor || '#000000',
                 box: 1,

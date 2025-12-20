@@ -93,6 +93,32 @@ class VideoPlayer {
                 this.onTimeUpdateCallback(currentTime);
             }
         });
+
+        // エラーイベント
+        this.video.addEventListener('error', () => {
+            const error = this.video.error;
+            let message = '動画の読み込みに失敗しました';
+
+            if (error) {
+                switch (error.code) {
+                    case error.MEDIA_ERR_ABORTED:
+                        message = '動画の読み込みが中断されました';
+                        break;
+                    case error.MEDIA_ERR_NETWORK:
+                        message = 'ネットワークエラーが発生しました';
+                        break;
+                    case error.MEDIA_ERR_DECODE:
+                        message = '動画のデコードに失敗しました（コーデック非対応の可能性）';
+                        break;
+                    case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        message = 'この動画形式はサポートされていません';
+                        break;
+                }
+            }
+
+            handleError(new Error(message), '動画再生');
+            this.isLoaded = false;
+        });
     }
 
     /**
@@ -208,6 +234,7 @@ class VideoPlayer {
             this.textAnnotationDisplay.textContent = annotation.text;
             this.textAnnotationDisplay.style.color = annotation.textColor;
             this.textAnnotationDisplay.style.backgroundColor = annotation.bgColor;
+            this.textAnnotationDisplay.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
             this.textAnnotationDisplay.classList.add('visible');
         } else {
             // 注釈がない場合は非表示
@@ -226,25 +253,12 @@ class VideoPlayer {
         // 現在時刻で有効な詳細テキストを取得
         const detailTexts = detailTextManager.getDetailTexts();
 
-        // 詳細テキストを時刻順にソート済みと仮定
-        // 現在時刻以前で最も近い詳細テキストを見つける
-        let activeDetailText = null;
-        for (let i = 0; i < detailTexts.length; i++) {
-            if (detailTexts[i].time <= currentTime) {
-                // 次の詳細テキストがあるか確認
-                if (i < detailTexts.length - 1) {
-                    // 次の詳細テキストの時刻前であれば、このテキストを表示
-                    if (currentTime < detailTexts[i + 1].time) {
-                        activeDetailText = detailTexts[i];
-                        break;
-                    }
-                } else {
-                    // 最後の詳細テキストであれば、動画終了まで表示
-                    activeDetailText = detailTexts[i];
-                    break;
-                }
-            }
-        }
+        // 現在時刻以前のテキストを抽出し、その中で最も時刻が近いものを取得
+        const activeDetailText = detailTexts
+            .filter(text => text.time <= currentTime)
+            .reduce((latest, current) =>
+                !latest || current.time > latest.time ? current : latest
+            , null);
 
         if (activeDetailText && activeDetailText.text) {
             // 詳細テキストがある場合は表示

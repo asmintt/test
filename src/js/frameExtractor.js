@@ -54,53 +54,138 @@ class FrameExtractor {
      * 現在位置のフレームを抽出
      */
     async extractCurrentFrame() {
-        if (!videoPlayer || !videoPlayer.video) return;
-
-        const video = videoPlayer.video;
-        const currentTime = videoPlayer.getCurrentTime();
-
-        // キャンバスサイズを動画に合わせる
-        this.extractCanvas.width = video.videoWidth;
-        this.extractCanvas.height = video.videoHeight;
-
-        // 動画フレームを描画
-        this.extractCtx.drawImage(video, 0, 0);
-
-        // 図形アノテーションを含める場合
-        if (this.includeShapes && this.includeShapes.checked && shapeAnnotationManager) {
-            this.drawShapesOnCanvas(this.extractCtx, video);
+        if (!videoPlayer || !videoPlayer.video) {
+            handleError(new Error('動画が読み込まれていません'), 'フレーム抽出', true);
+            return;
         }
 
-        // テキスト注釈を含める場合
-        if (this.includeTextAnnotations && this.includeTextAnnotations.checked && annotationManager) {
-            this.drawTextAnnotationOnCanvas(this.extractCtx, currentTime, video);
+        if (!videoPlayer.isLoaded) {
+            handleError(new Error('動画のメタデータが読み込まれていません'), 'フレーム抽出', true);
+            return;
         }
 
-        // タイムスタンプを含める場合
-        if (this.includeTimestamp && this.includeTimestamp.checked) {
-            this.drawTimestampOnCanvas(this.extractCtx, currentTime);
+        try {
+            const video = videoPlayer.video;
+            const currentTime = videoPlayer.getCurrentTime();
+
+            // キャンバスサイズを動画に合わせる
+            this.extractCanvas.width = video.videoWidth;
+            this.extractCanvas.height = video.videoHeight;
+
+            // 動画フレームを描画
+            this.extractCtx.drawImage(video, 0, 0);
+
+            // 図形アノテーションを含める場合
+            if (this.includeShapes && this.includeShapes.checked && shapeAnnotationManager) {
+                this.drawShapesOnCanvas(this.extractCtx, video);
+            }
+
+            // テキスト注釈を含める場合
+            if (this.includeTextAnnotations && this.includeTextAnnotations.checked && annotationManager) {
+                this.drawTextAnnotationOnCanvas(this.extractCtx, currentTime, video);
+            }
+
+            // タイムスタンプを含める場合
+            if (this.includeTimestamp && this.includeTimestamp.checked) {
+                this.drawTimestampOnCanvas(this.extractCtx, currentTime);
+            }
+
+            // 画像として保存（Promiseでラップ）
+            await new Promise((resolve, reject) => {
+                this.extractCanvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('画像の生成に失敗しました'));
+                        return;
+                    }
+
+                    try {
+                        // Blob URLを作成
+                        const url = createBlobUrl(blob);
+
+                        if (!url) {
+                            reject(new Error('画像URLの作成に失敗しました'));
+                            return;
+                        }
+
+                        // 抽出画像データに追加
+                        const imageData = {
+                            url: url,
+                            time: currentTime,
+                            timestamp: formatTimeWithDecimal(currentTime),
+                            blob: blob
+                        };
+
+                        this.extractedImages.push(imageData);
+
+                        // ギャラリーに追加
+                        this.addImageToGallery(imageData);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                }, 'image/png');
+            });
+
+        } catch (error) {
+            handleError(error, 'フレーム抽出処理');
         }
+    }
 
-        // 画像として保存
-        this.extractCanvas.toBlob((blob) => {
-            if (!blob) return;
+    /**
+     * 矩形を描画
+     * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
+     * @param {number} x1 - 開始X座標
+     * @param {number} y1 - 開始Y座標
+     * @param {number} x2 - 終了X座標
+     * @param {number} y2 - 終了Y座標
+     */
+    drawRectangle(ctx, x1, y1, x2, y2) {
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    }
 
-            // Blob URLを作成
-            const url = createBlobUrl(blob);
+    /**
+     * 円を描画
+     * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
+     * @param {number} x1 - 中心X座標
+     * @param {number} y1 - 中心Y座標
+     * @param {number} x2 - 外周点X座標
+     * @param {number} y2 - 外周点Y座標
+     */
+    drawCircle(ctx, x1, y1, x2, y2) {
+        const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        ctx.beginPath();
+        ctx.arc(x1, y1, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
 
-            // 抽出画像データに追加
-            const imageData = {
-                url: url,
-                time: currentTime,
-                timestamp: formatTimeWithDecimal(currentTime),
-                blob: blob
-            };
+    /**
+     * 直線を描画
+     * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
+     * @param {number} x1 - 開始X座標
+     * @param {number} y1 - 開始Y座標
+     * @param {number} x2 - 終了X座標
+     * @param {number} y2 - 終了Y座標
+     */
+    drawLine(ctx, x1, y1, x2, y2) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
 
-            this.extractedImages.push(imageData);
-
-            // ギャラリーに追加
-            this.addImageToGallery(imageData);
-        }, 'image/png');
+    /**
+     * 図形タイプに応じた描画メソッドを取得
+     * @param {string} shapeType - 図形タイプ
+     * @returns {Function} 描画メソッド
+     */
+    getShapeDrawMethod(shapeType) {
+        const drawMethods = {
+            'rectangle': this.drawRectangle.bind(this),
+            'circle': this.drawCircle.bind(this),
+            'arrow': this.drawArrowOnCanvas.bind(this),
+            'line': this.drawLine.bind(this)
+        };
+        return drawMethods[shapeType] || null;
     }
 
     /**
@@ -125,28 +210,10 @@ class FrameExtractor {
             ctx.strokeStyle = shape.color;
             ctx.lineWidth = 5;
 
-            switch (shape.type) {
-                case 'rectangle':
-                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                    break;
-
-                case 'circle':
-                    const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                    ctx.beginPath();
-                    ctx.arc(x1, y1, radius, 0, 2 * Math.PI);
-                    ctx.stroke();
-                    break;
-
-                case 'arrow':
-                    this.drawArrowOnCanvas(ctx, x1, y1, x2, y2);
-                    break;
-
-                case 'line':
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.stroke();
-                    break;
+            // 図形タイプに応じた描画メソッドを実行
+            const drawMethod = this.getShapeDrawMethod(shape.type);
+            if (drawMethod) {
+                drawMethod(ctx, x1, y1, x2, y2);
             }
         });
     }
@@ -194,7 +261,8 @@ class FrameExtractor {
 
         // テキスト設定
         const fontSize = Math.floor(video.videoHeight * 0.05); // 動画高さの5%
-        ctx.font = `bold ${fontSize}px "Hiragino Sans", sans-serif`;
+        const fontFamily = annotation.font || 'Noto Sans JP';
+        ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 

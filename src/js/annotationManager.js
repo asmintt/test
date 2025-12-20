@@ -5,6 +5,7 @@ class AnnotationManager {
     constructor() {
         // DOM要素
         this.annotationText = document.getElementById('annotationText');
+        this.textFontSelect = document.getElementById('textFontSelect');
         this.textColorPalette = document.getElementById('textColorPalette');
         this.bgColorPalette = document.getElementById('bgColorPalette');
         this.addAnnotationBtn = document.getElementById('addAnnotationBtn');
@@ -16,12 +17,13 @@ class AnnotationManager {
         this.syncAnnotationTimeBtn = document.getElementById('syncAnnotationTime');
         this.resetAnnotationTimeBtn = document.getElementById('resetAnnotationTime');
 
-        // 選択された色
+        // 選択された色とフォント
         this.selectedTextColor = '#000000'; // デフォルト: 黒
         this.selectedBgColor = '#FFFFFF';   // デフォルト: 白
+        this.selectedFont = 'Noto Sans JP'; // デフォルト: Noto Sans JP
 
         // 注釈データ（配列）
-        // 各注釈: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色 }
+        // 各注釈: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色, font: フォント }
         this.annotations = [];
 
         // コールバック
@@ -71,6 +73,13 @@ class AnnotationManager {
 
         // カラーパレットのイベントハンドラ
         this.initColorPalettes();
+
+        // フォント選択イベント
+        if (this.textFontSelect) {
+            this.textFontSelect.addEventListener('change', () => {
+                this.selectedFont = this.textFontSelect.value;
+            });
+        }
     }
 
     /**
@@ -107,13 +116,7 @@ class AnnotationManager {
      */
     selectTextColor(color, button) {
         this.selectedTextColor = color;
-
-        // すべてのボタンからactiveクラスを削除
-        const allButtons = this.textColorPalette.querySelectorAll('.color-btn');
-        allButtons.forEach(btn => btn.classList.remove('active'));
-
-        // クリックされたボタンにactiveクラスを追加
-        button.classList.add('active');
+        selectColorFromPalette(this.textColorPalette, button);
     }
 
     /**
@@ -123,13 +126,7 @@ class AnnotationManager {
      */
     selectBgColor(color, button) {
         this.selectedBgColor = color;
-
-        // すべてのボタンからactiveクラスを削除
-        const allButtons = this.bgColorPalette.querySelectorAll('.color-btn');
-        allButtons.forEach(btn => btn.classList.remove('active'));
-
-        // クリックされたボタンにactiveクラスを追加
-        button.classList.add('active');
+        selectColorFromPalette(this.bgColorPalette, button);
     }
 
     /**
@@ -150,6 +147,7 @@ class AnnotationManager {
         // UIを有効化
         setEnabledMultiple([
             this.annotationText,
+            this.textFontSelect,
             this.addAnnotationBtn,
             this.addBlankAnnotationBtn
         ], true);
@@ -210,7 +208,8 @@ class AnnotationManager {
             time: currentTime,
             text: text,
             textColor: this.selectedTextColor,
-            bgColor: this.selectedBgColor
+            bgColor: this.selectedBgColor,
+            font: this.selectedFont
         };
 
         // 配列に追加して時刻順にソート
@@ -240,7 +239,8 @@ class AnnotationManager {
             time: currentTime,
             text: '',
             textColor: '#000000',
-            bgColor: '#ffffff'
+            bgColor: '#ffffff',
+            font: this.selectedFont
         };
 
         this.annotations.push(annotation);
@@ -288,52 +288,25 @@ class AnnotationManager {
      * @returns {HTMLElement} 注釈アイテム要素
      */
     createAnnotationItem(annotation, index) {
-        const item = document.createElement('div');
-        item.className = 'annotation-item';
-
-        // 時刻表示
-        const timeLabel = document.createElement('div');
-        timeLabel.className = 'annotation-time';
-        timeLabel.textContent = formatTimeWithDecimal(annotation.time);
-        timeLabel.style.cursor = 'pointer';
-        timeLabel.addEventListener('click', () => {
-            if (videoPlayer) {
-                videoPlayer.setCurrentTime(annotation.time);
-            }
+        return createListItem({
+            itemClassName: 'annotation-item',
+            time: annotation.time,
+            useDecimalTime: true,
+            onTimeClick: () => {
+                if (videoPlayer) {
+                    videoPlayer.setCurrentTime(annotation.time);
+                }
+            },
+            text: annotation.text || '(注釈なし)',
+            textStyle: {
+                color: annotation.textColor,
+                backgroundColor: annotation.bgColor,
+                padding: '2px 6px',
+                borderRadius: '3px'
+            },
+            onEdit: () => this.editAnnotation(index),
+            onDelete: () => this.deleteAnnotation(index)
         });
-
-        // テキスト表示（色付き）
-        const textLabel = document.createElement('div');
-        textLabel.className = 'annotation-text';
-        textLabel.textContent = annotation.text || '(注釈なし)';
-        textLabel.style.color = annotation.textColor;
-        textLabel.style.backgroundColor = annotation.bgColor;
-        textLabel.style.padding = '2px 6px';
-        textLabel.style.borderRadius = '3px';
-
-        // 修正ボタン
-        const editBtn = document.createElement('button');
-        editBtn.className = 'btn-edit';
-        editBtn.textContent = '修正';
-        editBtn.addEventListener('click', () => {
-            this.editAnnotation(index);
-        });
-
-        // 削除ボタン
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn-delete';
-        deleteBtn.textContent = '削除';
-        deleteBtn.addEventListener('click', () => {
-            this.deleteAnnotation(index);
-        });
-
-        // 要素を組み立て
-        item.appendChild(timeLabel);
-        item.appendChild(textLabel);
-        item.appendChild(editBtn);
-        item.appendChild(deleteBtn);
-
-        return item;
     }
 
     /**
