@@ -54,7 +54,7 @@ class ProjectManager {
      */
     collectProjectData() {
         const projectData = {
-            version: '1.0',
+            version: APP_CONSTANTS.PROJECT_VERSION,
             videoFileName: this.currentVideoFileName,
             savedAt: new Date().toISOString(),
             annotations: [],
@@ -137,27 +137,27 @@ class ProjectManager {
      */
     async saveProject() {
         if (!this.currentVideoFileName) {
-            alert('動画ファイルが読み込まれていません');
+            alert(APP_CONSTANTS.MESSAGES.ERROR.NO_VIDEO);
             return;
         }
 
         // Electron APIが利用可能かチェック
         if (!window.electronApi || !window.electronApi.saveProjectAsFolder) {
-            alert('この機能はデスクトップアプリ版でのみ利用できます');
+            alert(APP_CONSTANTS.MESSAGES.ERROR.NO_ELECTRON_API);
             return;
         }
 
         // 動画ファイルを取得
         const videoFile = fileHandler ? fileHandler.getCurrentFile() : null;
         if (!videoFile) {
-            alert('動画ファイルが見つかりません');
+            alert(APP_CONSTANTS.MESSAGES.ERROR.NO_VIDEO_FILE);
             return;
         }
 
         // プロジェクトタイトルを取得
         const projectTitle = videoPlayer ? videoPlayer.getProjectTitle() : '';
         if (!projectTitle) {
-            alert('プロジェクトタイトルを入力してください');
+            alert(APP_CONSTANTS.MESSAGES.ERROR.NO_TITLE);
             return;
         }
 
@@ -207,35 +207,51 @@ class ProjectManager {
     }
 
     /**
+     * データを復元する共通処理
+     * @param {Array|Object} data - 復元するデータ
+     * @param {Object} manager - マネージャーオブジェクト
+     * @param {string} methodName - 呼び出すメソッド名
+     * @param {string} dataTypeName - データ種類の名前（ログ用）
+     */
+    restoreData(data, manager, methodName, dataTypeName) {
+        if (data && manager) {
+            const count = Array.isArray(data) ? data.length : '';
+            const countText = count ? `${count}件` : '';
+            console.log(`[DEBUG] ${dataTypeName}を復元:`, countText, data);
+            manager[methodName](data);
+        } else {
+            console.warn(`[DEBUG] ${dataTypeName}のデータがないか、マネージャーが存在しません`);
+        }
+    }
+
+    /**
      * プロジェクトを読み込み
      * @param {Object} projectData - プロジェクトデータ
      */
     loadProject(projectData) {
         console.log('[DEBUG] プロジェクトを読み込み中...', projectData);
 
-        // テキスト注釈を復元
-        if (projectData.annotations && annotationManager) {
-            console.log('[DEBUG] テキスト注釈を復元:', projectData.annotations.length, '件', projectData.annotations);
-            annotationManager.loadAnnotations(projectData.annotations);
-        } else {
-            console.warn('[DEBUG] テキスト注釈のデータがないか、annotationManagerが存在しません');
-        }
+        // 各種データを復元
+        this.restoreData(
+            projectData.annotations,
+            annotationManager,
+            'loadAnnotations',
+            'テキスト注釈'
+        );
 
-        // 図形アノテーションを復元
-        if (projectData.shapes && shapeAnnotationManager) {
-            console.log('[DEBUG] 図形アノテーションを復元:', projectData.shapes.length, '件', projectData.shapes);
-            shapeAnnotationManager.loadShapes(projectData.shapes);
-        } else {
-            console.warn('[DEBUG] 図形アノテーションのデータがないか、shapeAnnotationManagerが存在しません');
-        }
+        this.restoreData(
+            projectData.shapes,
+            shapeAnnotationManager,
+            'loadShapes',
+            '図形アノテーション'
+        );
 
-        // 詳細テキストを復元
-        if (projectData.detailTexts && detailTextManager) {
-            console.log('[DEBUG] 詳細テキストを復元:', projectData.detailTexts.length, '件', projectData.detailTexts);
-            detailTextManager.loadDetailTexts(projectData.detailTexts);
-        } else {
-            console.warn('[DEBUG] 詳細テキストのデータがないか、detailTextManagerが存在しません');
-        }
+        this.restoreData(
+            projectData.detailTexts,
+            detailTextManager,
+            'loadDetailTexts',
+            '詳細テキスト'
+        );
 
         // 範囲情報を復元
         if (projectData.range && rangeSelector) {
