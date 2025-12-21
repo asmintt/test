@@ -340,8 +340,8 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
  * @returns {Array|null} FFmpegのcomplexFilterに渡すフィルタ配列、または null
  */
 function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, trimDuration, videoScale) {
-    // テキストがある注釈のみをフィルタリング
-    const textAnnotations = annotations ? annotations.filter(ann => ann.text && ann.text.trim() !== '') : [];
+    // テキストがある注釈のみをフィルタリング（text1またはtext2がある場合）
+    const textAnnotations = annotations ? annotations.filter(ann => (ann.text1 && ann.text1.trim() !== '') || (ann.text2 && ann.text2.trim() !== '')) : [];
 
     // 図形がある注釈のみをフィルタリング
     const validShapes = shapes ? shapes.filter(s => s.type !== '') : [];
@@ -468,12 +468,6 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
             }
         }
 
-        // テキストを安全にエスケープ
-        const escapedText = ann.text
-            .replace(/\\/g, '\\\\\\\\')
-            .replace(/'/g, "\\\\'")
-            .replace(/:/g, '\\\\:');
-
         // フォント名からシステムフォントファイルパスへのマッピング
         const fontMapping = {
             'Noto Sans JP': '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
@@ -482,25 +476,63 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
         };
         const fontFile = fontMapping[ann.font] || '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc';
 
-        const filterObj = {
-            filter: 'drawtext',
-            options: {
-                text: escapedText,
-                fontfile: fontFile,
-                fontsize: 60,
-                fontcolor: ann.textColor || '#000000',
-                box: 1,
-                boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                boxborderw: 15,
-                x: '(w-text_w)/2', // 常に中央揃え
-                y: `h-${textAreaHeight/2}-text_h/2`,
-                enable: `between(t,${displayStartTime},${displayEndTime})`
-            },
-            inputs: currentInput
-        };
+        const fontSize = 60;
 
-        filters.push(filterObj);
-        filterIndex++;
+        // 1段目のテキストがある場合
+        if (ann.text1 && ann.text1.trim() !== '') {
+            const escapedText1 = ann.text1
+                .replace(/\\/g, '\\\\\\\\')
+                .replace(/'/g, "\\\\'")
+                .replace(/:/g, '\\\\:');
+
+            const filterObj1 = {
+                filter: 'drawtext',
+                options: {
+                    text: escapedText1,
+                    fontfile: fontFile,
+                    fontsize: fontSize,
+                    fontcolor: ann.textColor || '#000000',
+                    box: 1,
+                    boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
+                    boxborderw: 15,
+                    x: '(w-text_w)/2', // 中央揃え
+                    y: `h-${textAreaHeight/2}-text_h-10`, // 1段目（上）
+                    enable: `between(t,${displayStartTime},${displayEndTime})`
+                },
+                inputs: currentInput
+            };
+
+            filters.push(filterObj1);
+            filterIndex++;
+        }
+
+        // 2段目のテキストがある場合
+        if (ann.text2 && ann.text2.trim() !== '') {
+            const escapedText2 = ann.text2
+                .replace(/\\/g, '\\\\\\\\')
+                .replace(/'/g, "\\\\'")
+                .replace(/:/g, '\\\\:');
+
+            const filterObj2 = {
+                filter: 'drawtext',
+                options: {
+                    text: escapedText2,
+                    fontfile: fontFile,
+                    fontsize: fontSize,
+                    fontcolor: ann.textColor || '#000000',
+                    box: 1,
+                    boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
+                    boxborderw: 15,
+                    x: '(w-text_w)/2', // 中央揃え
+                    y: `h-${textAreaHeight/2}+10`, // 2段目（下）
+                    enable: `between(t,${displayStartTime},${displayEndTime})`
+                },
+                inputs: currentInput
+            };
+
+            filters.push(filterObj2);
+            filterIndex++;
+        }
     });
 
     // 4. 詳細テキストを追加（メインテキストの下、最下部）
@@ -695,6 +727,81 @@ ipcMain.handle('save-project-file', async (event, data) => {
 
     } catch (error) {
         console.error('プロジェクト保存エラー:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+/**
+ * IPC通信: プロジェクトフォルダの読み込み（推奨）
+ * フォルダを選択し、その中の動画とJSONファイルを自動的に読み込む
+ */
+ipcMain.handle('load-project-folder', async (event) => {
+    const fs = require('fs');
+
+    try {
+        // デフォルトのプロジェクト保存先
+        const defaultProjectsPath = path.join(app.getPath('documents'), 'MovieFrameSnap', 'Projects');
+
+        // フォルダ選択ダイアログを表示
+        const result = await dialog.showOpenDialog(mainWindow, {
+            title: 'プロジェクト保存先のフォルダを選択',
+            defaultPath: defaultProjectsPath,
+            properties: ['openDirectory']  // フォルダ選択
+        });
+
+        // キャンセルされた場合
+        if (result.canceled || result.filePaths.length === 0) {
+            return { success: false, canceled: true };
+        }
+
+        const folderPath = result.filePaths[0];
+
+        // フォルダ内のファイルを取得
+        const files = fs.readdirSync(folderPath);
+
+        // JSONファイルを検索（.mfs.json で終わるファイル）
+        const jsonFile = files.find(file => file.endsWith('.mfs.json'));
+        if (!jsonFile) {
+            return {
+                success: false,
+                error: 'プロジェクトファイル（.mfs.json）が見つかりませんでした。'
+            };
+        }
+
+        // JSONファイルを読み込み
+        const jsonPath = path.join(folderPath, jsonFile);
+        const jsonContent = fs.readFileSync(jsonPath, 'utf8');
+        const projectData = JSON.parse(jsonContent);
+
+        // 動画ファイルを検索（一般的な動画拡張子）
+        const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.MP4', '.MOV', '.AVI'];
+        const videoFile = files.find(file =>
+            videoExtensions.some(ext => file.endsWith(ext))
+        );
+
+        let videoData = null;
+        let videoFileName = null;
+
+        if (videoFile) {
+            videoFileName = videoFile;
+            const videoPath = path.join(folderPath, videoFile);
+            videoData = fs.readFileSync(videoPath);
+            console.log('動画ファイルを検出しました:', videoPath);
+        } else {
+            console.warn('動画ファイルが見つかりませんでした');
+        }
+
+        console.log('プロジェクトフォルダを読み込みました:', folderPath);
+        return {
+            success: true,
+            folderPath: folderPath,
+            projectData: projectData,
+            videoData: videoData ? videoData.buffer : null,
+            videoFileName: videoFileName
+        };
+
+    } catch (error) {
+        console.error('プロジェクトフォルダ読み込みエラー:', error);
         return { success: false, error: error.message };
     }
 });

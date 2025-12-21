@@ -4,10 +4,12 @@
 class AnnotationManager {
     constructor() {
         // DOM要素
-        this.annotationText = document.getElementById('annotationText');
+        this.annotationText1 = document.getElementById('annotationText1');
+        this.annotationText2 = document.getElementById('annotationText2');
         this.textFontSelect = document.getElementById('textFontSelect');
-        this.textColorPalette = document.getElementById('textColorPalette');
-        this.bgColorPalette = document.getElementById('bgColorPalette');
+        this.presetButtons = document.querySelectorAll('.preset-btn');
+        this.customTextColor = document.getElementById('customTextColor');
+        this.customBgColor = document.getElementById('customBgColor');
         this.addAnnotationBtn = document.getElementById('addAnnotationBtn');
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
         this.annotationList = document.getElementById('annotationList');
@@ -21,9 +23,10 @@ class AnnotationManager {
         this.selectedTextColor = '#000000'; // デフォルト: 黒
         this.selectedBgColor = '#FFFFFF';   // デフォルト: 白
         this.selectedFont = 'Noto Sans JP'; // デフォルト: Noto Sans JP
+        this.selectedPreset = 'explanation'; // デフォルト: 説明
 
         // 注釈データ（配列）
-        // 各注釈: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色, font: フォント }
+        // 各注釈: { time: 秒数, text1: 1段目テキスト, text2: 2段目テキスト, textColor: 色, bgColor: 色, font: フォント }
         this.annotations = [];
 
         // コールバック
@@ -71,8 +74,8 @@ class AnnotationManager {
             });
         }
 
-        // カラーパレットのイベントハンドラ
-        this.initColorPalettes();
+        // 配色コントロールのイベントハンドラ
+        this.initColorControls();
 
         // フォント選択イベント
         if (this.textFontSelect) {
@@ -83,74 +86,85 @@ class AnnotationManager {
     }
 
     /**
-     * カラーパレットの初期化
+     * 配色コントロールの初期化
      */
-    initColorPalettes() {
-        // 文字色パレット
-        if (this.textColorPalette) {
-            const textColorButtons = this.textColorPalette.querySelectorAll('.color-btn');
-            textColorButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const color = button.getAttribute('data-color');
-                    this.selectTextColor(color, button);
-                });
+    initColorControls() {
+        // プリセットボタン
+        this.presetButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const preset = button.getAttribute('data-preset');
+                const textColor = button.getAttribute('data-text-color');
+                const bgColor = button.getAttribute('data-bg-color');
+                this.selectPreset(preset, textColor, bgColor, button);
+            });
+        });
+
+        // カスタムカラーピッカー
+        if (this.customTextColor) {
+            this.customTextColor.addEventListener('change', () => {
+                this.selectCustomColors();
             });
         }
 
-        // 背景色パレット
-        if (this.bgColorPalette) {
-            const bgColorButtons = this.bgColorPalette.querySelectorAll('.color-btn');
-            bgColorButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const color = button.getAttribute('data-color');
-                    this.selectBgColor(color, button);
-                });
+        if (this.customBgColor) {
+            this.customBgColor.addEventListener('change', () => {
+                this.selectCustomColors();
             });
         }
     }
 
     /**
-     * 文字色を選択
-     * @param {string} color - 選択された色
+     * プリセットを選択
+     * @param {string} preset - プリセット名
+     * @param {string} textColor - 文字色
+     * @param {string} bgColor - 背景色
      * @param {HTMLElement} button - クリックされたボタン
      */
-    selectTextColor(color, button) {
-        this.selectedTextColor = color;
-        selectColorFromPalette(this.textColorPalette, button);
+    selectPreset(preset, textColor, bgColor, button) {
+        this.selectedPreset = preset;
+        this.selectedTextColor = textColor;
+        this.selectedBgColor = bgColor;
+
+        // プリセットボタンのactive状態を更新
+        this.presetButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        // カスタムカラーピッカーを同期
+        if (this.customTextColor) this.customTextColor.value = textColor;
+        if (this.customBgColor) this.customBgColor.value = bgColor;
     }
 
     /**
-     * 背景色を選択
-     * @param {string} color - 選択された色
-     * @param {HTMLElement} button - クリックされたボタン
+     * カスタム色を選択
      */
-    selectBgColor(color, button) {
-        this.selectedBgColor = color;
-        selectColorFromPalette(this.bgColorPalette, button);
+    selectCustomColors() {
+        this.selectedTextColor = this.customTextColor.value;
+        this.selectedBgColor = this.customBgColor.value;
+
+        // プリセットボタンのactive状態を解除
+        this.presetButtons.forEach(btn => btn.classList.remove('active'));
+        this.selectedPreset = null;
     }
 
     /**
      * 動画読み込み時の設定
      */
     onVideoLoaded() {
-        // 最大文字数を計算してプレースホルダーを設定
-        if (videoPlayer && videoPlayer.video) {
-            const videoWidth = videoPlayer.video.videoWidth;
-            const maxCharacters = Math.floor((videoWidth - 110) / 60);
-
-            if (this.annotationText) {
-                this.annotationText.placeholder = `文字数：${maxCharacters}文字まで`;
-                this.annotationText.maxLength = maxCharacters;
-            }
-        }
-
         // UIを有効化
         setEnabledMultiple([
-            this.annotationText,
+            this.annotationText1,
+            this.annotationText2,
             this.textFontSelect,
+            this.customTextColor,
+            this.customBgColor,
             this.addAnnotationBtn,
             this.addBlankAnnotationBtn
         ], true);
+
+        // プリセットボタンを有効化
+        this.presetButtons.forEach(button => {
+            button.disabled = false;
+        });
 
         // 時刻調整ボタンを有効化
         this.timeAdjustButtons.forEach(button => {
@@ -195,8 +209,10 @@ class AnnotationManager {
     addAnnotation() {
         if (!videoPlayer) return;
 
-        const text = this.annotationText.value.trim();
-        if (!text) {
+        const text1 = this.annotationText1.value.trim();
+        const text2 = this.annotationText2.value.trim();
+
+        if (!text1 && !text2) {
             alert('注釈テキストを入力してください');
             return;
         }
@@ -206,7 +222,8 @@ class AnnotationManager {
         // 注釈オブジェクトを作成
         const annotation = {
             time: currentTime,
-            text: text,
+            text1: text1,
+            text2: text2,
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
             font: this.selectedFont
@@ -220,7 +237,8 @@ class AnnotationManager {
         this.renderAnnotationList();
 
         // 入力欄をクリア
-        this.annotationText.value = '';
+        this.annotationText1.value = '';
+        this.annotationText2.value = '';
 
         // コールバック実行
         this.notifyChange();
@@ -237,7 +255,8 @@ class AnnotationManager {
         // 空のテキストで注釈を追加
         const annotation = {
             time: currentTime,
-            text: '',
+            text1: '',
+            text2: '',
             textColor: '#000000',
             bgColor: '#ffffff',
             font: this.selectedFont
@@ -288,6 +307,11 @@ class AnnotationManager {
      * @returns {HTMLElement} 注釈アイテム要素
      */
     createAnnotationItem(annotation, index) {
+        // 2行テキストを改行で結合
+        const displayText = (annotation.text1 || annotation.text2)
+            ? `${annotation.text1 || ''}\n${annotation.text2 || ''}`
+            : '(注釈なし)';
+
         return createListItem({
             itemClassName: 'annotation-item',
             time: annotation.time,
@@ -297,12 +321,13 @@ class AnnotationManager {
                     videoPlayer.setCurrentTime(annotation.time);
                 }
             },
-            text: annotation.text || '(注釈なし)',
+            text: displayText,
             textStyle: {
                 color: annotation.textColor,
                 backgroundColor: annotation.bgColor,
                 padding: '2px 6px',
-                borderRadius: '3px'
+                borderRadius: '3px',
+                whiteSpace: 'pre-line'
             },
             onEdit: () => this.editAnnotation(index),
             onDelete: () => this.deleteAnnotation(index)
@@ -317,35 +342,36 @@ class AnnotationManager {
         const annotation = this.annotations[index];
 
         // 入力フィールドに現在の値を設定
-        this.annotationText.value = annotation.text;
+        this.annotationText1.value = annotation.text1 || '';
+        this.annotationText2.value = annotation.text2 || '';
 
-        // 色を設定してボタンの状態を更新
+        // 色を設定
         this.selectedTextColor = annotation.textColor;
         this.selectedBgColor = annotation.bgColor;
 
-        // 文字色パレットのアクティブ状態を更新
-        if (this.textColorPalette) {
-            const textColorButtons = this.textColorPalette.querySelectorAll('.color-btn');
-            textColorButtons.forEach(btn => {
-                if (btn.getAttribute('data-color') === annotation.textColor) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+        // プリセットボタンの状態を更新
+        let matchedPreset = false;
+        this.presetButtons.forEach(btn => {
+            const presetTextColor = btn.getAttribute('data-text-color');
+            const presetBgColor = btn.getAttribute('data-bg-color');
+
+            if (presetTextColor === annotation.textColor && presetBgColor === annotation.bgColor) {
+                btn.classList.add('active');
+                this.selectedPreset = btn.getAttribute('data-preset');
+                matchedPreset = true;
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // プリセットと一致しない場合はカスタム色として扱う
+        if (!matchedPreset) {
+            this.selectedPreset = null;
         }
 
-        // 背景色パレットのアクティブ状態を更新
-        if (this.bgColorPalette) {
-            const bgColorButtons = this.bgColorPalette.querySelectorAll('.color-btn');
-            bgColorButtons.forEach(btn => {
-                if (btn.getAttribute('data-color') === annotation.bgColor) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        }
+        // カスタムカラーピッカーを同期
+        if (this.customTextColor) this.customTextColor.value = annotation.textColor;
+        if (this.customBgColor) this.customBgColor.value = annotation.bgColor;
 
         // 注釈を削除（再追加するため）
         this.annotations.splice(index, 1);
@@ -358,7 +384,7 @@ class AnnotationManager {
         }
 
         // 入力フィールドにフォーカス
-        this.annotationText.focus();
+        this.annotationText1.focus();
     }
 
     /**
@@ -411,13 +437,13 @@ class AnnotationManager {
         // 次の注釈を取得
         const nextAnnotation = this.annotations.find(ann => ann.time > currentTime);
 
-        // 次の注釈が「注釈なし」（text が空）の場合は表示しない
-        if (nextAnnotation && nextAnnotation.text === '' && nextAnnotation.time <= currentTime) {
+        // 次の注釈が「注釈なし」（text1とtext2が両方とも空）の場合は表示しない
+        if (nextAnnotation && !nextAnnotation.text1 && !nextAnnotation.text2 && nextAnnotation.time <= currentTime) {
             return null;
         }
 
         // 現在の注釈が「注釈なし」の場合は表示しない
-        if (activeAnnotation.text === '') {
+        if (!activeAnnotation.text1 && !activeAnnotation.text2) {
             return null;
         }
 

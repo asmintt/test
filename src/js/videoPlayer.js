@@ -220,7 +220,7 @@ class VideoPlayer {
     }
 
     /**
-     * テキスト注釈の表示を更新
+     * テキスト注釈の表示を更新（2行表示）
      * @param {number} currentTime - 現在時刻（秒）
      */
     updateTextAnnotationDisplay(currentTime) {
@@ -229,12 +229,17 @@ class VideoPlayer {
         // 現在時刻で有効な注釈を取得（継続表示）
         const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
 
-        if (annotation && annotation.text) {
+        if (annotation && (annotation.text1 || annotation.text2)) {
+            // 2行テキストを改行で結合
+            const displayText = (annotation.text1 || '') + '\n' + (annotation.text2 || '');
+
             // 注釈がある場合は表示
-            this.textAnnotationDisplay.textContent = annotation.text;
+            this.textAnnotationDisplay.textContent = displayText;
             this.textAnnotationDisplay.style.color = annotation.textColor;
             this.textAnnotationDisplay.style.backgroundColor = annotation.bgColor;
             this.textAnnotationDisplay.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
+            this.textAnnotationDisplay.style.fontSize = '32px';
+            this.textAnnotationDisplay.style.whiteSpace = 'pre-line';
             this.textAnnotationDisplay.classList.add('visible');
         } else {
             // 注釈がない場合は非表示

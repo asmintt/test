@@ -21,18 +21,33 @@
                     <h1>MovieFrameSnap Lite</h1>
                 </div>
 
-                <!-- 1. 動画ファイル選択 -->
+                <!-- 1. プロジェクト選択（タブ式） -->
                 <section class="control-section">
-                    <h2>1. 動画ファイルを選択</h2>
-                    <div class="file-input-area">
-                        <input type="file" id="videoInput" accept="video/*" class="file-input">
-                        <label for="videoInput" class="file-label">
-                            ファイルを選択 / ドロップ
-                        </label>
+                    <h2>1. 開始</h2>
+
+                    <!-- タブナビゲーション -->
+                    <div class="start-tab-navigation">
+                        <button class="start-tab-btn active" data-start-tab="new">📁 新規作成</button>
+                        <button class="start-tab-btn" data-start-tab="open">📂 編集再開</button>
                     </div>
-                    <p id="fileName" class="file-name"></p>
-                    <button id="saveProjectBtn" class="btn" disabled>💾 プロジェクトを保存</button>
-                    <button id="loadProjectBtn" class="btn" disabled>📂 プロジェクトを開く</button>
+
+                    <!-- 新規作成タブ -->
+                    <div class="start-tab-content active" id="newProjectTab">
+                        <div class="file-input-area">
+                            <input type="file" id="videoInput" accept="video/*" class="file-input">
+                            <label for="videoInput" class="file-label">
+                                ファイルを選択 / ドロップ
+                            </label>
+                        </div>
+                        <p id="fileName" class="file-name"></p>
+                    </div>
+
+                    <!-- 既存を開くタブ -->
+                    <div class="start-tab-content" id="openProjectTab">
+                        <button id="loadProjectBtn" class="btn-primary">📂 プロジェクトを開く</button>
+                        <p class="help-text">保存済みのプロジェクトフォルダを選択して、編集を再開できます</p>
+                        <button id="saveProjectBtn" class="btn" disabled>💾 プロジェクトを保存</button>
+                    </div>
                 </section>
 
                 <!-- 2. 動画の範囲を指定 -->
@@ -149,9 +164,9 @@
 
                 <!-- タブナビゲーション -->
                 <div class="tab-navigation">
-                    <button class="tab-btn active" data-tab="text">テキスト注釈</button>
-                    <button class="tab-btn" data-tab="shape">図形アノテーション</button>
-                    <button class="tab-btn" data-tab="detail">詳細テキスト</button>
+                    <button class="tab-btn active" data-tab="text">注釈</button>
+                    <button class="tab-btn" data-tab="shape">図形</button>
+                    <button class="tab-btn" data-tab="detail">詳細</button>
                 </div>
 
                 <!-- テキスト注釈タブ -->
@@ -180,8 +195,12 @@
                         </div>
                     </div>
 
-                    <!-- テキスト入力 -->
-                    <input type="text" id="annotationText" placeholder="注釈テキスト" disabled>
+                    <!-- テキスト入力（2行） -->
+                    <div class="two-line-input-section">
+                        <label>注釈テキスト:</label>
+                        <input type="text" id="annotationText1" placeholder="1段目（10文字まで）" maxlength="10" disabled>
+                        <input type="text" id="annotationText2" placeholder="2段目（10文字まで）" maxlength="10" disabled>
+                    </div>
 
                     <!-- フォント選択 -->
                     <div class="font-selection-section">
@@ -193,43 +212,30 @@
                         </select>
                     </div>
 
-                    <!-- 文字色選択 -->
-                    <div class="color-palette-section">
-                        <label>文字色:</label>
-                        <div class="color-palette" id="textColorPalette">
-                            <button class="color-btn active" data-color="#000000" style="background-color: #000000;" title="黒"></button>
-                            <button class="color-btn" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
-                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
-                            <button class="color-btn" data-color="#FF8800" style="background-color: #FF8800;" title="オレンジ"></button>
-                            <button class="color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
-                            <button class="color-btn" data-color="#00BB00" style="background-color: #00BB00;" title="緑"></button>
-                            <button class="color-btn" data-color="#0088FF" style="background-color: #0088FF;" title="青"></button>
-                            <button class="color-btn" data-color="#8800FF" style="background-color: #8800FF;" title="紫"></button>
-                            <button class="color-btn" data-color="#FF0088" style="background-color: #FF0088;" title="ピンク"></button>
-                            <button class="color-btn" data-color="#8B4513" style="background-color: #8B4513;" title="茶色"></button>
-                            <button class="color-btn" data-color="#808080" style="background-color: #808080;" title="グレー"></button>
-                            <button class="color-btn" data-color="#00DDDD" style="background-color: #00DDDD;" title="水色"></button>
+                    <!-- 配色プリセット -->
+                    <div class="color-preset-section">
+                        <label>配色:</label>
+                        <div class="preset-buttons">
+                            <button class="preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
+                            <button class="preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#E3F2FD">ポイント</button>
+                            <button class="preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFE5E0">注意</button>
                         </div>
                     </div>
 
-                    <!-- 背景色選択 -->
-                    <div class="color-palette-section">
-                        <label>背景色:</label>
-                        <div class="color-palette" id="bgColorPalette">
-                            <button class="color-btn" data-color="#000000" style="background-color: #000000;" title="黒"></button>
-                            <button class="color-btn active" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
-                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
-                            <button class="color-btn" data-color="#FF8800" style="background-color: #FF8800;" title="オレンジ"></button>
-                            <button class="color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
-                            <button class="color-btn" data-color="#00BB00" style="background-color: #00BB00;" title="緑"></button>
-                            <button class="color-btn" data-color="#0088FF" style="background-color: #0088FF;" title="青"></button>
-                            <button class="color-btn" data-color="#8800FF" style="background-color: #8800FF;" title="紫"></button>
-                            <button class="color-btn" data-color="#FF0088" style="background-color: #FF0088;" title="ピンク"></button>
-                            <button class="color-btn" data-color="#8B4513" style="background-color: #8B4513;" title="茶色"></button>
-                            <button class="color-btn" data-color="#808080" style="background-color: #808080;" title="グレー"></button>
-                            <button class="color-btn" data-color="#00DDDD" style="background-color: #00DDDD;" title="水色"></button>
+                    <!-- カスタム色選択（折りたたみ可能） -->
+                    <details class="custom-color-section">
+                        <summary>カスタム色</summary>
+                        <div class="custom-color-inputs">
+                            <div class="color-input-row">
+                                <label>文字色:</label>
+                                <input type="color" id="customTextColor" value="#000000" disabled>
+                            </div>
+                            <div class="color-input-row">
+                                <label>背景色:</label>
+                                <input type="color" id="customBgColor" value="#FFFFFF" disabled>
+                            </div>
                         </div>
-                    </div>
+                    </details>
 
                     <button id="addAnnotationBtn" class="btn" disabled>📌 追加</button>
                     <button id="addBlankAnnotationBtn" class="btn" disabled>注釈なし</button>
@@ -274,24 +280,29 @@
                         <button class="shape-btn" data-shape="arrow">→ 矢印</button>
                     </div>
 
-                    <!-- 枠線色選択 -->
-                    <div class="color-palette-section">
+                    <!-- 枠線色選択（6色パネル） -->
+                    <div class="shape-color-panel-section">
                         <label>枠線色:</label>
-                        <div class="color-palette" id="shapeColorPalette">
-                            <button class="color-btn" data-color="#000000" style="background-color: #000000;" title="黒"></button>
-                            <button class="color-btn" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
-                            <button class="color-btn active" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
-                            <button class="color-btn" data-color="#FF8800" style="background-color: #FF8800;" title="オレンジ"></button>
-                            <button class="color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
-                            <button class="color-btn" data-color="#00BB00" style="background-color: #00BB00;" title="緑"></button>
-                            <button class="color-btn" data-color="#0088FF" style="background-color: #0088FF;" title="青"></button>
-                            <button class="color-btn" data-color="#8800FF" style="background-color: #8800FF;" title="紫"></button>
-                            <button class="color-btn" data-color="#FF0088" style="background-color: #FF0088;" title="ピンク"></button>
-                            <button class="color-btn" data-color="#8B4513" style="background-color: #8B4513;" title="茶色"></button>
-                            <button class="color-btn" data-color="#808080" style="background-color: #808080;" title="グレー"></button>
-                            <button class="color-btn" data-color="#00DDDD" style="background-color: #00DDDD;" title="水色"></button>
+                        <div class="shape-color-panel">
+                            <button class="shape-color-btn" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 2px solid #ddd;" title="白"></button>
+                            <button class="shape-color-btn" data-color="#E3F2FD" style="background-color: #E3F2FD; border: 2px solid #ddd;" title="水色"></button>
+                            <button class="shape-color-btn" data-color="#FFE5E0" style="background-color: #FFE5E0; border: 2px solid #ddd;" title="サーモン"></button>
+                            <button class="shape-color-btn active" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
+                            <button class="shape-color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
+                            <button class="shape-color-btn" data-color="#000000" style="background-color: #000000;" title="黒"></button>
                         </div>
                     </div>
+
+                    <!-- カスタム色選択（折りたたみ可能） -->
+                    <details class="custom-color-section">
+                        <summary>カスタム色</summary>
+                        <div class="custom-color-inputs">
+                            <div class="color-input-row">
+                                <label>枠線色:</label>
+                                <input type="color" id="shapeCustomColor" value="#FF0000" disabled>
+                            </div>
+                        </div>
+                    </details>
 
                     <p class="help-text">図形を追加するには、動画プレビュー上でドラッグした後、「追加」ボタンをクリックしてください</p>
 
@@ -334,43 +345,30 @@
                     <!-- テキスト入力 -->
                     <input type="text" id="detailText" placeholder="詳細テキスト" disabled>
 
-                    <!-- 文字色選択 -->
-                    <div class="color-palette-section">
-                        <label>文字色:</label>
-                        <div class="color-palette" id="detailTextColorPalette">
-                            <button class="color-btn active" data-color="#000000" style="background-color: #000000;" title="黒"></button>
-                            <button class="color-btn" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
-                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
-                            <button class="color-btn" data-color="#FF8800" style="background-color: #FF8800;" title="オレンジ"></button>
-                            <button class="color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
-                            <button class="color-btn" data-color="#00BB00" style="background-color: #00BB00;" title="緑"></button>
-                            <button class="color-btn" data-color="#0088FF" style="background-color: #0088FF;" title="青"></button>
-                            <button class="color-btn" data-color="#8800FF" style="background-color: #8800FF;" title="紫"></button>
-                            <button class="color-btn" data-color="#FF0088" style="background-color: #FF0088;" title="ピンク"></button>
-                            <button class="color-btn" data-color="#8B4513" style="background-color: #8B4513;" title="茶色"></button>
-                            <button class="color-btn" data-color="#808080" style="background-color: #808080;" title="グレー"></button>
-                            <button class="color-btn" data-color="#00DDDD" style="background-color: #00DDDD;" title="水色"></button>
+                    <!-- 配色プリセット -->
+                    <div class="color-preset-section">
+                        <label>配色:</label>
+                        <div class="preset-buttons">
+                            <button class="detail-preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
+                            <button class="detail-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#E3F2FD">ポイント</button>
+                            <button class="detail-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFE5E0">注意</button>
                         </div>
                     </div>
 
-                    <!-- 背景色選択 -->
-                    <div class="color-palette-section">
-                        <label>背景色:</label>
-                        <div class="color-palette" id="detailBgColorPalette">
-                            <button class="color-btn" data-color="#000000" style="background-color: #000000;" title="黒"></button>
-                            <button class="color-btn active" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
-                            <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000;" title="赤"></button>
-                            <button class="color-btn" data-color="#FF8800" style="background-color: #FF8800;" title="オレンジ"></button>
-                            <button class="color-btn" data-color="#FFDD00" style="background-color: #FFDD00;" title="黄色"></button>
-                            <button class="color-btn" data-color="#00BB00" style="background-color: #00BB00;" title="緑"></button>
-                            <button class="color-btn" data-color="#0088FF" style="background-color: #0088FF;" title="青"></button>
-                            <button class="color-btn" data-color="#8800FF" style="background-color: #8800FF;" title="紫"></button>
-                            <button class="color-btn" data-color="#FF0088" style="background-color: #FF0088;" title="ピンク"></button>
-                            <button class="color-btn" data-color="#8B4513" style="background-color: #8B4513;" title="茶色"></button>
-                            <button class="color-btn" data-color="#808080" style="background-color: #808080;" title="グレー"></button>
-                            <button class="color-btn" data-color="#00DDDD" style="background-color: #00DDDD;" title="水色"></button>
+                    <!-- カスタム色選択（折りたたみ可能） -->
+                    <details class="custom-color-section">
+                        <summary>カスタム色</summary>
+                        <div class="custom-color-inputs">
+                            <div class="color-input-row">
+                                <label>文字色:</label>
+                                <input type="color" id="detailCustomTextColor" value="#000000" disabled>
+                            </div>
+                            <div class="color-input-row">
+                                <label>背景色:</label>
+                                <input type="color" id="detailCustomBgColor" value="#FFFFFF" disabled>
+                            </div>
                         </div>
-                    </div>
+                    </details>
 
                     <div class="detail-button-row">
                         <button id="addDetailTextBtn" class="btn-compact" disabled>📌 追加</button>

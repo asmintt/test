@@ -7,7 +7,8 @@ class ShapeAnnotationManager {
         this.canvas = document.getElementById('annotationCanvas');
         this.ctx = this.canvas?.getContext('2d');
         this.shapeButtons = document.querySelectorAll('.shape-btn');
-        this.shapeColorPalette = document.getElementById('shapeColorPalette');
+        this.shapeColorButtons = document.querySelectorAll('.shape-color-btn');
+        this.customColor = document.getElementById('shapeCustomColor');
         this.shapeList = document.getElementById('shapeList');
         this.addShapeBtn = document.getElementById('addShapeBtn');
         this.addNoShapeBtn = document.getElementById('addNoShapeBtn');
@@ -113,39 +114,54 @@ class ShapeAnnotationManager {
             });
         }
 
-        // カラーパレットの初期化
-        this.initColorPalette();
+        // カラーコントロールの初期化
+        this.initColorControls();
     }
 
     /**
-     * カラーパレットの初期化
+     * カラーコントロールの初期化
      */
-    initColorPalette() {
-        if (this.shapeColorPalette) {
-            const colorButtons = this.shapeColorPalette.querySelectorAll('.color-btn');
-            colorButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const color = button.getAttribute('data-color');
-                    this.selectShapeColor(color, button);
-                });
+    initColorControls() {
+        // 6色パネルボタン
+        this.shapeColorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const color = button.getAttribute('data-color');
+                this.selectPanelColor(color, button);
+            });
+        });
+
+        // カスタムカラーピッカー
+        if (this.customColor) {
+            this.customColor.addEventListener('change', () => {
+                this.selectCustomColor();
             });
         }
     }
 
     /**
-     * 図形色を選択
+     * パネルから色を選択
      * @param {string} color - 選択された色
      * @param {HTMLElement} button - クリックされたボタン
      */
-    selectShapeColor(color, button) {
+    selectPanelColor(color, button) {
         this.selectedShapeColor = color;
 
-        // すべてのボタンからactiveクラスを削除
-        const allButtons = this.shapeColorPalette.querySelectorAll('.color-btn');
-        allButtons.forEach(btn => btn.classList.remove('active'));
-
-        // クリックされたボタンにactiveクラスを追加
+        // パネルボタンのactive状態を更新
+        this.shapeColorButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
+
+        // カスタムカラーピッカーを同期
+        if (this.customColor) this.customColor.value = color;
+    }
+
+    /**
+     * カスタム色を選択
+     */
+    selectCustomColor() {
+        this.selectedShapeColor = this.customColor.value;
+
+        // パネルボタンのactive状態を解除
+        this.shapeColorButtons.forEach(btn => btn.classList.remove('active'));
     }
 
     /**
@@ -468,20 +484,6 @@ class ShapeAnnotationManager {
      * @returns {HTMLElement} 図形アイテム要素
      */
     createShapeItem(shape, index) {
-        const item = document.createElement('div');
-        item.className = 'annotation-item';
-
-        // 時刻表示
-        const timeLabel = document.createElement('div');
-        timeLabel.className = 'annotation-time';
-        timeLabel.textContent = formatTimeWithDecimal(shape.time);
-        timeLabel.style.cursor = 'pointer';
-        timeLabel.addEventListener('click', () => {
-            if (videoPlayer) {
-                videoPlayer.setCurrentTime(shape.time);
-            }
-        });
-
         // 図形タイプの日本語名
         const typeNames = {
             rectangle: '四角',
@@ -489,39 +491,26 @@ class ShapeAnnotationManager {
             '': '図形なし'
         };
 
-        // テキスト表示
-        const textLabel = document.createElement('div');
-        textLabel.className = 'annotation-text';
-        textLabel.textContent = typeNames[shape.type] || shape.type;
+        // テキストスタイル
+        const textStyle = {};
         if (shape.type !== '') {
-            textLabel.style.color = shape.color;
+            textStyle.color = shape.color;
         }
 
-        // 修正ボタン
-        const editBtn = document.createElement('button');
-        editBtn.className = 'btn-edit';
-        editBtn.textContent = '修正';
-        editBtn.addEventListener('click', () => {
-            this.editShape(index);
+        return createListItem({
+            itemClassName: 'annotation-item',
+            time: shape.time,
+            useDecimalTime: true,
+            onTimeClick: () => {
+                if (videoPlayer) {
+                    videoPlayer.setCurrentTime(shape.time);
+                }
+            },
+            text: typeNames[shape.type] || shape.type,
+            textStyle: textStyle,
+            onEdit: shape.type !== '' ? () => this.editShape(index) : null,
+            onDelete: () => this.deleteShape(index)
         });
-
-        // 削除ボタン
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn-delete';
-        deleteBtn.textContent = '削除';
-        deleteBtn.addEventListener('click', () => {
-            this.deleteShape(index);
-        });
-
-        // 要素を組み立て
-        item.appendChild(timeLabel);
-        item.appendChild(textLabel);
-        if (shape.type !== '') {
-            item.appendChild(editBtn);
-        }
-        item.appendChild(deleteBtn);
-
-        return item;
     }
 
     /**
@@ -531,20 +520,28 @@ class ShapeAnnotationManager {
     editShape(index) {
         const shape = this.shapes[index];
 
-        // 色を設定してボタンの状態を更新
+        // 色を設定
         this.selectedShapeColor = shape.color;
 
-        // 枠線色パレットのアクティブ状態を更新
-        if (this.shapeColorPalette) {
-            const colorButtons = this.shapeColorPalette.querySelectorAll('.color-btn');
-            colorButtons.forEach(btn => {
-                if (btn.getAttribute('data-color') === shape.color) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+        // 6色パネルボタンのアクティブ状態を更新
+        let matchedPanel = false;
+        this.shapeColorButtons.forEach(btn => {
+            if (btn.getAttribute('data-color') === shape.color) {
+                btn.classList.add('active');
+                matchedPanel = true;
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // パネルと一致しない場合はカスタム色として扱う
+        if (!matchedPanel) {
+            // すべてのパネルボタンを非アクティブ化
+            this.shapeColorButtons.forEach(btn => btn.classList.remove('active'));
         }
+
+        // カスタムカラーピッカーを同期
+        if (this.customColor) this.customColor.value = shape.color;
 
         // 図形タイプを選択
         const shapeBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === shape.type);
@@ -605,6 +602,14 @@ class ShapeAnnotationManager {
         if (this.addNoShapeBtn) {
             setEnabled(this.addNoShapeBtn, true);
         }
+
+        // カスタムカラーピッカーを有効化
+        if (this.customColor) this.customColor.disabled = false;
+
+        // 6色パネルボタンを有効化
+        this.shapeColorButtons.forEach(button => {
+            button.disabled = false;
+        });
 
         // 時刻調整ボタンを有効化
         this.timeAdjustShapeButtons.forEach(button => {

@@ -5,8 +5,9 @@ class DetailTextManager {
     constructor() {
         // DOM要素
         this.detailText = document.getElementById('detailText');
-        this.detailTextColorPalette = document.getElementById('detailTextColorPalette');
-        this.detailBgColorPalette = document.getElementById('detailBgColorPalette');
+        this.presetButtons = document.querySelectorAll('.detail-preset-btn');
+        this.customTextColor = document.getElementById('detailCustomTextColor');
+        this.customBgColor = document.getElementById('detailCustomBgColor');
         this.addDetailTextBtn = document.getElementById('addDetailTextBtn');
         this.addNoDetailTextBtn = document.getElementById('addNoDetailTextBtn');
         this.detailTextList = document.getElementById('detailTextList');
@@ -16,9 +17,10 @@ class DetailTextManager {
         this.syncDetailTimeBtn = document.getElementById('syncDetailTime');
         this.resetDetailTimeBtn = document.getElementById('resetDetailTime');
 
-        // 選択された色
+        // 選択された色とプリセット
         this.selectedTextColor = '#000000'; // デフォルト: 黒
         this.selectedBgColor = '#FFFFFF';   // デフォルト: 白
+        this.selectedPreset = 'explanation'; // デフォルト: 説明
 
         // 詳細テキストデータ（配列）
         // 各詳細テキスト: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色 }
@@ -71,63 +73,65 @@ class DetailTextManager {
             });
         }
 
-        // カラーパレットのイベントハンドラ
-        this.initColorPalettes();
+        // 配色コントロールのイベントハンドラ
+        this.initColorControls();
     }
 
     /**
-     * カラーパレットの初期化
+     * 配色コントロールの初期化
      */
-    initColorPalettes() {
-        // 文字色パレット
-        if (this.detailTextColorPalette) {
-            const textColorButtons = this.detailTextColorPalette.querySelectorAll('.color-btn');
-            textColorButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const color = button.getAttribute('data-color');
-                    this.selectTextColor(color, button);
-                });
+    initColorControls() {
+        // プリセットボタン
+        this.presetButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const preset = button.getAttribute('data-preset');
+                const textColor = button.getAttribute('data-text-color');
+                const bgColor = button.getAttribute('data-bg-color');
+                this.selectPreset(preset, textColor, bgColor, button);
+            });
+        });
+
+        // カスタムカラーピッカー
+        if (this.customTextColor) {
+            this.customTextColor.addEventListener('change', () => {
+                this.selectCustomColors();
             });
         }
 
-        // 背景色パレット
-        if (this.detailBgColorPalette) {
-            const bgColorButtons = this.detailBgColorPalette.querySelectorAll('.color-btn');
-            bgColorButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const color = button.getAttribute('data-color');
-                    this.selectBgColor(color, button);
-                });
+        if (this.customBgColor) {
+            this.customBgColor.addEventListener('change', () => {
+                this.selectCustomColors();
             });
         }
     }
 
     /**
-     * 文字色を選択
+     * プリセットを選択
      */
-    selectTextColor(color, button) {
-        this.selectedTextColor = color;
+    selectPreset(preset, textColor, bgColor, button) {
+        this.selectedPreset = preset;
+        this.selectedTextColor = textColor;
+        this.selectedBgColor = bgColor;
 
-        // すべてのボタンから active クラスを削除
-        const buttons = this.detailTextColorPalette.querySelectorAll('.color-btn');
-        buttons.forEach(btn => btn.classList.remove('active'));
-
-        // クリックされたボタンに active クラスを追加
+        // プリセットボタンのactive状態を更新
+        this.presetButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
+
+        // カスタムカラーピッカーを同期
+        if (this.customTextColor) this.customTextColor.value = textColor;
+        if (this.customBgColor) this.customBgColor.value = bgColor;
     }
 
     /**
-     * 背景色を選択
+     * カスタム色を選択
      */
-    selectBgColor(color, button) {
-        this.selectedBgColor = color;
+    selectCustomColors() {
+        this.selectedTextColor = this.customTextColor.value;
+        this.selectedBgColor = this.customBgColor.value;
 
-        // すべてのボタンから active クラスを削除
-        const buttons = this.detailBgColorPalette.querySelectorAll('.color-btn');
-        buttons.forEach(btn => btn.classList.remove('active'));
-
-        // クリックされたボタンに active クラスを追加
-        button.classList.add('active');
+        // プリセットボタンのactive状態を解除
+        this.presetButtons.forEach(btn => btn.classList.remove('active'));
+        this.selectedPreset = null;
     }
 
     /**
@@ -226,37 +230,25 @@ class DetailTextManager {
         }
 
         this.detailTexts.forEach((detailTextObj, index) => {
-            const item = document.createElement('div');
-            item.className = 'detail-text-item';
-
-            // 時刻表示
-            const timeDiv = document.createElement('div');
-            timeDiv.className = 'detail-text-time';
-            timeDiv.textContent = formatTime(detailTextObj.time);
-            timeDiv.addEventListener('click', () => {
-                if (videoPlayer) {
-                    videoPlayer.seekTo(detailTextObj.time);
-                }
+            const item = createListItem({
+                itemClassName: 'detail-text-item',
+                time: detailTextObj.time,
+                timeClassName: 'detail-text-time',
+                useDecimalTime: false,
+                onTimeClick: () => {
+                    if (videoPlayer) {
+                        videoPlayer.seekTo(detailTextObj.time);
+                    }
+                },
+                text: detailTextObj.text || '（詳細テキストなし）',
+                textClassName: 'detail-text-content',
+                textStyle: {
+                    color: detailTextObj.textColor,
+                    backgroundColor: detailTextObj.bgColor
+                },
+                onEdit: null,
+                onDelete: () => this.deleteDetailText(index)
             });
-
-            // テキスト表示
-            const textDiv = document.createElement('div');
-            textDiv.className = 'detail-text-content';
-            textDiv.textContent = detailTextObj.text || '（詳細テキストなし）';
-            textDiv.style.color = detailTextObj.textColor;
-            textDiv.style.backgroundColor = detailTextObj.bgColor;
-
-            // 削除ボタン
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn-delete';
-            deleteBtn.textContent = '🗑 削除';
-            deleteBtn.addEventListener('click', () => {
-                this.deleteDetailText(index);
-            });
-
-            item.appendChild(timeDiv);
-            item.appendChild(textDiv);
-            item.appendChild(deleteBtn);
 
             this.detailTextList.appendChild(item);
         });
@@ -314,8 +306,13 @@ class DetailTextManager {
      */
     enableControls() {
         if (this.detailText) this.detailText.disabled = false;
+        if (this.customTextColor) this.customTextColor.disabled = false;
+        if (this.customBgColor) this.customBgColor.disabled = false;
         if (this.addDetailTextBtn) this.addDetailTextBtn.disabled = false;
         if (this.addNoDetailTextBtn) this.addNoDetailTextBtn.disabled = false;
+
+        // プリセットボタンを有効化
+        this.presetButtons.forEach(button => button.disabled = false);
 
         this.timeAdjustButtons.forEach(button => button.disabled = false);
         if (this.syncDetailTimeBtn) this.syncDetailTimeBtn.disabled = false;
