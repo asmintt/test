@@ -272,3 +272,68 @@ function isValidRange(start, end) {
 function isValidText(text, maxLength = 1000) {
     return typeof text === 'string' && text.length <= maxLength;
 }
+
+/**
+ * 矢印の画像を生成（透過PNG、base64形式）
+ * @param {Object} arrow - 矢印データ
+ * @param {number} arrow.x1 - 開始X座標
+ * @param {number} arrow.y1 - 開始Y座標
+ * @param {number} arrow.x2 - 終了X座標
+ * @param {number} arrow.y2 - 終了Y座標
+ * @param {string} arrow.color - 色（例: "#FF0000"）
+ * @param {number} arrow.lineWidth - 線の太さ
+ * @param {number} videoWidth - 動画の幅
+ * @param {number} videoHeight - 動画の高さ
+ * @returns {Object} { dataUrl: string, width: number, height: number }
+ */
+function generateArrowImage(arrow, videoWidth, videoHeight) {
+    // オフスクリーンCanvasを作成
+    const canvas = document.createElement('canvas');
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
+    const ctx = canvas.getContext('2d');
+
+    // 透過背景
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 矢印を描画
+    const { x1, y1, x2, y2, color, lineWidth } = arrow;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth || 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // 矢印の先端サイズをlineWidthに応じて調整
+    const headLength = Math.max(15, ctx.lineWidth * 3);
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+
+    // 直線を描画
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    // 矢印の先端を描画
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(
+        x2 - headLength * Math.cos(angle - Math.PI / 6),
+        y2 - headLength * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(
+        x2 - headLength * Math.cos(angle + Math.PI / 6),
+        y2 - headLength * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.stroke();
+
+    // PNG画像として出力（base64）
+    const dataUrl = canvas.toDataURL('image/png');
+
+    return {
+        dataUrl: dataUrl,
+        width: videoWidth,
+        height: videoHeight
+    };
+}

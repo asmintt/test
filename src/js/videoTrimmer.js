@@ -103,6 +103,31 @@ class VideoTrimmer {
                 displayHeight: video.offsetHeight
             };
 
+            // 矢印画像を生成して保存
+            const arrowImages = [];
+            if (includeAnnotations && shapes && shapes.length > 0) {
+                for (let i = 0; i < shapes.length; i++) {
+                    const shape = shapes[i];
+                    if (shape.type === 'arrow') {
+                        // 矢印画像を生成
+                        const arrowImageData = generateArrowImage(shape, videoScale.actualWidth, videoScale.actualHeight);
+
+                        // 画像を一時ファイルとして保存
+                        const filename = `arrow_${Date.now()}_${i}.png`;
+                        const imagePath = await window.electronApi.saveArrowImage(arrowImageData.dataUrl, filename);
+
+                        arrowImages.push({
+                            shapeIndex: i,
+                            imagePath: imagePath,
+                            startTime: shape.startTime,
+                            endTime: shape.endTime
+                        });
+
+                        console.log(`矢印画像を生成: ${imagePath}`);
+                    }
+                }
+            }
+
             // ファイルをArrayBufferとして読み込む
             const arrayBuffer = await this.readFileAsArrayBuffer(fileHandler.currentFile);
 
@@ -117,7 +142,8 @@ class VideoTrimmer {
                 shapes: shapes,
                 detailTexts: detailTexts,
                 videoScale: videoScale,
-                filename: projectTitle
+                filename: projectTitle,
+                arrowImages: arrowImages  // 矢印画像パス情報を追加
             });
 
             if (result.success) {
