@@ -28,7 +28,7 @@ class ProjectManager {
         // プロジェクト読み込みボタン
         if (this.loadProjectBtn) {
             this.loadProjectBtn.addEventListener('click', () => {
-                this.loadProjectFromFile();
+                this.loadProjectFromFolder();
             });
         }
     }
@@ -39,13 +39,11 @@ class ProjectManager {
     onVideoLoaded(fileName) {
         this.currentVideoFileName = fileName;
 
-        // ボタンを有効化
+        // プロジェクト保存ボタンを有効化
         if (this.saveProjectBtn) {
             setEnabled(this.saveProjectBtn, true);
         }
-        if (this.loadProjectBtn) {
-            setEnabled(this.loadProjectBtn, true);
-        }
+        // プロジェクト読み込みボタンは常に有効（フォルダから動画も自動的に読み込まれるため）
     }
 
     /**
@@ -133,34 +131,44 @@ class ProjectManager {
     }
 
     /**
-     * プロジェクトを保存
+     * プロジェクト保存のバリデーション
+     * @returns {Object|null} バリデーション結果（videoFile, projectTitle）またはnull
      */
-    async saveProject() {
+    validateProjectSave() {
         if (!this.currentVideoFileName) {
             alert(APP_CONSTANTS.MESSAGES.ERROR.NO_VIDEO);
-            return;
+            return null;
         }
 
         // Electron APIが利用可能かチェック
         if (!window.electronApi || !window.electronApi.saveProjectAsFolder) {
             alert(APP_CONSTANTS.MESSAGES.ERROR.NO_ELECTRON_API);
-            return;
+            return null;
         }
 
         // 動画ファイルを取得
         const videoFile = fileHandler ? fileHandler.getCurrentFile() : null;
         if (!videoFile) {
             alert(APP_CONSTANTS.MESSAGES.ERROR.NO_VIDEO_FILE);
-            return;
+            return null;
         }
 
         // プロジェクトタイトルを取得
         const projectTitle = videoPlayer ? videoPlayer.getProjectTitle() : '';
         if (!projectTitle) {
             alert(APP_CONSTANTS.MESSAGES.ERROR.NO_TITLE);
-            return;
+            return null;
         }
 
+        return { videoFile, projectTitle };
+    }
+
+    /**
+     * プロジェクトデータを準備
+     * @param {string} projectTitle - プロジェクトタイトル
+     * @returns {Object} 準備されたデータ
+     */
+    prepareProjectData(projectTitle) {
         // プロジェクトデータを収集
         const projectData = this.collectProjectData();
 
@@ -176,6 +184,23 @@ class ProjectManager {
 
         // 新しい動画ファイル名を生成（タイトル + 拡張子）
         const newVideoFileName = `${projectTitle}${extension}`;
+
+        return {
+            projectData,
+            jsonString,
+            projectName,
+            newVideoFileName,
+            extension
+        };
+    }
+
+    /**
+     * プロジェクト保存を実行
+     * @param {File} videoFile - 動画ファイル
+     * @param {Object} preparedData - 準備されたデータ
+     */
+    async executeSaveProject(videoFile, preparedData, projectTitle) {
+        const { jsonString, projectName, newVideoFileName } = preparedData;
 
         try {
             // 動画ファイルをArrayBufferとして読み込み
@@ -204,6 +229,23 @@ class ProjectManager {
             console.error('プロジェクト保存エラー:', error);
             alert(`プロジェクトの保存中にエラーが発生しました:\n${error.message}`);
         }
+    }
+
+    /**
+     * プロジェクトを保存
+     */
+    async saveProject() {
+        // バリデーション
+        const validation = this.validateProjectSave();
+        if (!validation) return;
+
+        const { videoFile, projectTitle } = validation;
+
+        // データ準備
+        const preparedData = this.prepareProjectData(projectTitle);
+
+        // 保存実行
+        await this.executeSaveProject(videoFile, preparedData, projectTitle);
     }
 
     /**
@@ -262,6 +304,87 @@ class ProjectManager {
         }
 
         console.log('[DEBUG] プロジェクトの読み込みが完了しました');
+    }
+
+    /**
+     * フォルダからプロジェクトを読み込み（推奨）
+     */
+    async loadProjectFromFolder() {
+        // Electron APIが利用可能かチェック
+        if (!window.electronApi || !window.electronApi.loadProjectFolder) {
+            alert('この機能はデスクトップアプリ版でのみ利用できます');
+            return;
+        }
+
+        try {
+            // IPC通信でフォルダ選択ダイアログを表示
+            const result = await window.electronApi.loadProjectFolder();
+
+            if (result.success && result.projectData) {
+                console.log('プロジェクトフォルダを読み込みました:', result.folderPath);
+
+                // プロジェクト読み込みフラグをON
+                this.isLoadingProject = true;
+
+                // 動画ファイルが見つかった場合、自動的に読み込む
+                if (result.videoData && result.videoFileName) {
+                    console.log('動画ファイルを読み込み中...', result.videoFileName);
+
+                    // ArrayBufferからBlobを作成
+                    const videoBlob = new Blob([result.videoData], { type: 'video/mp4' });
+                    const videoFile = new File([videoBlob], result.videoFileName, { type: videoBlob.type });
+
+                    // 動画ファイルを読み込み（fileHandlerを使用）
+                    if (fileHandler) {
+                        // ファイル名を表示
+                        const fileNameDisplay = document.getElementById('fileName');
+                        if (fileNameDisplay) {
+                            fileNameDisplay.textContent = `選択中: ${result.videoFileName}`;
+                        }
+
+                        // 現在のファイルを保存
+                        fileHandler.currentFile = videoFile;
+
+                        // 動画を読み込み
+                        const videoUrl = createBlobUrl(videoFile);
+                        if (fileHandler.onFileLoadedCallback) {
+                            fileHandler.onFileLoadedCallback(videoUrl, videoFile);
+                        }
+
+                        console.log('動画ファイルを読み込みました');
+                    }
+
+                    // 動画の読み込みが完了するまで少し待つ
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } else {
+                    // 動画ファイルがない場合は警告のみ（エラーにしない）
+                    console.warn('動画ファイルが見つかりませんでした');
+                }
+
+                // プロジェクトデータを適用
+                this.loadProject(result.projectData);
+
+                // プロジェクト読み込みフラグをOFF
+                this.isLoadingProject = false;
+
+                // 成功メッセージ
+                const message = result.videoFileName
+                    ? `プロジェクトを読み込みました:\n${result.folderPath}\n\n動画: ${result.videoFileName}`
+                    : `プロジェクトを読み込みました:\n${result.folderPath}\n\n※ 動画ファイルが見つかりませんでした`;
+                alert(message);
+
+            } else if (result.canceled) {
+                console.log('プロジェクトの読み込みがキャンセルされました');
+            } else {
+                console.error('プロジェクトの読み込みに失敗しました:', result.error);
+                alert(`プロジェクトの読み込みに失敗しました:\n${result.error}`);
+            }
+        } catch (error) {
+            console.error('プロジェクト読み込みエラー:', error);
+            alert(`プロジェクトの読み込み中にエラーが発生しました:\n${error.message}`);
+            // エラー時もフラグをOFF
+            this.isLoadingProject = false;
+        }
     }
 
     /**

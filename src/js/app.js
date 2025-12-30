@@ -103,6 +103,7 @@ class App {
      * タブ切り替え機能を初期化
      */
     initializeTabs() {
+        // 右サイドバーのタブ（テキスト注釈、図形、詳細テキスト）
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
 
@@ -122,6 +123,29 @@ class App {
                 }
 
                 console.log('タブ切り替え:', targetTab);
+            });
+        });
+
+        // 左サイドバーの開始タブ（新規作成、既存を開く）
+        const startTabButtons = document.querySelectorAll('.start-tab-btn');
+        const startTabContents = document.querySelectorAll('.start-tab-content');
+
+        startTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-start-tab');
+
+                // すべてのタブボタンとコンテンツから active クラスを削除
+                startTabButtons.forEach(btn => btn.classList.remove('active'));
+                startTabContents.forEach(content => content.classList.remove('active'));
+
+                // クリックされたタブボタンとコンテンツに active クラスを追加
+                button.classList.add('active');
+                const targetContent = document.getElementById(targetTab === 'new' ? 'newProjectTab' : 'openProjectTab');
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+
+                console.log('開始タブ切り替え:', targetTab);
             });
         });
 

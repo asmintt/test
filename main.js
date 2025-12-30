@@ -410,6 +410,9 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
             const w = Math.round(Math.abs(shape.x2 - shape.x1) * scaleX);
             const h = Math.round(Math.abs(shape.y2 - shape.y1) * scaleY);
 
+            // lineWidthを使用（後方互換性のため、なければ5）
+            const lineWidth = shape.lineWidth || 5;
+
             filterObj = {
                 filter: 'drawbox',
                 options: {
@@ -418,26 +421,47 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
                     w: w,
                     h: h,
                     color: shape.color,
-                    t: Math.round(3 * scaleX),  // 線の太さもスケール
+                    t: Math.round(lineWidth * scaleX),  // shape.lineWidthを使用
                     enable: `between(t,${displayStartTime},${displayEndTime})`
                 },
                 inputs: currentInput
             };
         } else if (shape.type === 'arrow') {
-            // 矢印: →記号のみで描画（プレビューと統一）
-            // 座標をスケール変換
+            // 矢印: 幾何学的矢印（直線+先端記号）
+            const x1 = Math.round(shape.x1 * scaleX);
+            const y1 = Math.round(shape.y1 * scaleY);
             const x2 = Math.round(shape.x2 * scaleX);
             const y2 = Math.round(shape.y2 * scaleY);
 
-            // →記号を描画
+            // lineWidthを使用（後方互換性のため、なければ5）
+            const lineWidth = shape.lineWidth || 5;
+            const scaledLineWidth = Math.round(lineWidth * Math.min(scaleX, scaleY));
+
+            // 直線部分を描画（drawboxで細長いboxとして描画）
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+
+            // 直線: drawboxで実装（水平線として描画後、回転は不可なので近似）
+            // 簡略化: 水平・垂直・45度の矢印のみ正確に描画可能
+            // 一般的な角度の場合は、drawtextで「→」を回転して描画
+            // FFmpegのdrawboxは回転をサポートしないため、drawtextのみ使用
+
+            // 矢印の先端サイズをlineWidthに応じて調整
+            const baseFontSize = 16 + (lineWidth * 4.8);
+            const fontSize = Math.round(baseFontSize * Math.min(scaleX, scaleY));
+
+            // 矢印全体をdrawtextで描画（→記号）
+            // TODO: 将来的にはoverlayフィルターで幾何学的矢印を実装
             filterObj = {
                 filter: 'drawtext',
                 options: {
                     text: '→',
-                    fontsize: Math.round(40 * Math.min(scaleX, scaleY)),
+                    fontsize: fontSize,
                     fontcolor: shape.color,
-                    x: x2 - Math.round(20 * scaleX),
-                    y: y2 - Math.round(10 * scaleY),
+                    x: x2 - Math.round((baseFontSize / 2) * scaleX),
+                    y: y2 - Math.round((baseFontSize / 4) * scaleY),
                     enable: `between(t,${displayStartTime},${displayEndTime})`
                 },
                 inputs: currentInput
@@ -478,6 +502,20 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
 
         const fontSize = 60;
 
+        // 動画の実際の高さを取得
+        const videoHeight = videoScale ? videoScale.actualHeight : 1080;
+
+        // 文字位置に応じたx座標を計算
+        const textAlign = ann.textAlign || 'center';
+        let xPosition;
+        if (textAlign === 'left') {
+            xPosition = '40'; // 左寄せ
+        } else if (textAlign === 'right') {
+            xPosition = 'w-text_w-40'; // 右寄せ
+        } else {
+            xPosition = '(w-text_w)/2'; // 中央揃え
+        }
+
         // 1段目のテキストがある場合
         if (ann.text1 && ann.text1.trim() !== '') {
             const escapedText1 = ann.text1
@@ -495,8 +533,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
                     box: 1,
                     boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
                     boxborderw: 15,
-                    x: '(w-text_w)/2', // 中央揃え
-                    y: `h-${textAreaHeight/2}-text_h-10`, // 1段目（上）
+                    x: xPosition,
+                    y: videoHeight + 20, // 1段目（白い領域の上部）
                     enable: `between(t,${displayStartTime},${displayEndTime})`
                 },
                 inputs: currentInput
@@ -523,8 +561,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
                     box: 1,
                     boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
                     boxborderw: 15,
-                    x: '(w-text_w)/2', // 中央揃え
-                    y: `h-${textAreaHeight/2}+10`, // 2段目（下）
+                    x: xPosition,
+                    y: videoHeight + 90, // 2段目（白い領域の中央下）
                     enable: `between(t,${displayStartTime},${displayEndTime})`
                 },
                 inputs: currentInput
@@ -558,6 +596,23 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
             .replace(/'/g, "\\\\'")
             .replace(/:/g, '\\\\:');
 
+        // 動画の実際の高さを取得
+        const videoHeight = videoScale ? videoScale.actualHeight : 1080;
+
+        // 背景透明度を取得（0.0-1.0、デフォルト1.0）
+        const bgOpacity = detail.bgOpacity !== undefined ? detail.bgOpacity : 1.0;
+
+        // 文字位置に応じたx座標を計算
+        const detailTextAlign = detail.textAlign || 'left';
+        let detailXPosition;
+        if (detailTextAlign === 'left') {
+            detailXPosition = '40'; // 左寄せ
+        } else if (detailTextAlign === 'right') {
+            detailXPosition = 'w-text_w-40'; // 右寄せ
+        } else {
+            detailXPosition = '(w-text_w)/2'; // 中央揃え
+        }
+
         const filterObj = {
             filter: 'drawtext',
             options: {
@@ -566,10 +621,10 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
                 fontsize: 16, // 12 → 16 に変更（数字の歪みを防ぐ）
                 fontcolor: detail.textColor || '#000000',
                 box: 1,
-                boxcolor: `${detail.bgColor || '#ffffff'}@1.0`,
+                boxcolor: `${detail.bgColor || '#ffffff'}@${bgOpacity.toFixed(2)}`,
                 boxborderw: 3,
-                x: '40', // 左寄せ（左から40px）
-                y: 'h-15-text_h/2', // 最下部（メインテキストと重ならないように調整）
+                x: detailXPosition,
+                y: videoHeight - 25, // 動画エリアの最下部（白い領域の直前）
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },
             inputs: currentInput

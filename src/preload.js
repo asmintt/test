@@ -46,6 +46,13 @@ contextBridge.exposeInMainWorld('electronApi', {
     loadProjectFile: () => ipcRenderer.invoke('load-project-file'),
 
     /**
+     * プロジェクトフォルダを読み込み（推奨）
+     * フォルダを選択し、動画とJSONファイルを自動的に読み込む
+     * @returns {Promise} 読み込み結果
+     */
+    loadProjectFolder: () => ipcRenderer.invoke('load-project-folder'),
+
+    /**
      * Node.jsのpathモジュールの機能を提供
      * （ファイルパスの処理に使用）
      */

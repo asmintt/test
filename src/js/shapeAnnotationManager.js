@@ -8,6 +8,7 @@ class ShapeAnnotationManager {
         this.ctx = this.canvas?.getContext('2d');
         this.shapeButtons = document.querySelectorAll('.shape-btn');
         this.shapeColorButtons = document.querySelectorAll('.shape-color-btn');
+        this.shapeLineWidthButtons = document.querySelectorAll('.shape-linewidth-btn');
         this.customColor = document.getElementById('shapeCustomColor');
         this.shapeList = document.getElementById('shapeList');
         this.addShapeBtn = document.getElementById('addShapeBtn');
@@ -22,6 +23,9 @@ class ShapeAnnotationManager {
         // 選択された色
         this.selectedShapeColor = '#FF0000'; // デフォルト: 赤
 
+        // 選択された枠線の太さ
+        this.selectedLineWidth = 5; // デフォルト: 5px（標準）
+
         // 現在の図形タイプ
         this.currentShapeType = null;
 
@@ -30,8 +34,8 @@ class ShapeAnnotationManager {
         this.startX = 0;
         this.startY = 0;
 
-        // 一時的な図形（追加前のプレビュー）
-        this.pendingShape = null;
+        // 一時的な図形（追加前のプレビュー）- 複数対応
+        this.pendingShapes = [];
 
         // 図形データ（配列）
         // 各図形: { time, type, x1, y1, x2, y2, color }
@@ -58,11 +62,11 @@ class ShapeAnnotationManager {
             });
         });
 
-        // 「追加」ボタン
+        // 「すべて追加」ボタン
         if (this.addShapeBtn) {
             this.addShapeBtn.addEventListener('click', () => {
-                console.log('追加ボタンがクリックされました');
-                this.confirmPendingShape();
+                console.log('すべて追加ボタンがクリックされました');
+                this.confirmAllPendingShapes();
             });
         } else {
             console.error('addShapeBtn要素が見つかりません');
@@ -114,14 +118,14 @@ class ShapeAnnotationManager {
             });
         }
 
-        // カラーコントロールの初期化
-        this.initColorControls();
+        // 図形コントロール（色・太さ）の初期化
+        this.initShapeControls();
     }
 
     /**
-     * カラーコントロールの初期化
+     * 図形コントロール（色・太さ）の初期化
      */
-    initColorControls() {
+    initShapeControls() {
         // 6色パネルボタン
         this.shapeColorButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -136,6 +140,14 @@ class ShapeAnnotationManager {
                 this.selectCustomColor();
             });
         }
+
+        // 枠線の太さボタン
+        this.shapeLineWidthButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const lineWidth = parseInt(button.getAttribute('data-linewidth'), 10);
+                this.selectLineWidth(lineWidth, button);
+            });
+        });
     }
 
     /**
@@ -152,6 +164,12 @@ class ShapeAnnotationManager {
 
         // カスタムカラーピッカーを同期
         if (this.customColor) this.customColor.value = color;
+
+        // pendingShapes（確定前の図形）の最後の図形の色を更新
+        if (this.pendingShapes.length > 0) {
+            this.pendingShapes[this.pendingShapes.length - 1].color = color;
+            this.redrawShapes(); // リアルタイムプレビュー更新
+        }
     }
 
     /**
@@ -162,6 +180,34 @@ class ShapeAnnotationManager {
 
         // パネルボタンのactive状態を解除
         this.shapeColorButtons.forEach(btn => btn.classList.remove('active'));
+
+        // pendingShapes（確定前の図形）の最後の図形の色を更新
+        if (this.pendingShapes.length > 0) {
+            this.pendingShapes[this.pendingShapes.length - 1].color = this.customColor.value;
+            this.redrawShapes(); // リアルタイムプレビュー更新
+        }
+    }
+
+    /**
+     * 枠線の太さを選択
+     * @param {number} lineWidth - 選択された太さ
+     * @param {HTMLElement} button - クリックされたボタン
+     */
+    selectLineWidth(lineWidth, button) {
+        this.selectedLineWidth = lineWidth;
+
+        // ボタンのactive状態を更新
+        this.shapeLineWidthButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        // pendingShapes（確定前の図形）の最後の図形の太さを更新
+        if (this.pendingShapes.length > 0) {
+            this.pendingShapes[this.pendingShapes.length - 1].lineWidth = lineWidth;
+            this.redrawShapes(); // リアルタイムプレビュー更新
+            console.log(`枠線の太さを${lineWidth}pxに変更し、プレビューを更新しました`);
+        } else {
+            console.log(`枠線の太さを${lineWidth}pxに変更しました`);
+        }
     }
 
     /**
@@ -234,7 +280,7 @@ class ShapeAnnotationManager {
         this.redrawShapes();
 
         // プレビュー図形を描画
-        this.drawShape(this.currentShapeType, this.startX, this.startY, currentX, currentY, this.selectedShapeColor);
+        this.drawShape(this.currentShapeType, this.startX, this.startY, currentX, currentY, this.selectedShapeColor, this.selectedLineWidth);
     }
 
     /**
@@ -253,7 +299,7 @@ class ShapeAnnotationManager {
         // 図形が小さすぎる場合はキャンセル
         const distance = Math.sqrt(Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2));
         if (distance < 10) {
-            this.pendingShape = null;
+            // 図形が小さすぎる場合はキャンセル（何も追加しない）
             this.redrawShapes();
             return;
         }
@@ -261,23 +307,26 @@ class ShapeAnnotationManager {
         // 現在の動画時刻を取得
         const currentTime = videoPlayer ? videoPlayer.getCurrentTime() : 0;
 
-        // 一時的な図形として保存（まだ確定しない）
-        this.pendingShape = {
+        // 一時的な図形として配列に追加
+        const newShape = {
             time: currentTime,
             type: this.currentShapeType,
             x1: this.startX,
             y1: this.startY,
             x2: endX,
             y2: endY,
-            color: this.selectedShapeColor
+            color: this.selectedShapeColor,
+            lineWidth: this.selectedLineWidth
         };
 
-        console.log('図形を描画しました（未確定）:', this.pendingShape);
+        this.pendingShapes.push(newShape);
+        console.log('図形を描画しました（未確定）:', newShape);
+        console.log('現在の未確定図形数:', this.pendingShapes.length);
 
-        // 「追加」ボタンを有効化
+        // 「すべて追加」ボタンを有効化
         if (this.addShapeBtn) {
             setEnabled(this.addShapeBtn, true);
-            console.log('追加ボタンを有効化しました');
+            console.log('すべて追加ボタンを有効化しました');
         }
 
         // プレビュー表示を維持（redrawShapesで一時図形も描画される）
@@ -285,22 +334,27 @@ class ShapeAnnotationManager {
     }
 
     /**
-     * 一時保存された図形を確定して追加
+     * すべての未確定図形を確定して追加
      */
-    confirmPendingShape() {
-        console.log('confirmPendingShape呼び出し - pendingShape:', this.pendingShape);
+    confirmAllPendingShapes() {
+        console.log('confirmAllPendingShapes呼び出し - pendingShapes数:', this.pendingShapes.length);
 
-        if (!this.pendingShape) {
-            console.log('pendingShapeがnullのため処理を中断');
+        if (this.pendingShapes.length === 0) {
+            console.log('pendingShapesが空のため処理を中断');
             return;
         }
 
-        // 図形を配列に追加
-        this.shapes.push(this.pendingShape);
-        console.log('図形を配列に追加しました。現在の図形数:', this.shapes.length);
-        this.pendingShape = null;
+        // すべての未確定図形を配列に追加
+        this.pendingShapes.forEach(shape => {
+            this.shapes.push(shape);
+        });
+        console.log('図形を配列に追加しました。追加した図形数:', this.pendingShapes.length);
+        console.log('現在の図形総数:', this.shapes.length);
 
-        // 「追加」ボタンを無効化
+        // pendingShapesをクリア
+        this.pendingShapes = [];
+
+        // ボタンを無効化
         if (this.addShapeBtn) {
             setEnabled(this.addShapeBtn, false);
         }
@@ -317,6 +371,15 @@ class ShapeAnnotationManager {
 
         // コールバック実行
         this.notifyChange();
+
+        // 図形選択を解除して、カーソルを通常に戻す
+        this.selectShape('none');
+
+        // 「選択解除」ボタンをアクティブにする
+        const noneBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === 'none');
+        if (noneBtn) {
+            this.updateButtonStates(noneBtn);
+        }
     }
 
     /**
@@ -335,13 +398,23 @@ class ShapeAnnotationManager {
             y1: 0,
             x2: 0,
             y2: 0,
-            color: '#000000'
+            color: '#000000',
+            lineWidth: 5
         };
 
         this.shapes.push(shape);
         this.sortShapes();
         this.updateShapeList();
         this.notifyChange();
+
+        // 図形選択を解除して、カーソルを通常に戻す
+        this.selectShape('none');
+
+        // 「選択解除」ボタンをアクティブにする
+        const noneBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === 'none');
+        if (noneBtn) {
+            this.updateButtonStates(noneBtn);
+        }
     }
 
     /**
@@ -359,10 +432,11 @@ class ShapeAnnotationManager {
      * @param {number} x2 - 終了X座標
      * @param {number} y2 - 終了Y座標
      * @param {string} color - 色
+     * @param {number} lineWidth - 枠線の太さ（デフォルト: this.selectedLineWidth）
      */
-    drawShape(type, x1, y1, x2, y2, color) {
+    drawShape(type, x1, y1, x2, y2, color, lineWidth = this.selectedLineWidth) {
         this.ctx.strokeStyle = color;
-        this.ctx.lineWidth = 3;
+        this.ctx.lineWidth = lineWidth;
         this.ctx.fillStyle = 'transparent';
 
         switch (type) {
@@ -377,7 +451,7 @@ class ShapeAnnotationManager {
     }
 
     /**
-     * 矢印を描画（→記号のみ）
+     * 矢印を描画（幾何学的な矢印：直線+三角形）
      * @param {number} x1 - 開始X座標
      * @param {number} y1 - 開始Y座標
      * @param {number} x2 - 終了X座標
@@ -385,10 +459,30 @@ class ShapeAnnotationManager {
      * @param {string} color - 色
      */
     drawArrow(x1, y1, x2, y2, color) {
-        // →記号を描画
-        this.ctx.font = '40px sans-serif';
-        this.ctx.fillStyle = color;
-        this.ctx.fillText('→', x2 - 20, y2 + 10);
+        // lineWidthに応じて矢印の先端サイズを調整
+        const currentLineWidth = this.ctx.lineWidth || this.selectedLineWidth;
+        const headLength = Math.max(15, currentLineWidth * 3); // 最小15px、lineWidthの3倍
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+
+        // 直線を描画
+        this.ctx.beginPath();
+        this.ctx.moveTo(x1, y1);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.stroke();
+
+        // 矢印の先端を描画
+        this.ctx.beginPath();
+        this.ctx.moveTo(x2, y2);
+        this.ctx.lineTo(
+            x2 - headLength * Math.cos(angle - Math.PI / 6),
+            y2 - headLength * Math.sin(angle - Math.PI / 6)
+        );
+        this.ctx.moveTo(x2, y2);
+        this.ctx.lineTo(
+            x2 - headLength * Math.cos(angle + Math.PI / 6),
+            y2 - headLength * Math.sin(angle + Math.PI / 6)
+        );
+        this.ctx.stroke();
     }
 
     /**
@@ -400,28 +494,36 @@ class ShapeAnnotationManager {
         if (this.shapes.length === 0) return [];
 
         const activeShapes = [];
+        let lastShapeTime = -1;
 
-        // 現在時刻以前の図形を取得
-        for (let i = 0; i < this.shapes.length; i++) {
+        // 現在時刻以前の図形を逆順で走査
+        for (let i = this.shapes.length - 1; i >= 0; i--) {
             const shape = this.shapes[i];
 
-            if (shape.time > currentTime) break;
+            // 現在時刻より未来の図形はスキップ
+            if (shape.time > currentTime) continue;
 
-            // 次の図形を確認
-            const nextShape = this.shapes[i + 1];
-
-            if (nextShape && nextShape.time <= currentTime) {
-                // 次の図形がすでに開始している場合はスキップ
-                continue;
+            // 「図形なし」が見つかったらそれ以降の図形を無効化
+            if (shape.type === '') {
+                break;
             }
 
-            // 現在の図形が「図形なし」でない場合は追加
-            if (shape.type !== '') {
+            // まだ有効な図形時刻が設定されていない場合
+            if (lastShapeTime === -1) {
+                lastShapeTime = shape.time;
+            }
+
+            // 同じタイムスタンプの図形はすべて追加
+            if (shape.time === lastShapeTime) {
                 activeShapes.push(shape);
+            } else {
+                // 異なるタイムスタンプに到達したら終了
+                break;
             }
         }
 
-        return activeShapes;
+        // 逆順で追加したので、元の順序に戻す
+        return activeShapes.reverse();
     }
 
     /**
@@ -437,21 +539,24 @@ class ShapeAnnotationManager {
             const activeShapes = this.getActiveShapesAtTime(currentTime);
 
             activeShapes.forEach(shape => {
-                this.drawShape(shape.type, shape.x1, shape.y1, shape.x2, shape.y2, shape.color);
+                // 後方互換性: lineWidthがない場合はデフォルト値5を使用
+                const lineWidth = shape.lineWidth || 5;
+                this.drawShape(shape.type, shape.x1, shape.y1, shape.x2, shape.y2, shape.color, lineWidth);
             });
         }
 
-        // 一時図形（未確定）も描画
-        if (this.pendingShape) {
+        // 一時図形（未確定）もすべて描画
+        this.pendingShapes.forEach(shape => {
             this.drawShape(
-                this.pendingShape.type,
-                this.pendingShape.x1,
-                this.pendingShape.y1,
-                this.pendingShape.x2,
-                this.pendingShape.y2,
-                this.pendingShape.color
+                shape.type,
+                shape.x1,
+                shape.y1,
+                shape.x2,
+                shape.y2,
+                shape.color,
+                shape.lineWidth || this.selectedLineWidth
             );
-        }
+        });
     }
 
     /**
@@ -543,6 +648,18 @@ class ShapeAnnotationManager {
         // カスタムカラーピッカーを同期
         if (this.customColor) this.customColor.value = shape.color;
 
+        // 枠線の太さを設定（後方互換性）
+        this.selectedLineWidth = shape.lineWidth || 5;
+
+        // 太さボタンのアクティブ状態を更新
+        this.shapeLineWidthButtons.forEach(btn => {
+            if (parseInt(btn.getAttribute('data-linewidth'), 10) === this.selectedLineWidth) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
         // 図形タイプを選択
         const shapeBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === shape.type);
         if (shapeBtn) {
@@ -586,6 +703,7 @@ class ShapeAnnotationManager {
      */
     clearShapes() {
         this.shapes = [];
+        this.pendingShapes = [];
         this.redrawShapes();
         this.updateShapeList();
         this.notifyChange();
@@ -608,6 +726,11 @@ class ShapeAnnotationManager {
 
         // 6色パネルボタンを有効化
         this.shapeColorButtons.forEach(button => {
+            button.disabled = false;
+        });
+
+        // 枠線の太さボタンを有効化
+        this.shapeLineWidthButtons.forEach(button => {
             button.disabled = false;
         });
 

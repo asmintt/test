@@ -517,6 +517,10 @@ details:not([open]) summary h2::before {
 
 /* 詳細テキスト表示エリア */
 .detail-text-display {
+    position: absolute;
+    bottom: calc(60px + 25px); /* 60px for text-annotation-display + 25px from video bottom */
+    left: 40px;
+    right: 40px;
     min-height: 35px;
     display: flex;
     align-items: center;
@@ -525,10 +529,12 @@ details:not([open]) summary h2::before {
     font-size: 0.85rem;
     text-align: left;
     font-family: "Hiragino Sans", sans-serif;
-    background: #1a1a1a;
-    border-top: 1px solid #333;
+    background: transparent; /* Transparent background to match export overlay */
+    border: none; /* Remove border */
     opacity: 0;
     transition: opacity 0.3s;
+    pointer-events: none; /* Don't block video interaction */
+    z-index: 5; /* Above video but below controls */
 }
 
 .detail-text-display.visible {
@@ -735,8 +741,9 @@ details:not([open]) summary h2::before {
 }
 
 .preset-buttons {
-    display: flex;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
 }
 
 .preset-btn {
@@ -745,8 +752,8 @@ details:not([open]) summary h2::before {
     border: 2px solid #ddd;
     border-radius: 6px;
     background: white;
-    color: #333;
-    font-size: 0.85rem;
+    color: #666;
+    font-size: 0.65rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -768,6 +775,41 @@ details:not([open]) summary h2::before {
     cursor: not-allowed;
 }
 
+/* 配色プリセット - 実際の色を表示 */
+.preset-btn[data-preset="explanation"] {
+    background-color: #FFFFFF;
+    color: #000000;
+    border: 2px solid #ddd;
+}
+
+.preset-btn[data-preset="point"] {
+    background-color: #E3F2FD;
+    color: #000000;
+    border: 2px solid #90CAF9;
+}
+
+.preset-btn[data-preset="caution"] {
+    background-color: #FFE5E0;
+    color: #000000;
+    border: 2px solid #FFAB91;
+}
+
+/* 選択中の状態 - 太い枠線で強調 */
+.preset-btn[data-preset="explanation"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+}
+
+.preset-btn[data-preset="point"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+}
+
+.preset-btn[data-preset="caution"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+}
+
 /* 詳細タブのプリセットボタン（注釈タブと同じスタイル） */
 .detail-preset-btn {
     flex: 1;
@@ -775,8 +817,8 @@ details:not([open]) summary h2::before {
     border: 2px solid #ddd;
     border-radius: 6px;
     background: white;
-    color: #333;
-    font-size: 0.85rem;
+    color: #666;
+    font-size: 0.65rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -796,6 +838,41 @@ details:not([open]) summary h2::before {
 .detail-preset-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* 詳細タブ配色プリセット - 実際の色を表示 */
+.detail-preset-btn[data-preset="explanation"] {
+    background-color: #FFFFFF;
+    color: #000000;
+    border: 2px solid #ddd;
+}
+
+.detail-preset-btn[data-preset="point"] {
+    background-color: #E3F2FD;
+    color: #000000;
+    border: 2px solid #90CAF9;
+}
+
+.detail-preset-btn[data-preset="caution"] {
+    background-color: #FFE5E0;
+    color: #000000;
+    border: 2px solid #FFAB91;
+}
+
+/* 選択中の状態 - 太い枠線で強調 */
+.detail-preset-btn[data-preset="explanation"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+}
+
+.detail-preset-btn[data-preset="point"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+}
+
+.detail-preset-btn[data-preset="caution"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
 }
 
 /* 図形タブの6色パネル */
@@ -839,6 +916,58 @@ details:not([open]) summary h2::before {
 }
 
 .shape-color-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 枠線の太さ選択パネル */
+.shape-linewidth-panel-section {
+    margin-bottom: 12px;
+}
+
+.shape-linewidth-panel-section label {
+    display: block;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.shape-linewidth-panel {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.shape-linewidth-btn {
+    width: 100%;
+    height: 36px;
+    padding: 0;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.shape-linewidth-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    background: rgba(44, 82, 130, 0.05);
+}
+
+.shape-linewidth-btn.active {
+    border-color: #2c5282;
+    border-width: 3px;
+    background: rgba(44, 82, 130, 0.1);
+    color: #2c5282;
+    transform: scale(1.05);
+}
+
+.shape-linewidth-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -906,6 +1035,125 @@ details:not([open]) summary h2::before {
 .color-input-row input[type="color"]:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.color-input-row input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, transparent 0%, #2c5282 100%);
+    outline: none;
+    cursor: pointer;
+}
+
+.color-input-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2c5282;
+    cursor: pointer;
+}
+
+.color-input-row input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2c5282;
+    cursor: pointer;
+    border: none;
+}
+
+.color-input-row input[type="range"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.color-input-row span {
+    min-width: 45px;
+    text-align: right;
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 600;
+}
+
+/* 文字位置選択セクション */
+.text-align-section {
+    margin-top: 12px;
+}
+
+.text-align-section label {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.text-align-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.text-align-btn,
+.detail-text-align-btn {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.text-align-btn:hover:not(:disabled),
+.detail-text-align-btn:hover:not(:disabled) {
+    border-color: #2c5282;
+    background: rgba(44, 82, 130, 0.05);
+}
+
+.text-align-btn.active,
+.detail-text-align-btn.active {
+    border-color: #2c5282;
+    background: rgba(44, 82, 130, 0.1);
+    color: #2c5282;
+}
+
+.text-align-btn:disabled,
+.detail-text-align-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 登録ボタン */
+.btn-save-preset {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 16px;
+    background: #2c5282;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-save-preset:hover:not(:disabled) {
+    background: #2a4365;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(44, 82, 130, 0.3);
+}
+
+.btn-save-preset:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .annotation-list,

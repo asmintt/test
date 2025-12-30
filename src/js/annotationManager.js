@@ -10,6 +10,9 @@ class AnnotationManager {
         this.presetButtons = document.querySelectorAll('.preset-btn');
         this.customTextColor = document.getElementById('customTextColor');
         this.customBgColor = document.getElementById('customBgColor');
+        this.textAlignButtons = document.querySelectorAll('.text-align-btn');
+        this.saveCustomPresetBtn = document.getElementById('saveCustomPresetBtn');
+        this.customPresetBtn = document.getElementById('customPresetBtn');
         this.addAnnotationBtn = document.getElementById('addAnnotationBtn');
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
         this.annotationList = document.getElementById('annotationList');
@@ -24,9 +27,10 @@ class AnnotationManager {
         this.selectedBgColor = '#FFFFFF';   // デフォルト: 白
         this.selectedFont = 'Noto Sans JP'; // デフォルト: Noto Sans JP
         this.selectedPreset = 'explanation'; // デフォルト: 説明
+        this.selectedTextAlign = 'center';  // デフォルト: 中央
 
         // 注釈データ（配列）
-        // 各注釈: { time: 秒数, text1: 1段目テキスト, text2: 2段目テキスト, textColor: 色, bgColor: 色, font: フォント }
+        // 各注釈: { time: 秒数, text1: 1段目テキスト, text2: 2段目テキスト, textColor: 色, bgColor: 色, font: フォント, textAlign: 文字位置 }
         this.annotations = [];
 
         // コールバック
@@ -81,6 +85,29 @@ class AnnotationManager {
         if (this.textFontSelect) {
             this.textFontSelect.addEventListener('change', () => {
                 this.selectedFont = this.textFontSelect.value;
+
+                // 入力フィールドにフォントを適用（プレビュー）
+                if (this.annotationText1) {
+                    this.annotationText1.style.fontFamily = `"${this.selectedFont}", sans-serif`;
+                }
+                if (this.annotationText2) {
+                    this.annotationText2.style.fontFamily = `"${this.selectedFont}", sans-serif`;
+                }
+            });
+        }
+
+        // 文字位置ボタンのイベントハンドラ
+        this.textAlignButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const align = button.getAttribute('data-align');
+                this.selectTextAlign(align, button);
+            });
+        });
+
+        // 登録ボタンのイベントハンドラ
+        if (this.saveCustomPresetBtn) {
+            this.saveCustomPresetBtn.addEventListener('click', () => {
+                this.saveCustomPreset();
             });
         }
     }
@@ -125,6 +152,20 @@ class AnnotationManager {
         this.selectedTextColor = textColor;
         this.selectedBgColor = bgColor;
 
+        // 文字位置も取得
+        const textAlign = button.getAttribute('data-text-align');
+        if (textAlign) {
+            this.selectedTextAlign = textAlign;
+
+            // 文字位置ボタンのactive状態を更新
+            this.textAlignButtons.forEach(btn => btn.classList.remove('active'));
+            this.textAlignButtons.forEach(btn => {
+                if (btn.getAttribute('data-align') === textAlign) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
         // プリセットボタンのactive状態を更新
         this.presetButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
@@ -147,6 +188,45 @@ class AnnotationManager {
     }
 
     /**
+     * 文字位置を選択
+     * @param {string} align - 文字位置（left/center/right）
+     * @param {HTMLElement} button - クリックされたボタン
+     */
+    selectTextAlign(align, button) {
+        this.selectedTextAlign = align;
+
+        // 文字位置ボタンのactive状態を更新
+        this.textAlignButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        console.log(`文字位置を${align}に変更しました`);
+    }
+
+    /**
+     * カスタムプリセットに登録
+     */
+    saveCustomPreset() {
+        if (!this.customPresetBtn) return;
+
+        // 現在の設定をカスタムボタンに保存
+        this.customPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
+        this.customPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
+        this.customPresetBtn.setAttribute('data-text-align', this.selectedTextAlign);
+
+        // ボタンに色を視覚的に反映
+        this.customPresetBtn.style.color = this.selectedTextColor;
+        this.customPresetBtn.style.backgroundColor = this.selectedBgColor;
+
+        console.log('カスタムプリセットを登録しました:', {
+            textColor: this.selectedTextColor,
+            bgColor: this.selectedBgColor,
+            textAlign: this.selectedTextAlign
+        });
+
+        alert('カスタム設定を登録しました！');
+    }
+
+    /**
      * 動画読み込み時の設定
      */
     onVideoLoaded() {
@@ -158,11 +238,17 @@ class AnnotationManager {
             this.customTextColor,
             this.customBgColor,
             this.addAnnotationBtn,
-            this.addBlankAnnotationBtn
+            this.addBlankAnnotationBtn,
+            this.saveCustomPresetBtn
         ], true);
 
         // プリセットボタンを有効化
         this.presetButtons.forEach(button => {
+            button.disabled = false;
+        });
+
+        // 文字位置ボタンを有効化
+        this.textAlignButtons.forEach(button => {
             button.disabled = false;
         });
 
@@ -172,6 +258,14 @@ class AnnotationManager {
         });
         if (this.syncAnnotationTimeBtn) this.syncAnnotationTimeBtn.disabled = false;
         if (this.resetAnnotationTimeBtn) this.resetAnnotationTimeBtn.disabled = false;
+
+        // 初期フォントを入力フィールドに適用
+        if (this.annotationText1) {
+            this.annotationText1.style.fontFamily = `"${this.selectedFont}", sans-serif`;
+        }
+        if (this.annotationText2) {
+            this.annotationText2.style.fontFamily = `"${this.selectedFont}", sans-serif`;
+        }
 
         // プロジェクト読み込み中でない場合のみ注釈リストをクリア
         if (projectManager && !projectManager.isLoadingProject) {
@@ -226,7 +320,8 @@ class AnnotationManager {
             text2: text2,
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
-            font: this.selectedFont
+            font: this.selectedFont,
+            textAlign: this.selectedTextAlign
         };
 
         // 配列に追加して時刻順にソート
@@ -259,7 +354,8 @@ class AnnotationManager {
             text2: '',
             textColor: '#000000',
             bgColor: '#ffffff',
-            font: this.selectedFont
+            font: this.selectedFont,
+            textAlign: 'center'
         };
 
         this.annotations.push(annotation);

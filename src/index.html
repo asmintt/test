@@ -141,9 +141,7 @@
                         <label>再生速度:</label>
                         <input type="number" id="playbackSpeed" value="1.0" min="0.25" max="4.0" step="0.25" disabled>
                         <span>×</span>
-                    </div>
-                    <div class="control-row">
-                        <label class="checkbox-label">
+                        <label class="checkbox-label" style="margin-left: 15px;">
                             <input type="checkbox" id="includeAudio" checked disabled>
                             音声を含む
                         </label>
@@ -195,13 +193,6 @@
                         </div>
                     </div>
 
-                    <!-- テキスト入力（2行） -->
-                    <div class="two-line-input-section">
-                        <label>注釈テキスト:</label>
-                        <input type="text" id="annotationText1" placeholder="1段目（10文字まで）" maxlength="10" disabled>
-                        <input type="text" id="annotationText2" placeholder="2段目（10文字まで）" maxlength="10" disabled>
-                    </div>
-
                     <!-- フォント選択 -->
                     <div class="font-selection-section">
                         <label>フォント:</label>
@@ -212,19 +203,27 @@
                         </select>
                     </div>
 
+                    <!-- テキスト入力（2行） -->
+                    <div class="two-line-input-section">
+                        <label>注釈テキスト:</label>
+                        <input type="text" id="annotationText1" placeholder="1段目（10文字まで）" maxlength="10" disabled>
+                        <input type="text" id="annotationText2" placeholder="2段目（10文字まで）" maxlength="10" disabled>
+                    </div>
+
                     <!-- 配色プリセット -->
                     <div class="color-preset-section">
-                        <label>配色:</label>
+                        <label>配色パターン:</label>
                         <div class="preset-buttons">
-                            <button class="preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
-                            <button class="preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#E3F2FD">ポイント</button>
-                            <button class="preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFE5E0">注意</button>
+                            <button class="preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF" data-text-align="center">説明用</button>
+                            <button class="preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#E3F2FD" data-text-align="center">ポイント用</button>
+                            <button class="preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFE5E0" data-text-align="center">注意用</button>
+                            <button class="preset-btn" id="customPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" data-text-align="center">カスタム</button>
                         </div>
                     </div>
 
-                    <!-- カスタム色選択（折りたたみ可能） -->
+                    <!-- カスタム設定（折りたたみ可能） -->
                     <details class="custom-color-section">
-                        <summary>カスタム色</summary>
+                        <summary>カスタム</summary>
                         <div class="custom-color-inputs">
                             <div class="color-input-row">
                                 <label>文字色:</label>
@@ -234,6 +233,15 @@
                                 <label>背景色:</label>
                                 <input type="color" id="customBgColor" value="#FFFFFF" disabled>
                             </div>
+                            <div class="text-align-section">
+                                <label>文字位置:</label>
+                                <div class="text-align-buttons">
+                                    <button class="text-align-btn" data-align="left" disabled>左</button>
+                                    <button class="text-align-btn active" data-align="center" disabled>中央</button>
+                                    <button class="text-align-btn" data-align="right" disabled>右</button>
+                                </div>
+                            </div>
+                            <button id="saveCustomPresetBtn" class="btn-save-preset" disabled>📌 登録</button>
                         </div>
                     </details>
 
@@ -304,9 +312,21 @@
                         </div>
                     </details>
 
-                    <p class="help-text">図形を追加するには、動画プレビュー上でドラッグした後、「追加」ボタンをクリックしてください</p>
+                    <!-- 枠線の太さ選択（5段階プリセット） -->
+                    <div class="shape-linewidth-panel-section">
+                        <label>枠線の太さ:</label>
+                        <div class="shape-linewidth-panel">
+                            <button class="shape-linewidth-btn" data-linewidth="2" title="極細" disabled>2px</button>
+                            <button class="shape-linewidth-btn" data-linewidth="3" title="細" disabled>3px</button>
+                            <button class="shape-linewidth-btn active" data-linewidth="5" title="標準" disabled>5px</button>
+                            <button class="shape-linewidth-btn" data-linewidth="7" title="太" disabled>7px</button>
+                            <button class="shape-linewidth-btn" data-linewidth="10" title="極太" disabled>10px</button>
+                        </div>
+                    </div>
 
-                    <button id="addShapeBtn" class="btn" disabled>📌 追加</button>
+                    <p class="help-text">図形を追加するには、動画プレビュー上でドラッグしてください。複数の図形を同じ時刻に追加する場合は、続けて図形を描画してから「すべて追加」ボタンをクリックしてください。</p>
+
+                    <button id="addShapeBtn" class="btn" disabled>📌 すべて追加</button>
                     <button id="addNoShapeBtn" class="btn" disabled>図形描画終了</button>
 
                     <!-- 図形リスト -->
@@ -342,22 +362,33 @@
                         </div>
                     </div>
 
+                    <!-- フォント選択 -->
+                    <div class="font-selection-section">
+                        <label>フォント:</label>
+                        <select id="detailFontSelect" disabled>
+                            <option value="Noto Sans JP">Noto Sans JP（標準）</option>
+                            <option value="M PLUS Rounded 1c">M PLUS Rounded 1c（丸ゴシック）</option>
+                            <option value="Zen Kaku Gothic New">Zen Kaku Gothic New（角ゴシック）</option>
+                        </select>
+                    </div>
+
                     <!-- テキスト入力 -->
                     <input type="text" id="detailText" placeholder="詳細テキスト" disabled>
 
                     <!-- 配色プリセット -->
                     <div class="color-preset-section">
-                        <label>配色:</label>
+                        <label>配色パターン:</label>
                         <div class="preset-buttons">
-                            <button class="detail-preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
-                            <button class="detail-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#E3F2FD">ポイント</button>
-                            <button class="detail-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFE5E0">注意</button>
+                            <button class="detail-preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF" data-bg-opacity="1.0" data-text-align="left">説明用</button>
+                            <button class="detail-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#E3F2FD" data-bg-opacity="1.0" data-text-align="left">ポイント用</button>
+                            <button class="detail-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFE5E0" data-bg-opacity="1.0" data-text-align="left">注意用</button>
+                            <button class="detail-preset-btn" id="detailCustomPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" data-bg-opacity="1.0" data-text-align="left">カスタム</button>
                         </div>
                     </div>
 
-                    <!-- カスタム色選択（折りたたみ可能） -->
+                    <!-- カスタム設定（折りたたみ可能） -->
                     <details class="custom-color-section">
-                        <summary>カスタム色</summary>
+                        <summary>カスタム</summary>
                         <div class="custom-color-inputs">
                             <div class="color-input-row">
                                 <label>文字色:</label>
@@ -367,6 +398,20 @@
                                 <label>背景色:</label>
                                 <input type="color" id="detailCustomBgColor" value="#FFFFFF" disabled>
                             </div>
+                            <div class="color-input-row">
+                                <label>透明度:</label>
+                                <input type="range" id="detailBgOpacity" min="0" max="100" value="100" disabled>
+                                <span id="detailBgOpacityValue">100%</span>
+                            </div>
+                            <div class="text-align-section">
+                                <label>文字位置:</label>
+                                <div class="text-align-buttons">
+                                    <button class="detail-text-align-btn active" data-align="left" disabled>左</button>
+                                    <button class="detail-text-align-btn" data-align="center" disabled>中央</button>
+                                    <button class="detail-text-align-btn" data-align="right" disabled>右</button>
+                                </div>
+                            </div>
+                            <button id="saveDetailCustomPresetBtn" class="btn-save-preset" disabled>📌 登録</button>
                         </div>
                     </details>
 

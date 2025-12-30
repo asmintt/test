@@ -6,7 +6,10 @@
   "scripts": {
     "start": "electron .",
     "clean": "rm -rf dist",
-    "build": "npm run clean && electron-builder"
+    "build": "npm run clean && electron-builder",
+    "build:mac": "npm run clean && electron-builder --mac",
+    "build:win": "npm run clean && electron-builder --win",
+    "build:all": "npm run clean && electron-builder --mac --win"
   },
   "keywords": ["video", "frame", "extraction", "electron"],
   "author": "",
@@ -22,18 +25,48 @@
   "build": {
     "appId": "com.movieframesnap.lite",
     "productName": "MovieFrameSnap Lite",
+    "electronVersion": "28.3.3",
     "files": [
-      "**/*",
+      "main.js",
+      "src/**/*",
+      "icon.png",
+      "package.json",
+      "!**/*.md",
       "!create-icon.js",
-      "!icon-*.png"
+      "!icon-*.png",
+      "!test-*.js",
+      "!run-*.js",
+      "!run-*.html",
+      "!screenshots/**/*",
+      "!.gitignore",
+      "!README.md"
     ],
     "asarUnpack": [
       "node_modules/ffmpeg-static/**/*"
     ],
+    "compression": "maximum",
     "mac": {
       "category": "public.app-category.video",
       "target": ["dmg", "zip"],
       "icon": "icon.png"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   }
 }

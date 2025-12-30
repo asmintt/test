@@ -208,7 +208,8 @@ class FrameExtractor {
             const y2 = shape.y2 * scaleY;
 
             ctx.strokeStyle = shape.color;
-            ctx.lineWidth = 5;
+            // 後方互換性: lineWidthがない場合はデフォルト値5を使用
+            ctx.lineWidth = shape.lineWidth || 5;
 
             // 図形タイプに応じた描画メソッドを実行
             const drawMethod = this.getShapeDrawMethod(shape.type);

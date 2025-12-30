@@ -240,6 +240,7 @@ class VideoPlayer {
             this.textAnnotationDisplay.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
             this.textAnnotationDisplay.style.fontSize = '32px';
             this.textAnnotationDisplay.style.whiteSpace = 'pre-line';
+            this.textAnnotationDisplay.style.textAlign = annotation.textAlign || 'center';
             this.textAnnotationDisplay.classList.add('visible');
         } else {
             // 注釈がない場合は非表示
@@ -267,13 +268,30 @@ class VideoPlayer {
 
         if (activeDetailText && activeDetailText.text) {
             // 詳細テキストがある場合は表示
-            this.detailTextDisplay.textContent = activeDetailText.text;
-            this.detailTextDisplay.style.color = activeDetailText.textColor;
-            this.detailTextDisplay.style.backgroundColor = activeDetailText.bgColor;
+            // 内側のボックスを作成して背景色を適用
+            const textBox = document.createElement('span');
+            textBox.className = 'detail-text-box';
+            textBox.textContent = activeDetailText.text;
+            textBox.style.color = activeDetailText.textColor;
+
+            // 背景色に透明度を適用
+            const bgColor = activeDetailText.bgColor || '#FFFFFF';
+            const bgOpacity = activeDetailText.bgOpacity !== undefined ? activeDetailText.bgOpacity : 1.0;
+            textBox.style.backgroundColor = bgColor;
+            textBox.style.opacity = bgOpacity;
+
+            // 文字位置を適用
+            const textAlign = activeDetailText.textAlign || 'left';
+            const justifyContent = textAlign === 'left' ? 'flex-start' : (textAlign === 'right' ? 'flex-end' : 'center');
+            this.detailTextDisplay.style.justifyContent = justifyContent;
+
+            // コンテナをクリアして新しいボックスを追加
+            this.detailTextDisplay.innerHTML = '';
+            this.detailTextDisplay.appendChild(textBox);
             this.detailTextDisplay.classList.add('visible');
         } else {
             // 詳細テキストがない場合は非表示
-            this.detailTextDisplay.textContent = '';
+            this.detailTextDisplay.innerHTML = '';
             this.detailTextDisplay.classList.remove('visible');
         }
     }

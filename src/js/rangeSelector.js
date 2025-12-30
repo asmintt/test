@@ -117,37 +117,79 @@ class RangeSelector {
     }
 
     /**
-     * 開始スライダー変更時の処理
+     * スライダー変更時の共通処理
+     * @param {boolean} isStart - 開始時刻のスライダーかどうか
      */
-    handleStartSliderChange() {
-        const value = parseFloat(this.startSlider.value);
+    handleSliderChange(isStart) {
+        const slider = isStart ? this.startSlider : this.endSlider;
+        const value = parseFloat(slider.value);
 
-        // 終了時刻より後にならないように
-        if (value >= this.endTime) {
-            this.startSlider.value = this.endTime - 0.1;
-            return;
+        // 範囲チェック
+        if (isStart) {
+            // 終了時刻より後にならないように
+            if (value >= this.endTime) {
+                slider.value = this.endTime - 0.1;
+                return;
+            }
+            this.startTime = value;
+        } else {
+            // 開始時刻より前にならないように
+            if (value <= this.startTime) {
+                slider.value = this.startTime + 0.1;
+                return;
+            }
+            this.endTime = value;
         }
 
-        this.startTime = value;
         this.updateTimeInputs();
         this.updateRangeDisplay();
         this.notifyRangeChange();
     }
 
     /**
+     * 開始スライダー変更時の処理
+     */
+    handleStartSliderChange() {
+        this.handleSliderChange(true);
+    }
+
+    /**
      * 終了スライダー変更時の処理
      */
     handleEndSliderChange() {
-        const value = parseFloat(this.endSlider.value);
+        this.handleSliderChange(false);
+    }
 
-        // 開始時刻より前にならないように
-        if (value <= this.startTime) {
-            this.endSlider.value = this.startTime + 0.1;
+    /**
+     * 時刻入力変更時の共通処理
+     * @param {boolean} isStart - 開始時刻の入力かどうか
+     */
+    handleTimeInputChange(isStart) {
+        const input = isStart ? this.startTimeInput : this.endTimeInput;
+        const slider = isStart ? this.startSlider : this.endSlider;
+        const time = parseTime(input.value);
+
+        // 範囲チェック
+        let isValid = false;
+        if (isStart) {
+            isValid = time >= 0 && time < this.endTime && time <= this.duration;
+        } else {
+            isValid = time > this.startTime && time <= this.duration;
+        }
+
+        if (!isValid) {
+            this.updateTimeInputs();
             return;
         }
 
-        this.endTime = value;
-        this.updateTimeInputs();
+        // 値を更新
+        if (isStart) {
+            this.startTime = time;
+        } else {
+            this.endTime = time;
+        }
+
+        slider.value = time;
         this.updateRangeDisplay();
         this.notifyRangeChange();
     }
@@ -156,36 +198,14 @@ class RangeSelector {
      * 開始時刻入力変更時の処理
      */
     handleStartTimeInputChange() {
-        const time = parseTime(this.startTimeInput.value);
-
-        // 範囲チェック
-        if (time < 0 || time >= this.endTime || time > this.duration) {
-            this.updateTimeInputs();
-            return;
-        }
-
-        this.startTime = time;
-        this.startSlider.value = time;
-        this.updateRangeDisplay();
-        this.notifyRangeChange();
+        this.handleTimeInputChange(true);
     }
 
     /**
      * 終了時刻入力変更時の処理
      */
     handleEndTimeInputChange() {
-        const time = parseTime(this.endTimeInput.value);
-
-        // 範囲チェック
-        if (time <= this.startTime || time > this.duration) {
-            this.updateTimeInputs();
-            return;
-        }
-
-        this.endTime = time;
-        this.endSlider.value = time;
-        this.updateRangeDisplay();
-        this.notifyRangeChange();
+        this.handleTimeInputChange(false);
     }
 
     /**
