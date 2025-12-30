@@ -783,15 +783,15 @@ details:not([open]) summary h2::before {
 }
 
 .preset-btn[data-preset="point"] {
-    background-color: #E3F2FD;
-    color: #000000;
-    border: 2px solid #90CAF9;
-}
-
-.preset-btn[data-preset="caution"] {
     background-color: #FFE5E0;
     color: #000000;
     border: 2px solid #FFAB91;
+}
+
+.preset-btn[data-preset="caution"] {
+    background-color: #FFF9E6;
+    color: #000000;
+    border: 2px solid #F4E9B5;
 }
 
 /* 選択中の状態 - 太い枠線で強調 */
@@ -848,15 +848,15 @@ details:not([open]) summary h2::before {
 }
 
 .detail-preset-btn[data-preset="point"] {
-    background-color: #E3F2FD;
-    color: #000000;
-    border: 2px solid #90CAF9;
-}
-
-.detail-preset-btn[data-preset="caution"] {
     background-color: #FFE5E0;
     color: #000000;
     border: 2px solid #FFAB91;
+}
+
+.detail-preset-btn[data-preset="caution"] {
+    background-color: #FFF9E6;
+    color: #000000;
+    border: 2px solid #F4E9B5;
 }
 
 /* 選択中の状態 - 太い枠線で強調 */
