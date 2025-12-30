@@ -93,8 +93,7 @@ ipcMain.handle('trim-video', async (event, data) => {
         shapes,             // 図形アノテーションデータ
         detailTexts,        // 詳細テキストデータ
         videoScale,         // 動画のスケール情報
-        filename,           // 出力ファイル名
-        arrowImages         // 矢印画像パス情報
+        filename            // 出力ファイル名
     } = data;
 
     // 一時ファイルパスを生成
@@ -164,19 +163,6 @@ ipcMain.handle('trim-video', async (event, data) => {
                     } catch (e) {
                         console.error('一時ファイル削除エラー:', e);
                     }
-                    // 矢印画像の一時ファイルを削除
-                    if (arrowImages && arrowImages.length > 0) {
-                        arrowImages.forEach(arrowImg => {
-                            try {
-                                if (fs.existsSync(arrowImg.imagePath)) {
-                                    fs.unlinkSync(arrowImg.imagePath);
-                                    console.log('矢印画像を削除:', arrowImg.imagePath);
-                                }
-                            } catch (e) {
-                                console.error('矢印画像削除エラー:', e);
-                            }
-                        });
-                    }
                     resolve({ success: true, outputPath });
                 })
                 .on('error', (err) => {
@@ -186,18 +172,6 @@ ipcMain.handle('trim-video', async (event, data) => {
                         fs.unlinkSync(tempInputPath);
                     } catch (e) {
                         console.error('一時ファイル削除エラー:', e);
-                    }
-                    // 矢印画像の一時ファイルを削除
-                    if (arrowImages && arrowImages.length > 0) {
-                        arrowImages.forEach(arrowImg => {
-                            try {
-                                if (fs.existsSync(arrowImg.imagePath)) {
-                                    fs.unlinkSync(arrowImg.imagePath);
-                                }
-                            } catch (e) {
-                                console.error('矢印画像削除エラー:', e);
-                            }
-                        });
                     }
                     reject(err);
                 })
@@ -452,26 +426,42 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
                 },
                 inputs: currentInput
             };
-        } else if (shape.type === 'arrow') {
-            // 矢印: overlayフィルターで幾何学的矢印を描画
-            // arrowImagesから該当する画像パスを取得
-            const arrowImage = arrowImages && arrowImages.find(img => img.shapeIndex === shapeIndex);
+        } else if (shape.type && shape.type.startsWith('arrow')) {
+            // 矢印: Unicode記号で描画
+            const x2 = Math.round(shape.x2 * scaleX);
+            const y2 = Math.round(shape.y2 * scaleY);
 
-            if (arrowImage && fs.existsSync(arrowImage.imagePath)) {
-                // overlay filter を使用して矢印画像を重ねる
-                filterObj = {
-                    filter: 'overlay',
-                    options: {
-                        x: 0,
-                        y: 0,
-                        enable: `between(t,${displayStartTime},${displayEndTime})`
-                    },
-                    inputs: [currentInput, arrowImage.imagePath]
-                };
-                console.log(`矢印をoverlayで描画: ${arrowImage.imagePath}`);
-            } else {
-                console.warn(`矢印画像が見つかりません (index: ${shapeIndex})`);
-            }
+            // lineWidthをフォントサイズに変換
+            const lineWidth = shape.lineWidth || 5;
+            const baseFontSize = 16 + (lineWidth * 4.8);
+            const fontSize = Math.round(baseFontSize * Math.min(scaleX, scaleY));
+
+            // 矢印のタイプに応じてUnicode記号を選択
+            let arrowSymbol = '➡';  // デフォルト：右向き
+            if (shape.type === 'arrow-left') arrowSymbol = '⬅';
+            else if (shape.type === 'arrow-up') arrowSymbol = '⬆';
+            else if (shape.type === 'arrow-down') arrowSymbol = '⬇';
+            else if (shape.type === 'arrow' || shape.type === 'arrow-right') arrowSymbol = '➡';
+
+            // 矢印絵文字を表示するためのフォントファイル
+            // オプション1: Apple Color Emoji（カラー絵文字、fontcolorは効かない可能性あり）
+            // const arrowFontFile = '/System/Library/Fonts/Apple Color Emoji.ttc';
+            // オプション2: ヒラギノ角ゴシック（矢印絵文字をサポート、fontcolorが効く）
+            const arrowFontFile = '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc';
+
+            filterObj = {
+                filter: 'drawtext',
+                options: {
+                    text: arrowSymbol,
+                    fontfile: arrowFontFile,
+                    fontsize: fontSize,
+                    fontcolor: shape.color,
+                    x: x2 - Math.round((baseFontSize / 2) * scaleX),
+                    y: y2 - Math.round((baseFontSize / 2) * scaleY),
+                    enable: `between(t,${displayStartTime},${displayEndTime})`
+                },
+                inputs: currentInput
+            };
         }
 
         if (filterObj) {
@@ -933,30 +923,5 @@ ipcMain.handle('load-project-file', async (event) => {
     } catch (error) {
         console.error('プロジェクト読み込みエラー:', error);
         return { success: false, error: error.message };
-    }
-});
-
-/**
- * 矢印画像を一時ファイルとして保存
- */
-ipcMain.handle('save-arrow-image', async (event, dataUrl, filename) => {
-    try {
-        const os = require('os');
-        const tmpDir = os.tmpdir();
-        const filePath = path.join(tmpDir, filename);
-
-        // base64データからBufferに変換
-        const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
-        const buffer = Buffer.from(base64Data, 'base64');
-
-        // ファイルに保存
-        fs.writeFileSync(filePath, buffer);
-
-        console.log('矢印画像を保存しました:', filePath);
-        return filePath;
-
-    } catch (error) {
-        console.error('矢印画像保存エラー:', error);
-        throw error;
     }
 });
