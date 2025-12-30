@@ -1285,20 +1285,25 @@ details:not([open]) summary h2::before {
 
 /* 図形アノテーション */
 .shape-selector {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    display: flex;
+    gap: 4px;
     margin-bottom: 15px;
+    flex-wrap: nowrap;
 }
 
 .shape-btn {
-    padding: 10px;
+    padding: 6px 8px;
     background: #f5f5f5;
     border: 2px solid transparent;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .shape-btn:hover {

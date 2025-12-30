@@ -61,13 +61,5 @@ contextBridge.exposeInMainWorld('electronApi', {
         basename: (filePath) => require('path').basename(filePath),
         dirname: (filePath) => require('path').dirname(filePath),
         extname: (filePath) => require('path').extname(filePath)
-    },
-
-    /**
-     * 矢印画像を一時ファイルとして保存
-     * @param {string} dataUrl - base64形式の画像データ
-     * @param {string} filename - ファイル名
-     * @returns {Promise<string>} 保存されたファイルのパス
-     */
-    saveArrowImage: (dataUrl, filename) => ipcRenderer.invoke('save-arrow-image', dataUrl, filename)
+    }
 });

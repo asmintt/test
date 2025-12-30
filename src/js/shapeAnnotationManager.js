@@ -444,45 +444,41 @@ class ShapeAnnotationManager {
                 this.ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 break;
 
-            case 'arrow':
-                this.drawArrow(x1, y1, x2, y2, color);
+            case 'arrow-right':
+            case 'arrow-left':
+            case 'arrow-up':
+            case 'arrow-down':
+            case 'arrow':  // 後方互換性
+                this.drawArrow(x2, y2, type, color);
                 break;
         }
     }
 
     /**
-     * 矢印を描画（幾何学的な矢印：直線+三角形）
-     * @param {number} x1 - 開始X座標
-     * @param {number} y1 - 開始Y座標
-     * @param {number} x2 - 終了X座標
-     * @param {number} y2 - 終了Y座標
+     * 矢印を描画（Unicode記号）
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     * @param {string} arrowType - 矢印のタイプ
      * @param {string} color - 色
      */
-    drawArrow(x1, y1, x2, y2, color) {
-        // lineWidthに応じて矢印の先端サイズを調整
+    drawArrow(x, y, arrowType, color) {
+        // lineWidthをフォントサイズに変換
         const currentLineWidth = this.ctx.lineWidth || this.selectedLineWidth;
-        const headLength = Math.max(15, currentLineWidth * 3); // 最小15px、lineWidthの3倍
-        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const fontSize = 16 + (currentLineWidth * 4.8);
 
-        // 直線を描画
-        this.ctx.beginPath();
-        this.ctx.moveTo(x1, y1);
-        this.ctx.lineTo(x2, y2);
-        this.ctx.stroke();
+        // 矢印のタイプに応じてUnicode記号を選択
+        let arrowSymbol = '➡';  // デフォルト：右向き
+        if (arrowType === 'arrow-left') arrowSymbol = '⬅';
+        else if (arrowType === 'arrow-up') arrowSymbol = '⬆';
+        else if (arrowType === 'arrow-down') arrowSymbol = '⬇';
+        else if (arrowType === 'arrow' || arrowType === 'arrow-right') arrowSymbol = '➡';
 
-        // 矢印の先端を描画
-        this.ctx.beginPath();
-        this.ctx.moveTo(x2, y2);
-        this.ctx.lineTo(
-            x2 - headLength * Math.cos(angle - Math.PI / 6),
-            y2 - headLength * Math.sin(angle - Math.PI / 6)
-        );
-        this.ctx.moveTo(x2, y2);
-        this.ctx.lineTo(
-            x2 - headLength * Math.cos(angle + Math.PI / 6),
-            y2 - headLength * Math.sin(angle + Math.PI / 6)
-        );
-        this.ctx.stroke();
+        // テキストとして描画
+        this.ctx.font = `${fontSize}px sans-serif`;
+        this.ctx.fillStyle = color;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(arrowSymbol, x, y);
     }
 
     /**
@@ -592,7 +588,11 @@ class ShapeAnnotationManager {
         // 図形タイプの日本語名
         const typeNames = {
             rectangle: '四角',
-            arrow: '矢印',
+            'arrow-right': '➡',
+            'arrow-left': '⬅',
+            'arrow-up': '⬆',
+            'arrow-down': '⬇',
+            arrow: '➡',  // 後方互換性
             '': '図形なし'
         };
 
