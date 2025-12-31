@@ -426,6 +426,47 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
                 },
                 inputs: currentInput
             };
+        } else if (shape.type === 'line') {
+            // 直線: drawbox フィルターで水平線または垂直線を描画
+            const lineWidth = shape.lineWidth || 5;
+
+            // 座標をスケール変換
+            const x1 = Math.round(shape.x1 * scaleX);
+            const y1 = Math.round(shape.y1 * scaleY);
+            const x2 = Math.round(shape.x2 * scaleX);
+            const y2 = Math.round(shape.y2 * scaleY);
+
+            // 水平線か垂直線かを判定
+            const isHorizontal = Math.abs(y2 - y1) < Math.abs(x2 - x1);
+
+            let x, y, w, h;
+            if (isHorizontal) {
+                // 水平線
+                x = Math.min(x1, x2);
+                y = Math.round((y1 + y2) / 2 - (lineWidth * scaleY) / 2);
+                w = Math.abs(x2 - x1);
+                h = Math.round(lineWidth * scaleY);
+            } else {
+                // 垂直線
+                x = Math.round((x1 + x2) / 2 - (lineWidth * scaleX) / 2);
+                y = Math.min(y1, y2);
+                w = Math.round(lineWidth * scaleX);
+                h = Math.abs(y2 - y1);
+            }
+
+            filterObj = {
+                filter: 'drawbox',
+                options: {
+                    x: x,
+                    y: y,
+                    w: w,
+                    h: h,
+                    color: shape.color,
+                    t: 'fill',  // 塗りつぶし
+                    enable: `between(t,${displayStartTime},${displayEndTime})`
+                },
+                inputs: currentInput
+            };
         } else if (shape.type && shape.type.startsWith('arrow')) {
             // 矢印: Unicode記号で描画
             const x2 = Math.round(shape.x2 * scaleX);

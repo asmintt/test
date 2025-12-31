@@ -466,6 +466,13 @@ class ShapeAnnotationManager {
                 this.ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 break;
 
+            case 'line':
+                this.ctx.beginPath();
+                this.ctx.moveTo(x1, y1);
+                this.ctx.lineTo(x2, y2);
+                this.ctx.stroke();
+                break;
+
             case 'arrow-right':
             case 'arrow-left':
             case 'arrow-up':
