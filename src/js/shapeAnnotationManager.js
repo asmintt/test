@@ -327,7 +327,9 @@ class ShapeAnnotationManager {
             x2: endX,
             y2: endY,
             color: this.selectedShapeColor,
-            lineWidth: this.selectedLineWidth
+            lineWidth: this.selectedLineWidth,
+            canvasWidth: this.canvas.width,   // 描画時のキャンバス幅を記録
+            canvasHeight: this.canvas.height  // 描画時のキャンバス高さを記録
         };
 
         this.pendingShapes.push(newShape);
@@ -566,9 +568,24 @@ class ShapeAnnotationManager {
             const activeShapes = this.getActiveShapesAtTime(currentTime);
 
             activeShapes.forEach(shape => {
+                // スケール係数を計算（図形保存時のキャンバスサイズと現在のキャンバスサイズの比率）
+                let x1 = shape.x1;
+                let y1 = shape.y1;
+                let x2 = shape.x2;
+                let y2 = shape.y2;
+
+                if (shape.canvasWidth && shape.canvasHeight) {
+                    const scaleX = this.canvas.width / shape.canvasWidth;
+                    const scaleY = this.canvas.height / shape.canvasHeight;
+                    x1 = shape.x1 * scaleX;
+                    y1 = shape.y1 * scaleY;
+                    x2 = shape.x2 * scaleX;
+                    y2 = shape.y2 * scaleY;
+                }
+
                 // 後方互換性: lineWidthがない場合はデフォルト値5を使用
                 const lineWidth = shape.lineWidth || 5;
-                this.drawShape(shape.type, shape.x1, shape.y1, shape.x2, shape.y2, shape.color, lineWidth);
+                this.drawShape(shape.type, x1, y1, x2, y2, shape.color, lineWidth);
             });
         }
 
