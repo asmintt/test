@@ -257,34 +257,59 @@ class FrameExtractor {
      * @param {HTMLVideoElement} video - 動画要素
      */
     drawTextAnnotationOnCanvas(ctx, currentTime, video) {
-        const annotation = annotationManager.getAnnotationAtTime(currentTime);
-        if (!annotation || !annotation.text) return;
+        const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
+        if (!annotation || (!annotation.text1 && !annotation.text2)) return;
 
         // テキスト設定
         const fontSize = Math.floor(video.videoHeight * 0.05); // 動画高さの5%
         const fontFamily = annotation.font || 'Noto Sans JP';
         ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
-        ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 
-        // テキストサイズを測定
-        const textMetrics = ctx.measureText(annotation.text);
-        const textWidth = textMetrics.width;
-        const textHeight = fontSize * 1.4;
+        // テキストサイズを測定（text1とtext2の両方）
+        const text1 = annotation.text1 || '';
+        const text2 = annotation.text2 || '';
+        const text1Metrics = ctx.measureText(text1);
+        const text2Metrics = ctx.measureText(text2);
+        const maxTextWidth = Math.max(text1Metrics.width, text2Metrics.width);
+        const lineHeight = fontSize * 1.4;
+        const numLines = (text1 ? 1 : 0) + (text2 ? 1 : 0);
+        const textHeight = lineHeight * numLines;
 
-        // 背景位置（画面上部中央）
-        const bgX = video.videoWidth / 2 - textWidth / 2 - 20;
+        // テキスト配置
+        const textAlign = annotation.textAlign || 'center';
+        let textX;
+        if (textAlign === 'left') {
+            ctx.textAlign = 'left';
+            textX = 40;
+        } else if (textAlign === 'right') {
+            ctx.textAlign = 'left'; // 行頭を揃えるため、左寄せで描画
+            textX = video.videoWidth - maxTextWidth - 40;
+        } else {
+            ctx.textAlign = 'left'; // 行頭を揃えるため、左寄せで描画
+            textX = (video.videoWidth - maxTextWidth) / 2;
+        }
+
+        // 背景位置
+        const bgX = textX - 20;
         const bgY = 20;
-        const bgWidth = textWidth + 40;
+        const bgWidth = maxTextWidth + 40;
         const bgHeight = textHeight + 20;
 
         // 背景を描画
         ctx.fillStyle = annotation.bgColor;
         ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
 
-        // テキストを描画
+        // テキストを描画（行頭を揃える）
         ctx.fillStyle = annotation.textColor;
-        ctx.fillText(annotation.text, video.videoWidth / 2, bgY + 10);
+        let yOffset = bgY + 10;
+        if (text1) {
+            ctx.fillText(text1, textX, yOffset);
+            yOffset += lineHeight;
+        }
+        if (text2) {
+            ctx.fillText(text2, textX, yOffset);
+        }
     }
 
     /**

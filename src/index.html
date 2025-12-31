@@ -206,7 +206,11 @@
                     <!-- テキスト入力（2行） -->
                     <div class="two-line-input-section">
                         <label>注釈テキスト:</label>
-                        <input type="text" id="annotationText1" placeholder="1段目（10文字まで）" maxlength="10" disabled>
+                        <p class="help-text-small">チェックオン：連番が自動で採番されます</p>
+                        <div class="input-with-checkbox">
+                            <input type="checkbox" id="annotationText1UseSeq" class="seq-checkbox" disabled>
+                            <input type="text" id="annotationText1" placeholder="1段目（10文字まで）" maxlength="10" disabled>
+                        </div>
                         <input type="text" id="annotationText2" placeholder="2段目（10文字まで）" maxlength="10" disabled>
                     </div>
 
@@ -329,9 +333,14 @@
                         </div>
                     </div>
 
-                    <p class="help-text">図形を追加するには、動画プレビュー上でドラッグしてください。複数の図形を同じ時刻に追加する場合は、続けて図形を描画してから「すべて追加」ボタンをクリックしてください。</p>
+                    <p class="help-text">図形を追加するには、動画プレビュー上でドラッグしてください。<br>
+                    「追加（継続）」：前の図形も表示<br>
+                    「追加（新規）」：前の図形を非表示</p>
 
-                    <button id="addShapeBtn" class="btn" disabled>📌 すべて追加</button>
+                    <div class="shape-buttons-row">
+                        <button id="addShapeContinueBtn" class="btn" disabled>追加（継続）</button>
+                        <button id="addShapeNewBtn" class="btn" disabled>追加（新規）</button>
+                    </div>
                     <button id="addNoShapeBtn" class="btn" disabled>図形描画終了</button>
 
                     <!-- 図形リスト -->

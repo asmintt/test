@@ -11,7 +11,8 @@ class ShapeAnnotationManager {
         this.shapeLineWidthButtons = document.querySelectorAll('.shape-linewidth-btn');
         this.customColor = document.getElementById('shapeCustomColor');
         this.shapeList = document.getElementById('shapeList');
-        this.addShapeBtn = document.getElementById('addShapeBtn');
+        this.addShapeContinueBtn = document.getElementById('addShapeContinueBtn');
+        this.addShapeNewBtn = document.getElementById('addShapeNewBtn');
         this.addNoShapeBtn = document.getElementById('addNoShapeBtn');
         this.shapeCurrentTime = document.getElementById('shapeCurrentTime');
 
@@ -62,14 +63,24 @@ class ShapeAnnotationManager {
             });
         });
 
-        // 「すべて追加」ボタン
-        if (this.addShapeBtn) {
-            this.addShapeBtn.addEventListener('click', () => {
-                console.log('すべて追加ボタンがクリックされました');
-                this.confirmAllPendingShapes();
+        // 「追加（継続）」ボタン
+        if (this.addShapeContinueBtn) {
+            this.addShapeContinueBtn.addEventListener('click', () => {
+                console.log('追加（継続）ボタンがクリックされました');
+                this.confirmPendingShapes(true); // 継続フラグ: true
             });
         } else {
-            console.error('addShapeBtn要素が見つかりません');
+            console.error('addShapeContinueBtn要素が見つかりません');
+        }
+
+        // 「追加（新規）」ボタン
+        if (this.addShapeNewBtn) {
+            this.addShapeNewBtn.addEventListener('click', () => {
+                console.log('追加（新規）ボタンがクリックされました');
+                this.confirmPendingShapes(false); // 継続フラグ: false
+            });
+        } else {
+            console.error('addShapeNewBtn要素が見つかりません');
         }
 
         // 「図形描画終了」ボタン
@@ -323,11 +334,14 @@ class ShapeAnnotationManager {
         console.log('図形を描画しました（未確定）:', newShape);
         console.log('現在の未確定図形数:', this.pendingShapes.length);
 
-        // 「すべて追加」ボタンを有効化
-        if (this.addShapeBtn) {
-            setEnabled(this.addShapeBtn, true);
-            console.log('すべて追加ボタンを有効化しました');
+        // 追加ボタンを有効化
+        if (this.addShapeContinueBtn) {
+            setEnabled(this.addShapeContinueBtn, true);
         }
+        if (this.addShapeNewBtn) {
+            setEnabled(this.addShapeNewBtn, true);
+        }
+        console.log('追加ボタンを有効化しました');
 
         // プレビュー表示を維持（redrawShapesで一時図形も描画される）
         this.redrawShapes();
@@ -335,17 +349,20 @@ class ShapeAnnotationManager {
 
     /**
      * すべての未確定図形を確定して追加
+     * @param {boolean} continueFromPrevious - 前の図形を継続表示するかどうか
      */
-    confirmAllPendingShapes() {
-        console.log('confirmAllPendingShapes呼び出し - pendingShapes数:', this.pendingShapes.length);
+    confirmPendingShapes(continueFromPrevious) {
+        console.log('confirmPendingShapes呼び出し - pendingShapes数:', this.pendingShapes.length);
+        console.log('継続フラグ:', continueFromPrevious);
 
         if (this.pendingShapes.length === 0) {
             console.log('pendingShapesが空のため処理を中断');
             return;
         }
 
-        // すべての未確定図形を配列に追加
+        // すべての未確定図形に継続フラグを追加して配列に追加
         this.pendingShapes.forEach(shape => {
+            shape.continueFromPrevious = continueFromPrevious;
             this.shapes.push(shape);
         });
         console.log('図形を配列に追加しました。追加した図形数:', this.pendingShapes.length);
@@ -355,8 +372,11 @@ class ShapeAnnotationManager {
         this.pendingShapes = [];
 
         // ボタンを無効化
-        if (this.addShapeBtn) {
-            setEnabled(this.addShapeBtn, false);
+        if (this.addShapeContinueBtn) {
+            setEnabled(this.addShapeContinueBtn, false);
+        }
+        if (this.addShapeNewBtn) {
+            setEnabled(this.addShapeNewBtn, false);
         }
 
         // 時刻順にソート
@@ -490,7 +510,7 @@ class ShapeAnnotationManager {
         if (this.shapes.length === 0) return [];
 
         const activeShapes = [];
-        let lastShapeTime = -1;
+        let continueCollecting = true;
 
         // 現在時刻以前の図形を逆順で走査
         for (let i = this.shapes.length - 1; i >= 0; i--) {
@@ -504,16 +524,27 @@ class ShapeAnnotationManager {
                 break;
             }
 
-            // まだ有効な図形時刻が設定されていない場合
-            if (lastShapeTime === -1) {
-                lastShapeTime = shape.time;
+            // 図形を追加
+            activeShapes.push(shape);
+
+            // 継続フラグがfalseの場合、これ以上前の図形は表示しない
+            if (shape.continueFromPrevious === false) {
+                break;
             }
 
-            // 同じタイムスタンプの図形はすべて追加
-            if (shape.time === lastShapeTime) {
-                activeShapes.push(shape);
-            } else {
-                // 異なるタイムスタンプに到達したら終了
+            // 継続フラグがundefined（古いデータ）の場合、同じタイムスタンプのみ表示（後方互換性）
+            if (shape.continueFromPrevious === undefined) {
+                const currentShapeTime = shape.time;
+                // 同じタイムスタンプの図形をすべて追加
+                for (let j = i - 1; j >= 0; j--) {
+                    if (this.shapes[j].time > currentTime) continue;
+                    if (this.shapes[j].type === '') break;
+                    if (this.shapes[j].time === currentShapeTime) {
+                        activeShapes.push(this.shapes[j]);
+                    } else {
+                        break;
+                    }
+                }
                 break;
             }
         }

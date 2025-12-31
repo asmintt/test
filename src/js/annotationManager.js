@@ -6,6 +6,7 @@ class AnnotationManager {
         // DOM要素
         this.annotationText1 = document.getElementById('annotationText1');
         this.annotationText2 = document.getElementById('annotationText2');
+        this.annotationText1UseSeq = document.getElementById('annotationText1UseSeq');
         this.textFontSelect = document.getElementById('textFontSelect');
         this.presetButtons = document.querySelectorAll('.preset-btn');
         this.customTextColor = document.getElementById('customTextColor');
@@ -234,6 +235,7 @@ class AnnotationManager {
         setEnabledMultiple([
             this.annotationText1,
             this.annotationText2,
+            this.annotationText1UseSeq,
             this.textFontSelect,
             this.customTextColor,
             this.customBgColor,
@@ -321,7 +323,8 @@ class AnnotationManager {
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
             font: this.selectedFont,
-            textAlign: this.selectedTextAlign
+            textAlign: this.selectedTextAlign,
+            useSequenceNumber: this.annotationText1UseSeq.checked
         };
 
         // 配列に追加して時刻順にソート
