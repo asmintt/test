@@ -343,12 +343,14 @@ class ShapeAnnotationManager {
             // クリック位置が図形の範囲内か判定
             if (x >= minX - margin && x <= maxX + margin &&
                 y >= minY - margin && y <= maxY + margin) {
-                // 全ての図形の選択を解除
-                this.pendingShapes.forEach(s => s.selected = false);
-                // この図形を選択
-                shape.selected = true;
+                // トグル動作：選択状態を反転
+                shape.selected = !shape.selected;
                 shapeFound = true;
-                console.log('✓ 図形を選択しました:', shape);
+                if (shape.selected) {
+                    console.log('✓ 図形を選択しました:', shape);
+                } else {
+                    console.log('✓ 図形の選択を解除しました:', shape);
+                }
                 break;
             }
         }
