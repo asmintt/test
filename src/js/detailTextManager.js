@@ -18,10 +18,10 @@ class DetailTextManager {
         this.addNoDetailTextBtn = document.getElementById('addNoDetailTextBtn');
         this.detailTextList = document.getElementById('detailTextList');
 
-        // 時刻調整ボタン
-        this.timeAdjustButtons = document.querySelectorAll('[data-adjust-detail]');
-        this.syncDetailTimeBtn = document.getElementById('syncDetailTime');
-        this.resetDetailTimeBtn = document.getElementById('resetDetailTime');
+        // 時刻調整ボタン（サイドバーの統合ボタン）
+        this.timeAdjustButtons = document.querySelectorAll('[data-video-adjust]');
+        this.syncDetailTimeBtn = document.getElementById('syncVideoTime');
+        this.resetDetailTimeBtn = document.getElementById('resetVideoTime');
 
         // 選択された色とプリセット
         this.selectedTextColor = '#000000'; // デフォルト: 黒
@@ -63,7 +63,7 @@ class DetailTextManager {
         // 時刻調整ボタン
         this.timeAdjustButtons.forEach(button => {
             button.addEventListener('click', () => {
-                const offset = parseFloat(button.getAttribute('data-adjust-detail'));
+                const offset = parseFloat(button.getAttribute('data-video-adjust'));
                 this.adjustTime(offset);
             });
         });

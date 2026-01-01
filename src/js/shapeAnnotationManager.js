@@ -16,10 +16,10 @@ class ShapeAnnotationManager {
         this.addNoShapeBtn = document.getElementById('addNoShapeBtn');
         this.shapeCurrentTime = document.getElementById('shapeCurrentTime');
 
-        // 時刻調整ボタン
-        this.timeAdjustShapeButtons = document.querySelectorAll('[data-adjust-shape]');
-        this.syncShapeTimeBtn = document.getElementById('syncShapeTime');
-        this.resetShapeTimeBtn = document.getElementById('resetShapeTime');
+        // 時刻調整ボタン（サイドバーの統合ボタン）
+        this.timeAdjustShapeButtons = document.querySelectorAll('[data-video-adjust]');
+        this.syncShapeTimeBtn = document.getElementById('syncVideoTime');
+        this.resetShapeTimeBtn = document.getElementById('resetVideoTime');
 
         // 選択された色
         this.selectedShapeColor = '#FF0000'; // デフォルト: 赤
@@ -93,7 +93,7 @@ class ShapeAnnotationManager {
         // 時刻調整ボタン
         this.timeAdjustShapeButtons.forEach(button => {
             button.addEventListener('click', () => {
-                const offset = parseFloat(button.getAttribute('data-adjust-shape'));
+                const offset = parseFloat(button.getAttribute('data-video-adjust'));
                 this.adjustTime(offset);
             });
         });

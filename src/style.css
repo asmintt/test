@@ -307,13 +307,15 @@ details:not([open]) summary h2::before {
    範囲コントロール
    ======================================== */
 .range-controls {
-    padding-top: 15px;
+    padding-top: 6px;
 }
 
 .range-slider {
     position: relative;
     height: 40px;
-    margin-bottom: 20px;
+    margin-bottom: 6px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
 }
 
 .range-slider input[type="range"] {
@@ -402,6 +404,76 @@ details:not([open]) summary h2::before {
     border-radius: 6px;
     font-family: monospace;
     font-size: 0.85rem;
+}
+
+/* コンパクト1行レイアウト */
+.time-input-group.compact-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.time-input-group.compact-row label {
+    font-weight: 600;
+    color: #555;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    min-width: 40px;
+}
+
+.time-input-group.compact-row .btn-tiny {
+    font-size: 0.7rem;
+    padding: 6px 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    height: 100%;
+    min-height: 34px;
+}
+
+.time-input-group.compact-row input[type="text"] {
+    width: auto;
+    flex: 1;
+    min-width: 80px;
+}
+
+/* 範囲情報セクション（2行レイアウト） */
+.range-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0;
+}
+
+/* 選択範囲表示ボックス（枠付き） */
+.range-display-box {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+}
+
+.range-info-text {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.range-info-text span {
+    font-weight: 700;
+    color: #2c5282;
+}
+
+/* 範囲操作ボタン行 */
+.range-action-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.range-action-buttons .btn-tiny {
+    flex: 1;
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    white-space: nowrap;
 }
 
 .range-info {
@@ -1624,7 +1696,7 @@ details:not([open]) summary h2::before {
 
 /* 時刻調整ボタンのコンパクト化 */
 .time-adjust-controls.compact {
-    margin: 8px 0;
+    margin: 0 0 20px 0;
 }
 
 .time-adjust-controls.compact .time-adjust-row {

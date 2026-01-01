@@ -18,10 +18,10 @@ class AnnotationManager {
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
         this.annotationList = document.getElementById('annotationList');
 
-        // 時刻調整ボタン
-        this.timeAdjustButtons = document.querySelectorAll('[data-adjust]');
-        this.syncAnnotationTimeBtn = document.getElementById('syncAnnotationTime');
-        this.resetAnnotationTimeBtn = document.getElementById('resetAnnotationTime');
+        // 時刻調整ボタン（サイドバーの統合ボタン）
+        this.timeAdjustButtons = document.querySelectorAll('[data-video-adjust]');
+        this.syncAnnotationTimeBtn = document.getElementById('syncVideoTime');
+        this.resetAnnotationTimeBtn = document.getElementById('resetVideoTime');
 
         // 選択された色とフォント
         this.selectedTextColor = '#000000'; // デフォルト: 黒
@@ -59,7 +59,7 @@ class AnnotationManager {
         // 時刻調整ボタン
         this.timeAdjustButtons.forEach(button => {
             button.addEventListener('click', () => {
-                const offset = parseFloat(button.getAttribute('data-adjust'));
+                const offset = parseFloat(button.getAttribute('data-video-adjust'));
                 this.adjustTime(offset);
             });
         });

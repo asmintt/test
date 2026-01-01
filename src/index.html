@@ -55,37 +55,51 @@
                     <details open>
                         <summary><h2>2. 動画の範囲を指定</h2></summary>
                         <div class="range-controls">
+                            <!-- 時刻調整ボタン -->
+                            <div class="time-adjust-controls compact">
+                                <div class="time-adjust-row">
+                                    <button class="btn-tiny" data-video-adjust="10" disabled>+10秒</button>
+                                    <button class="btn-tiny" data-video-adjust="1" disabled>+1秒</button>
+                                    <button class="btn-tiny" data-video-adjust="0.1" disabled>+0.1秒</button>
+                                    <button class="btn-tiny" id="syncVideoTime" disabled>現在位置</button>
+                                </div>
+                                <div class="time-adjust-row">
+                                    <button class="btn-tiny" data-video-adjust="-10" disabled>-10秒</button>
+                                    <button class="btn-tiny" data-video-adjust="-1" disabled>-1秒</button>
+                                    <button class="btn-tiny" data-video-adjust="-0.1" disabled>-0.1秒</button>
+                                    <button class="btn-tiny" id="resetVideoTime" disabled>リセット</button>
+                                </div>
+                            </div>
+
                             <!-- 範囲スライダー -->
                             <div class="range-slider">
                                 <input type="range" id="startSlider" min="0" max="100" value="0" step="0.1" disabled>
                                 <input type="range" id="endSlider" min="0" max="100" value="100" step="0.1" disabled>
                             </div>
 
-                            <!-- 開始時刻 -->
-                            <div class="time-input-group">
-                                <div class="time-label-row">
-                                    <label>開始:</label>
-                                    <button id="setStartBtn" class="btn-tiny" disabled>現在位置</button>
-                                </div>
+                            <!-- 開始時刻（1行） -->
+                            <div class="time-input-group compact-row">
+                                <label>開始:</label>
+                                <button id="setStartBtn" class="btn-tiny" disabled>現在位置</button>
                                 <input type="text" id="startTime" value="00:00:00" disabled>
                             </div>
 
-                            <!-- 終了時刻 -->
-                            <div class="time-input-group">
-                                <div class="time-label-row">
-                                    <label>終了:</label>
-                                    <button id="setEndBtn" class="btn-tiny" disabled>現在位置</button>
-                                </div>
+                            <!-- 終了時刻（1行） -->
+                            <div class="time-input-group compact-row">
+                                <label>終了:</label>
+                                <button id="setEndBtn" class="btn-tiny" disabled>現在位置</button>
                                 <input type="text" id="endTime" value="00:00:00" disabled>
                             </div>
 
-                            <!-- 範囲情報 -->
-                            <p class="range-info">選択範囲: <span id="rangeDisplay">00:00:00</span></p>
-
-                            <!-- 範囲操作ボタン -->
-                            <div class="range-buttons">
-                                <button id="playRangeBtn" class="btn" disabled>範囲を再生</button>
-                                <button id="resetRangeBtn" class="btn" disabled>全範囲</button>
+                            <!-- 範囲情報と操作ボタン（2行） -->
+                            <div class="range-info-section">
+                                <div class="range-display-box">
+                                    <span class="range-info-text">選択範囲: <span id="rangeDisplay">00:00:00</span></span>
+                                </div>
+                                <div class="range-action-buttons">
+                                    <button id="playRangeBtn" class="btn-tiny" disabled>再生</button>
+                                    <button id="resetRangeBtn" class="btn-tiny" disabled>全範囲再生</button>
+                                </div>
                             </div>
                         </div>
                     </details>
@@ -171,22 +185,6 @@
                 <div class="tab-content active" id="textTab">
                     <section class="annotation-section">
                         <h2 class="sr-only">テキスト注釈</h2>
-
-                    <!-- 時刻調整ボタン -->
-                    <div class="time-adjust-controls compact">
-                        <div class="time-adjust-row">
-                            <button class="btn-tiny" data-adjust="10" disabled>+10秒</button>
-                            <button class="btn-tiny" data-adjust="1" disabled>+1秒</button>
-                            <button class="btn-tiny" data-adjust="0.1" disabled>+0.1秒</button>
-                            <button class="btn-tiny" id="syncAnnotationTime" disabled>現在位置</button>
-                        </div>
-                        <div class="time-adjust-row">
-                            <button class="btn-tiny" data-adjust="-10" disabled>-10秒</button>
-                            <button class="btn-tiny" data-adjust="-1" disabled>-1秒</button>
-                            <button class="btn-tiny" data-adjust="-0.1" disabled>-0.1秒</button>
-                            <button class="btn-tiny" id="resetAnnotationTime" disabled>リセット</button>
-                        </div>
-                    </div>
 
                     <!-- テキスト注釈セクション -->
                     <div class="annotation-subsection text-annotation-section">
@@ -300,22 +298,6 @@
                     <section class="annotation-section">
                         <h2 class="sr-only">図形アノテーション</h2>
 
-                    <!-- 時刻調整ボタン -->
-                    <div class="time-adjust-controls">
-                        <div class="time-adjust-row">
-                            <button class="btn-tiny" data-adjust-shape="10" disabled>+10秒</button>
-                            <button class="btn-tiny" data-adjust-shape="1" disabled>+1秒</button>
-                            <button class="btn-tiny" data-adjust-shape="0.1" disabled>+0.1秒</button>
-                            <button class="btn-tiny" id="syncShapeTime" disabled>現在位置</button>
-                        </div>
-                        <div class="time-adjust-row">
-                            <button class="btn-tiny" data-adjust-shape="-10" disabled>-10秒</button>
-                            <button class="btn-tiny" data-adjust-shape="-1" disabled>-1秒</button>
-                            <button class="btn-tiny" data-adjust-shape="-0.1" disabled>-0.1秒</button>
-                            <button class="btn-tiny" id="resetShapeTime" disabled>リセット</button>
-                        </div>
-                    </div>
-
                     <!-- 図形選択 -->
                     <div class="shape-selector">
                         <button class="shape-btn" data-shape="line">直線</button>
@@ -387,22 +369,6 @@
                 <div class="tab-content" id="detailTab">
                     <section class="annotation-section">
                         <h2 class="sr-only">詳細テキスト</h2>
-
-                    <!-- 時刻調整ボタン -->
-                    <div class="time-adjust-controls">
-                        <div class="time-adjust-row">
-                            <button class="btn-tiny" data-adjust-detail="10" disabled>+10秒</button>
-                            <button class="btn-tiny" data-adjust-detail="1" disabled>+1秒</button>
-                            <button class="btn-tiny" data-adjust-detail="0.1" disabled>+0.1秒</button>
-                            <button class="btn-tiny" id="syncDetailTime" disabled>現在位置</button>
-                        </div>
-                        <div class="time-adjust-row">
-                            <button class="btn-tiny" data-adjust-detail="-10" disabled>-10秒</button>
-                            <button class="btn-tiny" data-adjust-detail="-1" disabled>-1秒</button>
-                            <button class="btn-tiny" data-adjust-detail="-0.1" disabled>-0.1秒</button>
-                            <button class="btn-tiny" id="resetDetailTime" disabled>リセット</button>
-                        </div>
-                    </div>
 
                     <!-- フォント選択 -->
                     <div class="font-selection-section">
