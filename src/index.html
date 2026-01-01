@@ -172,13 +172,8 @@
                     <section class="annotation-section">
                         <h2 class="sr-only">テキスト注釈</h2>
 
-                    <!-- 現在位置 -->
-                    <div class="current-time-display">
-                        現在位置: <span id="currentTime">00:00:00.0</span>
-                    </div>
-
                     <!-- 時刻調整ボタン -->
-                    <div class="time-adjust-controls">
+                    <div class="time-adjust-controls compact">
                         <div class="time-adjust-row">
                             <button class="btn-tiny" data-adjust="10" disabled>+10秒</button>
                             <button class="btn-tiny" data-adjust="1" disabled>+1秒</button>
@@ -193,69 +188,110 @@
                         </div>
                     </div>
 
-                    <!-- フォント選択 -->
-                    <div class="font-selection-section">
-                        <label>フォント:</label>
-                        <select id="textFontSelect" disabled>
-                            <option value="Noto Sans JP">Noto Sans JP（標準）</option>
-                            <option value="M PLUS Rounded 1c">M PLUS Rounded 1c（丸ゴシック）</option>
-                            <option value="Zen Kaku Gothic New">Zen Kaku Gothic New（角ゴシック）</option>
-                        </select>
-                    </div>
+                    <!-- テキスト注釈セクション -->
+                    <div class="annotation-subsection text-annotation-section">
+                        <h3 class="subsection-header">📝 テキスト注釈</h3>
 
-                    <!-- テキスト入力（2行） -->
-                    <div class="two-line-input-section">
-                        <label>注釈テキスト:</label>
-                        <p class="help-text-small">チェックオン：連番が自動で採番されます</p>
-                        <div class="input-with-checkbox">
-                            <input type="checkbox" id="annotationText1UseSeq" class="seq-checkbox" disabled>
-                            <input type="text" id="annotationText1" placeholder="1段目（10文字まで）" maxlength="10" disabled>
+                        <!-- フォント選択（1行圧縮） -->
+                        <div class="font-selection-section compact">
+                            <label>フォント:</label>
+                            <select id="textFontSelect" disabled>
+                                <option value="Noto Sans JP">角ゴシック（細）</option>
+                                <option value="M PLUS Rounded 1c">丸ゴシック</option>
+                                <option value="Zen Kaku Gothic New">角ゴシック（太）</option>
+                            </select>
                         </div>
-                        <input type="text" id="annotationText2" placeholder="2段目（10文字まで）" maxlength="10" disabled>
-                    </div>
 
-                    <!-- 配色プリセット -->
-                    <div class="color-preset-section">
-                        <label>配色パターン:</label>
-                        <div class="preset-buttons">
-                            <button class="preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF" data-text-align="center">説明用</button>
-                            <button class="preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FFE5E0" data-text-align="center">ポイント用</button>
-                            <button class="preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFF9E6" data-text-align="center">注意用</button>
-                            <button class="preset-btn" id="customPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" data-text-align="center">カスタム</button>
+                        <!-- テキスト入力（2行） -->
+                        <div class="two-line-input-section compact">
+                            <label>注釈テキスト:</label>
+                            <p class="help-text-small">チェックオン：連番が自動で採番されます</p>
+                            <div class="input-with-checkbox">
+                                <input type="checkbox" id="annotationText1UseSeq" class="seq-checkbox" disabled>
+                                <input type="text" id="annotationText1" placeholder="1段目（10文字まで）" maxlength="10" disabled>
+                            </div>
+                            <input type="text" id="annotationText2" placeholder="2段目（10文字まで）" maxlength="10" disabled>
                         </div>
-                    </div>
 
-                    <!-- カスタム設定（折りたたみ可能） -->
-                    <details class="custom-color-section">
-                        <summary>カスタム</summary>
-                        <div class="custom-color-inputs">
-                            <div class="color-input-row">
-                                <label>文字色:</label>
-                                <input type="color" id="customTextColor" value="#000000" disabled>
+                        <!-- 配色プリセット（縮小） -->
+                        <div class="color-preset-section compact">
+                            <label>配色:</label>
+                            <div class="preset-buttons">
+                                <button class="preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF" data-text-align="center">説明</button>
+                                <button class="preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FFE5E0" data-text-align="center">要点</button>
+                                <button class="preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFF9E6" data-text-align="center">注意</button>
+                                <button class="preset-btn" id="customPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" data-text-align="center">登録</button>
                             </div>
-                            <div class="color-input-row">
-                                <label>背景色:</label>
-                                <input type="color" id="customBgColor" value="#FFFFFF" disabled>
-                            </div>
-                            <div class="text-align-section">
-                                <label>文字位置:</label>
-                                <div class="text-align-buttons">
-                                    <button class="text-align-btn" data-align="left" disabled>左</button>
-                                    <button class="text-align-btn active" data-align="center" disabled>中央</button>
-                                    <button class="text-align-btn" data-align="right" disabled>右</button>
+                        </div>
+
+                        <!-- カスタム設定（折りたたみ可能） -->
+                        <details class="custom-color-section">
+                            <summary>カスタム</summary>
+                            <div class="custom-color-inputs">
+                                <div class="color-input-row">
+                                    <label>文字色:</label>
+                                    <input type="color" id="customTextColor" value="#000000" disabled>
                                 </div>
+                                <div class="color-input-row">
+                                    <label>背景色:</label>
+                                    <input type="color" id="customBgColor" value="#FFFFFF" disabled>
+                                </div>
+                                <div class="text-align-section">
+                                    <label>文字位置:</label>
+                                    <div class="text-align-buttons">
+                                        <button class="text-align-btn" data-align="left" disabled>左</button>
+                                        <button class="text-align-btn active" data-align="center" disabled>中央</button>
+                                        <button class="text-align-btn" data-align="right" disabled>右</button>
+                                    </div>
+                                </div>
+                                <button id="saveCustomPresetBtn" class="btn-save-preset" disabled>📌 登録</button>
                             </div>
-                            <button id="saveCustomPresetBtn" class="btn-save-preset" disabled>📌 登録</button>
+                        </details>
+
+                        <button id="addAnnotationBtn" class="btn compact" disabled>📌 追加</button>
+                        <button id="addBlankAnnotationBtn" class="btn compact" disabled>注釈なし</button>
+
+                        <!-- 注釈リスト -->
+                        <div id="annotationList" class="annotation-list">
+                            <p class="empty-message">注釈が登録されていません</p>
                         </div>
-                    </details>
-
-                    <button id="addAnnotationBtn" class="btn" disabled>📌 追加</button>
-                    <button id="addBlankAnnotationBtn" class="btn" disabled>注釈なし</button>
-
-                    <!-- 注釈リスト -->
-                    <div id="annotationList" class="annotation-list">
-                        <p class="empty-message">注釈が登録されていません</p>
                     </div>
+
+                    <!-- 方向矢印セクション -->
+                    <div class="annotation-subsection arrow-annotation-section">
+                        <h3 class="subsection-header">➡ 方向矢印</h3>
+
+                        <!-- 方向選択 -->
+                        <div class="arrow-selection">
+                            <button class="arrow-btn" data-arrow="left" disabled>←左</button>
+                            <button class="arrow-btn" data-arrow="right" disabled>右→</button>
+                            <label style="margin-left: 10px;">サイズ:</label>
+                            <select id="arrowSizeSelect" disabled>
+                                <option value="2">2px</option>
+                                <option value="3">3px</option>
+                                <option value="5" selected>5px</option>
+                                <option value="7">7px</option>
+                                <option value="10">10px</option>
+                            </select>
+                        </div>
+
+                        <!-- 色選択 -->
+                        <div class="arrow-color-section">
+                            <label>色:</label>
+                            <div class="arrow-color-buttons">
+                                <button class="arrow-color-btn active" data-color="#1976D2" data-arrow="left" style="background-color: #1976D2;" title="青（左）">青</button>
+                                <button class="arrow-color-btn active" data-color="#FF9800" data-arrow="right" style="background-color: #FF9800;" title="オレンジ（右）">橙</button>
+                            </div>
+                        </div>
+
+                        <button id="addArrowBtn" class="btn compact" disabled>矢印追加</button>
+
+                        <!-- 矢印リスト -->
+                        <div id="arrowList" class="arrow-list">
+                            <p class="empty-message">方向矢印が登録されていません</p>
+                        </div>
+                    </div>
+
                     </section>
                 </div>
 
@@ -263,11 +299,6 @@
                 <div class="tab-content" id="shapeTab">
                     <section class="annotation-section">
                         <h2 class="sr-only">図形アノテーション</h2>
-
-                    <!-- 現在位置 -->
-                    <div class="current-time-display">
-                        現在位置: <span id="shapeCurrentTime">00:00:00.0</span>
-                    </div>
 
                     <!-- 時刻調整ボタン -->
                     <div class="time-adjust-controls">
@@ -287,8 +318,9 @@
 
                     <!-- 図形選択 -->
                     <div class="shape-selector">
-                        <button class="shape-btn" data-shape="line">─ 直線</button>
-                        <button class="shape-btn" data-shape="rectangle">◻ 四角</button>
+                        <button class="shape-btn" data-shape="line">直線</button>
+                        <button class="shape-btn" data-shape="rectangle">四角</button>
+                        <button class="shape-btn" data-shape="erase">消去</button>
                         <button class="shape-btn" data-shape="none">解除</button>
                     </div>
                     <div class="shape-selector">
@@ -356,11 +388,6 @@
                     <section class="annotation-section">
                         <h2 class="sr-only">詳細テキスト</h2>
 
-                    <!-- 現在位置 -->
-                    <div class="current-time-display">
-                        現在位置: <span id="detailCurrentTime">00:00:00.0</span>
-                    </div>
-
                     <!-- 時刻調整ボタン -->
                     <div class="time-adjust-controls">
                         <div class="time-adjust-row">
@@ -391,13 +418,13 @@
                     <input type="text" id="detailText" placeholder="詳細テキスト" disabled>
 
                     <!-- 配色プリセット -->
-                    <div class="color-preset-section">
-                        <label>配色パターン:</label>
+                    <div class="color-preset-section compact">
+                        <label>配色:</label>
                         <div class="preset-buttons">
-                            <button class="detail-preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF" data-bg-opacity="1.0" data-text-align="left">説明用</button>
-                            <button class="detail-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FFE5E0" data-bg-opacity="1.0" data-text-align="left">ポイント用</button>
-                            <button class="detail-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFF9E6" data-bg-opacity="1.0" data-text-align="left">注意用</button>
-                            <button class="detail-preset-btn" id="detailCustomPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" data-bg-opacity="1.0" data-text-align="left">カスタム</button>
+                            <button class="detail-preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF" data-bg-opacity="1.0" data-text-align="left">説明</button>
+                            <button class="detail-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FFE5E0" data-bg-opacity="1.0" data-text-align="left">要点</button>
+                            <button class="detail-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFF9E6" data-bg-opacity="1.0" data-text-align="left">注意</button>
+                            <button class="detail-preset-btn" id="detailCustomPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" data-bg-opacity="1.0" data-text-align="left">登録</button>
                         </div>
                     </div>
 
@@ -471,6 +498,7 @@
     <script src="js/annotationManager.js"></script>
     <script src="js/shapeAnnotationManager.js"></script>
     <script src="js/detailTextManager.js"></script>
+    <script src="js/arrowAnnotationManager.js"></script>
     <script src="js/frameExtractor.js"></script>
     <script src="js/videoTrimmer.js"></script>
     <script src="js/projectManager.js"></script>

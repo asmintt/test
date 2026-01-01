@@ -84,6 +84,7 @@ class VideoTrimmer {
             let annotations = [];
             let shapes = [];
             let detailTexts = [];
+            let arrows = [];
             if (includeAnnotations && annotationManager) {
                 annotations = annotationManager.getAnnotations();
             }
@@ -92,6 +93,9 @@ class VideoTrimmer {
             }
             if (includeAnnotations && detailTextManager) {
                 detailTexts = detailTextManager.getDetailTexts();
+            }
+            if (includeAnnotations && arrowAnnotationManager) {
+                arrows = arrowAnnotationManager.getArrows();
             }
 
             // 動画の実際のサイズと表示サイズを取得（座標変換用）
@@ -102,6 +106,9 @@ class VideoTrimmer {
                 displayWidth: video.offsetWidth,
                 displayHeight: video.offsetHeight
             };
+
+            // 再生速度を取得
+            const playbackSpeed = video.playbackRate || 1.0;
 
             // ファイルをArrayBufferとして読み込む
             const arrayBuffer = await this.readFileAsArrayBuffer(fileHandler.currentFile);
@@ -116,7 +123,9 @@ class VideoTrimmer {
                 annotations: annotations,
                 shapes: shapes,
                 detailTexts: detailTexts,
+                arrows: arrows,
                 videoScale: videoScale,
+                speed: playbackSpeed,
                 filename: projectTitle
             });
 
@@ -167,10 +176,6 @@ class VideoTrimmer {
         if (progress.percent) {
             // 進捗パーセントを表示
             this.downloadVideoBtn.textContent = `処理中... ${Math.floor(progress.percent)}%`;
-        }
-
-        if (progress.message) {
-            console.log('トリミング進捗:', progress.message);
         }
     }
 }

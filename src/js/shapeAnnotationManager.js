@@ -117,6 +117,15 @@ class ShapeAnnotationManager {
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
         this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
 
+        // DeleteまたはBackspaceキーで選択された図形を削除
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && this.currentShapeType === 'erase') {
+                console.log('Deleteキーで削除実行');
+                e.preventDefault(); // ブラウザのデフォルト動作を防止
+                this.deleteSelectedShapes();
+            }
+        });
+
         // 動画のサイズに合わせてキャンバスをリサイズ
         if (videoPlayer && videoPlayer.video) {
             videoPlayer.video.addEventListener('loadedmetadata', () => {
@@ -237,13 +246,21 @@ class ShapeAnnotationManager {
 
     /**
      * 図形タイプを選択
-     * @param {string} shapeType - 図形タイプ (rectangle, arrow, none)
+     * @param {string} shapeType - 図形タイプ (rectangle, arrow, none, erase)
      */
     selectShape(shapeType) {
-        if (shapeType === 'none') {
+        if (shapeType === 'erase') {
+            // 消しゴムモード
+            this.currentShapeType = 'erase';
+            this.canvas.style.cursor = 'pointer';
+            console.log('消しゴムモードに入りました');
+        } else if (shapeType === 'none') {
             // 図形選択を解除
             this.currentShapeType = null;
             this.canvas.style.cursor = 'default';
+            // 全ての選択を解除
+            this.pendingShapes.forEach(s => s.selected = false);
+            this.redrawCanvas();
         } else {
             this.currentShapeType = shapeType;
             this.canvas.style.cursor = 'crosshair';
@@ -266,14 +283,84 @@ class ShapeAnnotationManager {
      * @param {MouseEvent} e - マウスイベント
      */
     onMouseDown(e) {
-        if (!this.currentShapeType) return;
-
-        this.isDrawing = true;
-
-        // キャンバス上の相対座標を取得
         const rect = this.canvas.getBoundingClientRect();
-        this.startX = e.clientX - rect.left;
-        this.startY = e.clientY - rect.top;
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        console.log('=== onMouseDown 呼び出し ===');
+        console.log('currentShapeType:', this.currentShapeType);
+        console.log('pendingShapes.length:', this.pendingShapes.length);
+        console.log('クリック座標:', clickX, clickY);
+
+        // 消しゴムモードの場合、図形を選択
+        if (this.currentShapeType === 'erase') {
+            console.log('消しゴムモードで図形を選択します');
+            e.preventDefault();
+            e.stopPropagation();
+            this.selectShapeAtPosition(clickX, clickY);
+            return;
+        }
+
+        // 図形描画モードでない場合
+        if (!this.currentShapeType) {
+            console.log('図形描画モードではありません');
+            return;
+        }
+
+        console.log('図形描画モードで描画開始');
+        this.isDrawing = true;
+        this.startX = clickX;
+        this.startY = clickY;
+    }
+
+    /**
+     * クリック位置にある図形を選択
+     * @param {number} x - クリックX座標
+     * @param {number} y - クリックY座標
+     */
+    selectShapeAtPosition(x, y) {
+        console.log('=== selectShapeAtPosition 呼び出し ===');
+        console.log('クリック位置:', x, y);
+        console.log('pendingShapes:', this.pendingShapes);
+
+        let shapeFound = false;
+
+        // pendingShapes を逆順で検索（後から描画された図形を優先）
+        for (let i = this.pendingShapes.length - 1; i >= 0; i--) {
+            const shape = this.pendingShapes[i];
+
+            // 図形の境界ボックスを計算
+            const minX = Math.min(shape.x1, shape.x2);
+            const maxX = Math.max(shape.x1, shape.x2);
+            const minY = Math.min(shape.y1, shape.y2);
+            const maxY = Math.max(shape.y1, shape.y2);
+
+            // マージン（クリックしやすくするため）
+            const margin = 10;
+
+            console.log(`図形 ${i}: 境界 (${minX}, ${minY}) - (${maxX}, ${maxY}), マージン込み: (${minX - margin}, ${minY - margin}) - (${maxX + margin}, ${maxY + margin})`);
+
+            // クリック位置が図形の範囲内か判定
+            if (x >= minX - margin && x <= maxX + margin &&
+                y >= minY - margin && y <= maxY + margin) {
+                // 全ての図形の選択を解除
+                this.pendingShapes.forEach(s => s.selected = false);
+                // この図形を選択
+                shape.selected = true;
+                shapeFound = true;
+                console.log('✓ 図形を選択しました:', shape);
+                break;
+            }
+        }
+
+        if (!shapeFound) {
+            // クリック位置に図形がない場合、全ての選択を解除
+            this.pendingShapes.forEach(s => s.selected = false);
+            console.log('図形の選択を解除しました');
+        }
+
+        // 再描画
+        this.redrawCanvas();
     }
 
     /**
@@ -329,7 +416,8 @@ class ShapeAnnotationManager {
             color: this.selectedShapeColor,
             lineWidth: this.selectedLineWidth,
             canvasWidth: this.canvas.width,   // 描画時のキャンバス幅を記録
-            canvasHeight: this.canvas.height  // 描画時のキャンバス高さを記録
+            canvasHeight: this.canvas.height, // 描画時のキャンバス高さを記録
+            selected: false                   // 選択状態を初期化
         };
 
         this.pendingShapes.push(newShape);
@@ -402,6 +490,40 @@ class ShapeAnnotationManager {
         if (noneBtn) {
             this.updateButtonStates(noneBtn);
         }
+    }
+
+    /**
+     * 選択された図形を削除
+     */
+    deleteSelectedShapes() {
+        // 選択された図形を検索
+        const selectedShapes = this.pendingShapes.filter(s => s.selected);
+
+        if (selectedShapes.length === 0) {
+            console.log('選択された図形がありません');
+            alert('削除する図形を選択してください');
+            return;
+        }
+
+        console.log('選択された図形を削除します。削除数:', selectedShapes.length);
+
+        // 選択された図形を削除
+        this.pendingShapes = this.pendingShapes.filter(s => !s.selected);
+
+        // pendingShapes が空になった場合、ボタンを無効化
+        if (this.pendingShapes.length === 0) {
+            if (this.addShapeContinueBtn) {
+                setEnabled(this.addShapeContinueBtn, false);
+            }
+            if (this.addShapeNewBtn) {
+                setEnabled(this.addShapeNewBtn, false);
+            }
+        }
+
+        // 再描画
+        this.redrawCanvas();
+
+        console.log('選択された図形を削除しました');
     }
 
     /**
@@ -598,16 +720,34 @@ class ShapeAnnotationManager {
 
         // 一時図形（未確定）もすべて描画
         this.pendingShapes.forEach(shape => {
+            // 選択された図形は破線と透明度で強調表示
+            if (shape.selected) {
+                this.ctx.save();
+                this.ctx.globalAlpha = 0.5;  // 透明度50%
+                this.ctx.setLineDash([5, 5]); // 破線（5px線、5px空白）
+            }
+
             this.drawShape(
                 shape.type,
                 shape.x1,
                 shape.y1,
                 shape.x2,
                 shape.y2,
-                shape.color,
+                shape.color,  // 元の色のまま
                 shape.lineWidth || this.selectedLineWidth
             );
+
+            if (shape.selected) {
+                this.ctx.restore();  // 設定を元に戻す
+            }
         });
+    }
+
+    /**
+     * キャンバス全体を再描画（redrawShapes のエイリアス）
+     */
+    redrawCanvas() {
+        this.redrawShapes();
     }
 
     /**

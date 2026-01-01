@@ -80,6 +80,12 @@ class App {
             console.log('✓ DetailTextManager initialized');
         }
 
+        // 方向矢印アノテーションマネージャー
+        if (typeof arrowAnnotationManager !== 'undefined') {
+            arrowAnnotationManager.init();
+            console.log('✓ ArrowAnnotationManager initialized');
+        }
+
         // フレーム抽出
         if (typeof frameExtractor !== 'undefined') {
             frameExtractor.init();
@@ -219,6 +225,11 @@ class App {
         // 詳細テキストマネージャーを有効化
         if (detailTextManager) {
             detailTextManager.onVideoLoaded();
+        }
+
+        // 方向矢印アノテーションマネージャーを有効化
+        if (arrowAnnotationManager) {
+            arrowAnnotationManager.onVideoLoaded();
         }
 
         // フレーム抽出を有効化

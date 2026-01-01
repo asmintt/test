@@ -92,7 +92,9 @@ ipcMain.handle('trim-video', async (event, data) => {
         annotations,        // 注釈データ
         shapes,             // 図形アノテーションデータ
         detailTexts,        // 詳細テキストデータ
+        arrows,             // 方向矢印データ
         videoScale,         // 動画のスケール情報
+        speed,              // 再生速度
         filename            // 出力ファイル名
     } = data;
 
@@ -107,11 +109,46 @@ ipcMain.handle('trim-video', async (event, data) => {
         fs.writeFileSync(tempInputPath, buffer);
         console.log('一時ファイル作成:', tempInputPath);
 
-        // FFmpegでトリミング処理を実行
-        return new Promise((resolve, reject) => {
-            try {
-                // FFmpegコマンドを構築
-                let command = ffmpeg(tempInputPath)
+        // テキスト注釈、図形、詳細テキスト、または方向矢印を含める場合
+        const hasAnnotations = includeAnnotations && (annotations?.length > 0 || shapes?.length > 0 || detailTexts?.length > 0 || arrows?.length > 0);
+        const needsSpeedChange = speed && speed !== 1.0;
+        const needsTwoStepProcess = hasAnnotations && needsSpeedChange;
+
+        // 2段階処理が必要な場合（注釈あり + 速度変更あり）
+        if (needsTwoStepProcess) {
+            console.log('2段階処理を実行: 注釈適用 → 速度変更');
+            return processTwoStep(tempInputPath, outputPath, {
+                startTime, duration, includeAudio,
+                annotations, shapes, detailTexts, arrows, videoScale, speed
+            });
+        }
+
+        // 1段階処理（注釈のみ、または速度変更のみ、または両方なし）
+        return processOneStep(tempInputPath, outputPath, {
+            startTime, duration, includeAudio, hasAnnotations,
+            annotations, shapes, detailTexts, arrows, videoScale, speed, needsSpeedChange
+        });
+
+    } catch (error) {
+        console.error('トリミングエラー:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+/**
+ * 1段階処理: 注釈または速度変更のいずれか（または両方なし）
+ */
+function processOneStep(tempInputPath, outputPath, options) {
+    const fs = require('fs');
+    const {
+        startTime, duration, includeAudio, hasAnnotations,
+        annotations, shapes, detailTexts, arrows, videoScale, speed, needsSpeedChange
+    } = options;
+
+    return new Promise((resolve, reject) => {
+        try {
+            // FFmpegコマンドを構築
+            let command = ffmpeg(tempInputPath)
                 .setStartTime(startTime)
                 .setDuration(duration);
 
@@ -120,12 +157,22 @@ ipcMain.handle('trim-video', async (event, data) => {
                 command = command.noAudio();
             }
 
-            // テキスト注釈、図形、または詳細テキストを含める場合
-            if (includeAnnotations && (annotations?.length > 0 || shapes?.length > 0 || detailTexts?.length > 0)) {
-                // フィルタチェーンを構築（テキスト注釈、図形、詳細テキストを統合）
-                const filters = buildCombinedFilters(annotations, shapes, detailTexts, startTime, duration, videoScale);
+            // 注釈を含める場合
+            if (hasAnnotations) {
+                const filters = buildCombinedFilters(annotations, shapes, detailTexts, arrows, startTime, duration, videoScale);
                 if (filters) {
                     command = command.complexFilter(filters);
+                }
+            }
+
+            // 再生速度の変更（注釈がない場合のみ）
+            if (needsSpeedChange && !hasAnnotations) {
+                const videoFilter = `setpts=PTS/${speed}`;
+                command = command.videoFilter(videoFilter);
+
+                if (includeAudio) {
+                    const audioFilter = buildAtempoFilter(speed);
+                    command = command.audioFilter(audioFilter);
                 }
             }
 
@@ -134,10 +181,9 @@ ipcMain.handle('trim-video', async (event, data) => {
                 '-c:v libx264',
                 '-preset ultrafast',
                 '-crf 28',
-                '-pix_fmt yuv420p'  // QuickTime互換性のため
+                '-pix_fmt yuv420p'
             ];
 
-            // 音声を含める場合は音声コーデックを指定
             if (includeAudio) {
                 outputOpts.push('-c:a aac');
                 outputOpts.push('-b:a 128k');
@@ -148,7 +194,6 @@ ipcMain.handle('trim-video', async (event, data) => {
                     console.log('FFmpeg開始:', commandLine);
                 })
                 .on('progress', (progress) => {
-                    // 進捗をレンダラープロセスに送信
                     if (progress.percent) {
                         mainWindow.webContents.send('trim-progress', {
                             percent: Math.min(Math.round(progress.percent), 100)
@@ -157,7 +202,6 @@ ipcMain.handle('trim-video', async (event, data) => {
                 })
                 .on('end', () => {
                     console.log('トリミング完了');
-                    // 一時ファイルを削除
                     try {
                         fs.unlinkSync(tempInputPath);
                     } catch (e) {
@@ -167,7 +211,6 @@ ipcMain.handle('trim-video', async (event, data) => {
                 })
                 .on('error', (err) => {
                     console.error('FFmpegエラー:', err);
-                    // 一時ファイルを削除
                     try {
                         fs.unlinkSync(tempInputPath);
                     } catch (e) {
@@ -178,7 +221,6 @@ ipcMain.handle('trim-video', async (event, data) => {
                 .save(outputPath);
 
         } catch (error) {
-            // 一時ファイルを削除
             try {
                 if (fs.existsSync(tempInputPath)) {
                     fs.unlinkSync(tempInputPath);
@@ -189,12 +231,141 @@ ipcMain.handle('trim-video', async (event, data) => {
             reject(error);
         }
     });
+}
 
-    } catch (error) {
-        console.error('トリミングエラー:', error);
-        return { success: false, error: error.message };
-    }
-});
+/**
+ * 2段階処理: 注釈適用 → 速度変更
+ */
+function processTwoStep(tempInputPath, outputPath, options) {
+    const fs = require('fs');
+    const os = require('os');
+    const {
+        startTime, duration, includeAudio,
+        annotations, shapes, detailTexts, arrows, videoScale, speed
+    } = options;
+
+    // ステップ1用の一時ファイル（注釈付き、通常速度）
+    const tempAnnotatedPath = path.join(os.tmpdir(), `annotated_${Date.now()}.mp4`);
+
+    return new Promise((resolve, reject) => {
+        // ステップ1: 注釈を適用して一時ファイルに出力
+        let command1 = ffmpeg(tempInputPath)
+            .setStartTime(startTime)
+            .setDuration(duration);
+
+        if (!includeAudio) {
+            command1 = command1.noAudio();
+        }
+
+        const filters = buildCombinedFilters(annotations, shapes, detailTexts, arrows, startTime, duration, videoScale);
+        if (filters) {
+            command1 = command1.complexFilter(filters);
+        }
+
+        const outputOpts1 = [
+            '-c:v libx264',
+            '-preset ultrafast',
+            '-crf 28',
+            '-pix_fmt yuv420p'
+        ];
+
+        if (includeAudio) {
+            outputOpts1.push('-c:a aac');
+            outputOpts1.push('-b:a 128k');
+        }
+
+        command1.outputOptions(outputOpts1)
+            .on('start', (commandLine) => {
+                console.log('ステップ1/2: 注釈適用中...', commandLine);
+            })
+            .on('progress', (progress) => {
+                if (progress.percent) {
+                    // ステップ1は全体の50%まで
+                    const overallPercent = Math.min(Math.round(progress.percent / 2), 50);
+                    mainWindow.webContents.send('trim-progress', {
+                        percent: overallPercent
+                    });
+                }
+            })
+            .on('end', () => {
+                console.log('ステップ1完了: 注釈適用済み');
+
+                // ステップ2: 速度変更を適用
+                let command2 = ffmpeg(tempAnnotatedPath);
+
+                const videoFilter = `setpts=PTS/${speed}`;
+                command2 = command2.videoFilter(videoFilter);
+
+                if (includeAudio) {
+                    const audioFilter = buildAtempoFilter(speed);
+                    command2 = command2.audioFilter(audioFilter);
+                }
+
+                const outputOpts2 = [
+                    '-c:v libx264',
+                    '-preset ultrafast',
+                    '-crf 28',
+                    '-pix_fmt yuv420p'
+                ];
+
+                if (includeAudio) {
+                    outputOpts2.push('-c:a aac');
+                    outputOpts2.push('-b:a 128k');
+                }
+
+                command2.outputOptions(outputOpts2)
+                    .on('start', (commandLine) => {
+                        console.log('ステップ2/2: 速度変更中...', commandLine);
+                    })
+                    .on('progress', (progress) => {
+                        if (progress.percent) {
+                            // ステップ2は50%から100%まで
+                            const overallPercent = Math.min(Math.round(50 + progress.percent / 2), 100);
+                            mainWindow.webContents.send('trim-progress', {
+                                percent: overallPercent
+                            });
+                        }
+                    })
+                    .on('end', () => {
+                        console.log('ステップ2完了: 速度変更済み');
+
+                        // 一時ファイルを削除
+                        try {
+                            fs.unlinkSync(tempInputPath);
+                            fs.unlinkSync(tempAnnotatedPath);
+                        } catch (e) {
+                            console.error('一時ファイル削除エラー:', e);
+                        }
+
+                        resolve({ success: true, outputPath });
+                    })
+                    .on('error', (err) => {
+                        console.error('ステップ2エラー:', err);
+                        try {
+                            fs.unlinkSync(tempInputPath);
+                            fs.unlinkSync(tempAnnotatedPath);
+                        } catch (e) {
+                            console.error('一時ファイル削除エラー:', e);
+                        }
+                        reject(err);
+                    })
+                    .save(outputPath);
+            })
+            .on('error', (err) => {
+                console.error('ステップ1エラー:', err);
+                try {
+                    fs.unlinkSync(tempInputPath);
+                    if (fs.existsSync(tempAnnotatedPath)) {
+                        fs.unlinkSync(tempAnnotatedPath);
+                    }
+                } catch (e) {
+                    console.error('一時ファイル削除エラー:', e);
+                }
+                reject(err);
+            })
+            .save(tempAnnotatedPath);
+    });
+}
 
 /**
  * atempo フィルターを構築
@@ -330,16 +501,17 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
 }
 
 /**
- * テキスト注釈、図形アノテーション、詳細テキストを統合したフィルタチェーンを構築
+ * テキスト注釈、図形アノテーション、詳細テキスト、方向矢印を統合したフィルタチェーンを構築
  * @param {Array} annotations - テキスト注釈データの配列
  * @param {Array} shapes - 図形アノテーションデータの配列
  * @param {Array} detailTexts - 詳細テキストデータの配列
+ * @param {Array} arrows - 方向矢印データの配列
  * @param {number} trimStartTime - トリミング開始時刻
  * @param {number} trimDuration - トリミング継続時間
  * @param {Object} videoScale - 動画のスケール情報 { actualWidth, actualHeight, displayWidth, displayHeight }
  * @returns {Array|null} FFmpegのcomplexFilterに渡すフィルタ配列、または null
  */
-function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, trimDuration, videoScale) {
+function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStartTime, trimDuration, videoScale) {
     // テキストがある注釈のみをフィルタリング（text1またはtext2がある場合）
     const textAnnotations = annotations ? annotations.filter(ann => (ann.text1 && ann.text1.trim() !== '') || (ann.text2 && ann.text2.trim() !== '')) : [];
 
@@ -349,9 +521,12 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
     // 詳細テキストがある注釈のみをフィルタリング
     const validDetailTexts = detailTexts ? detailTexts.filter(dt => dt.text && dt.text.trim() !== '') : [];
 
+    // 方向矢印をフィルタリング
+    const validArrows = arrows ? arrows : [];
+
     // すべてない場合は null を返す
-    if (textAnnotations.length === 0 && validShapes.length === 0 && validDetailTexts.length === 0) {
-        console.log('テキスト注釈、図形、詳細テキストともにないため、フィルタを適用しません');
+    if (textAnnotations.length === 0 && validShapes.length === 0 && validDetailTexts.length === 0 && validArrows.length === 0) {
+        console.log('テキスト注釈、図形、詳細テキスト、方向矢印ともにないため、フィルタを適用しません');
         return null;
     }
 
@@ -671,7 +846,50 @@ function buildCombinedFilters(annotations, shapes, detailTexts, trimStartTime, t
         filterIndex++;
     });
 
-    // 5. 全フィルターに対して、最後以外に出力ラベルを設定
+    // 5. 方向矢印を追加
+    validArrows.forEach((arrow, index) => {
+        // 方向矢印の表示開始時刻（トリミング開始時刻を基準とした相対時刻）
+        const displayStartTime = Math.max(0, arrow.time - trimStartTime);
+
+        // 方向矢印は常に表示（終了時刻 = トリミング終了時刻）
+        const displayEndTime = trimDuration;
+
+        // 座標をスケール変換
+        const x = Math.round(arrow.x * scaleX);
+        const y = Math.round(arrow.y * scaleY);
+
+        // サイズに基づいてフォントサイズを計算（sizeはpx単位）
+        const baseFontSize = 16 + (arrow.size * 6);
+        const fontSize = Math.round(baseFontSize * Math.min(scaleX, scaleY));
+
+        // 矢印テキストを作成
+        const arrowText = arrow.type === 'left' ? '⬅左' : '右➡';
+
+        // テキストを安全にエスケープ（Unicodeなのでエスケープ不要だが念のため）
+        const escapedText = arrowText;
+
+        // フォント選択（注釈タブのフォント選択を反映したい場合は将来拡張）
+        const arrowFontFile = '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc';
+
+        const filterObj = {
+            filter: 'drawtext',
+            options: {
+                text: escapedText,
+                fontfile: arrowFontFile,
+                fontsize: fontSize,
+                fontcolor: arrow.color,
+                x: x,
+                y: y,
+                enable: `between(t,${displayStartTime},${displayEndTime})`
+            },
+            inputs: currentInput
+        };
+
+        filters.push(filterObj);
+        filterIndex++;
+    });
+
+    // 6. 全フィルターに対して、最後以外に出力ラベルを設定
     for (let i = 0; i < filters.length; i++) {
         if (i === 0) {
             // 最初のフィルター（pad）は既に出力ラベルを持っている
