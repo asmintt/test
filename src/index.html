@@ -50,11 +50,11 @@
                     </div>
                 </section>
 
-                <!-- 2. 動画の範囲を指定 -->
+                <!-- 再生位置を指定 -->
                 <section class="control-section">
                     <details open>
-                        <summary><h2>2. 動画の範囲を指定</h2></summary>
-                        <div class="range-controls">
+                        <summary><h2>再生位置を指定</h2></summary>
+                        <div class="playback-controls">
                             <!-- 時刻調整ボタン -->
                             <div class="time-adjust-controls compact">
                                 <div class="time-adjust-row">
@@ -70,7 +70,15 @@
                                     <button class="btn-tiny" id="resetVideoTime" disabled>リセット</button>
                                 </div>
                             </div>
+                        </div>
+                    </details>
+                </section>
 
+                <!-- 2. 動画の範囲を指定 -->
+                <section class="control-section">
+                    <details open>
+                        <summary><h2>2. 動画の範囲を指定</h2></summary>
+                        <div class="range-controls">
                             <!-- 範囲スライダー -->
                             <div class="range-slider">
                                 <input type="range" id="startSlider" min="0" max="100" value="0" step="0.1" disabled>

@@ -306,6 +306,11 @@ details:not([open]) summary h2::before {
 /* ========================================
    範囲コントロール
    ======================================== */
+/* 再生位置コントロール */
+.playback-controls {
+    padding-top: 6px;
+}
+
 .range-controls {
     padding-top: 6px;
 }
@@ -314,8 +319,6 @@ details:not([open]) summary h2::before {
     position: relative;
     height: 40px;
     margin-bottom: 6px;
-    padding-top: 15px;
-    border-top: 1px solid #e0e0e0;
 }
 
 .range-slider input[type="range"] {
@@ -1696,7 +1699,7 @@ details:not([open]) summary h2::before {
 
 /* 時刻調整ボタンのコンパクト化 */
 .time-adjust-controls.compact {
-    margin: 0 0 20px 0;
+    margin: 0;
 }
 
 .time-adjust-controls.compact .time-adjust-row {
