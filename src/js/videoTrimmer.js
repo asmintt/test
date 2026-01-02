@@ -84,7 +84,6 @@ class VideoTrimmer {
             let annotations = [];
             let shapes = [];
             let detailTexts = [];
-            let arrows = [];
             if (includeAnnotations && annotationManager) {
                 annotations = annotationManager.getAnnotations();
             }
@@ -93,9 +92,6 @@ class VideoTrimmer {
             }
             if (includeAnnotations && detailTextManager) {
                 detailTexts = detailTextManager.getDetailTexts();
-            }
-            if (includeAnnotations && arrowAnnotationManager) {
-                arrows = arrowAnnotationManager.getArrows();
             }
 
             // 動画の実際のサイズと表示サイズを取得（座標変換用）
@@ -123,7 +119,6 @@ class VideoTrimmer {
                 annotations: annotations,
                 shapes: shapes,
                 detailTexts: detailTexts,
-                arrows: arrows,
                 videoScale: videoScale,
                 speed: playbackSpeed,
                 filename: projectTitle
