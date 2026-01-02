@@ -8,7 +8,8 @@ class ShapeAnnotationManager {
         this.ctx = this.canvas?.getContext('2d');
         this.shapeButtons = document.querySelectorAll('.shape-btn');
         this.shapeColorButtons = document.querySelectorAll('.shape-color-btn');
-        this.shapeLineWidthButtons = document.querySelectorAll('.shape-linewidth-btn');
+        this.shapeLineWidthButtons = document.querySelectorAll('.shape-linewidth-btn, .shape-linewidth-btn-compact');
+        this.customLineWidthInput = document.getElementById('customLineWidth');
         this.customColor = document.getElementById('shapeCustomColor');
         this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
         this.shapeList = document.getElementById('shapeList');
@@ -23,10 +24,10 @@ class ShapeAnnotationManager {
         this.resetShapeTimeBtn = document.getElementById('resetVideoTime');
 
         // 選択された色
-        this.selectedShapeColor = '#FF0000'; // デフォルト: 赤
+        this.selectedShapeColor = '#FFFFFF'; // デフォルト: 白
 
         // 選択された枠線の太さ
-        this.selectedLineWidth = 5; // デフォルト: 5px（標準）
+        this.selectedLineWidth = 1; // デフォルト: 1px（最極細）
 
         // 現在の図形タイプ
         this.currentShapeType = null;
@@ -58,6 +59,22 @@ class ShapeAnnotationManager {
      */
     init() {
         if (!this.canvas) return;
+
+        // localStorageから枠線の太さを復元
+        const savedLineWidth = localStorage.getItem('selectedLineWidth');
+        if (savedLineWidth) {
+            this.selectedLineWidth = parseInt(savedLineWidth);
+            console.log('枠線の太さを復元しました:', this.selectedLineWidth);
+
+            // 復元した値に対応するボタンをアクティブにする
+            this.shapeLineWidthButtons.forEach(btn => {
+                if (parseInt(btn.getAttribute('data-linewidth'), 10) === this.selectedLineWidth) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
 
         // 図形選択ボタン
         this.shapeButtons.forEach(btn => {
@@ -225,6 +242,21 @@ class ShapeAnnotationManager {
                 this.selectLineWidth(lineWidth, button);
             });
         });
+
+        // カスタム枠線の太さ入力欄
+        if (this.customLineWidthInput) {
+            this.customLineWidthInput.addEventListener('change', () => {
+                const lineWidth = parseInt(this.customLineWidthInput.value, 10);
+                if (lineWidth >= 1 && lineWidth <= 50) {
+                    this.selectLineWidth(lineWidth, null);
+                    // プリセットボタンの選択を解除
+                    this.shapeLineWidthButtons.forEach(btn => btn.classList.remove('active'));
+                }
+            });
+
+            // 復元した値をカスタム入力欄に反映
+            this.customLineWidthInput.value = this.selectedLineWidth;
+        }
     }
 
     /**
@@ -263,14 +295,19 @@ class ShapeAnnotationManager {
     /**
      * 枠線の太さを選択
      * @param {number} lineWidth - 選択された太さ
-     * @param {HTMLElement} button - クリックされたボタン
+     * @param {HTMLElement} button - クリックされたボタン（nullの場合はカスタム入力）
      */
     selectLineWidth(lineWidth, button) {
         this.selectedLineWidth = lineWidth;
 
+        // localStorageに保存
+        localStorage.setItem('selectedLineWidth', lineWidth);
+
         // ボタンのactive状態を更新
         this.shapeLineWidthButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
+        if (button) {
+            button.classList.add('active');
+        }
 
         // pendingShapes（確定前の図形）の最後の図形の太さを更新
         if (this.pendingShapes.length > 0) {
@@ -448,9 +485,9 @@ class ShapeAnnotationManager {
             // 既存の図形を再描画
             this.redrawShapes();
 
-            // プレビュー矢印を半透明で描画
+            // プレビュー矢印を半透明で描画（透過率0.3で仮の状態を強調）
             this.ctx.save();
-            this.ctx.globalAlpha = 0.5;
+            this.ctx.globalAlpha = 0.3;
 
             if (this.isTextIncludedArrow) {
                 // テキスト付き矢印
@@ -470,8 +507,11 @@ class ShapeAnnotationManager {
         // 既存の図形を再描画
         this.redrawShapes();
 
-        // プレビュー図形を描画
+        // プレビュー図形を半透明で描画（透過率0.3で仮の状態を強調、矢印と同じUX）
+        this.ctx.save();
+        this.ctx.globalAlpha = 0.3;
         this.drawShape(this.currentShapeType, this.startX, this.startY, currentX, currentY, this.selectedShapeColor, this.selectedLineWidth, this.isTextIncludedArrow);
+        this.ctx.restore();
     }
 
     /**
@@ -610,18 +650,19 @@ class ShapeAnnotationManager {
             isTextIncluded: this.isTextIncludedArrow  // テキスト付き矢印フラグを保存
         };
 
-        // shapesに直接追加（確定）
-        this.shapes.push(arrow);
-        console.log('方向矢印を配置しました:', arrow);
+        // pendingShapesに追加（一時保存、直線・四角形と同じ動作）
+        this.pendingShapes.push(arrow);
+        console.log('方向矢印を配置しました（未確定）:', arrow);
+        console.log('現在の未確定図形数:', this.pendingShapes.length);
 
-        // 時刻順にソート
-        this.sortShapes();
-
-        // リストを更新
-        this.updateShapeList();
-
-        // コールバック実行
-        this.notifyChange();
+        // 追加ボタンを有効化
+        if (this.addShapeContinueBtn) {
+            setEnabled(this.addShapeContinueBtn, true);
+        }
+        if (this.addShapeNewBtn) {
+            setEnabled(this.addShapeNewBtn, true);
+        }
+        console.log('追加ボタンを有効化しました');
 
         // 再描画
         this.redrawShapes();
@@ -1106,6 +1147,11 @@ class ShapeAnnotationManager {
         this.shapeLineWidthButtons.forEach(button => {
             button.disabled = false;
         });
+
+        // カスタム枠線の太さ入力欄を有効化
+        if (this.customLineWidthInput) {
+            this.customLineWidthInput.disabled = false;
+        }
 
         // 時刻調整ボタンを有効化
         this.timeAdjustShapeButtons.forEach(button => {

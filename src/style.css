@@ -107,7 +107,7 @@ body {
 }
 
 .sidebar-right input[type="text"],
-.sidebar-right input[type="number"] {
+.sidebar-right input[type="number"]:not(.custom-linewidth-input) {
     font-size: 1.0rem;
     padding: 10px 12px;
     border: 1px solid #ddd;
@@ -1082,56 +1082,105 @@ details:not([open]) summary h2::before {
     cursor: not-allowed;
 }
 
-/* 枠線の太さ選択パネル */
+
+/* 枠線の太さ選択パネル（1行レイアウト） */
 .shape-linewidth-panel-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 12px;
 }
 
 .shape-linewidth-panel-section label {
-    display: block;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #555;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin: 0;
 }
 
-.shape-linewidth-panel {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+.shape-linewidth-panel-compact {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex: 1;
 }
 
-.shape-linewidth-btn {
-    width: 100%;
-    height: 36px;
-    padding: 0;
+.shape-linewidth-btn-compact {
+    flex: 1;
+    height: 28px;
+    padding: 2px 4px;
     border: 2px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     background: white;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 0.8rem;
+    font-family: inherit;
+    font-size: 0.75rem;
     font-weight: 600;
+    line-height: 1;
     color: #333;
 }
 
-.shape-linewidth-btn:hover:not(:disabled) {
+.shape-linewidth-btn-compact:hover:not(:disabled) {
     transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     background: rgba(44, 82, 130, 0.05);
 }
 
-.shape-linewidth-btn.active {
+.shape-linewidth-btn-compact.active {
     border-color: #2c5282;
-    border-width: 3px;
+    border-width: 2px;
     background: rgba(44, 82, 130, 0.1);
     color: #2c5282;
-    transform: scale(1.05);
 }
 
-.shape-linewidth-btn:disabled {
+.shape-linewidth-btn-compact:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.custom-linewidth-input {
+    flex: 1;
+    height: 28px;
+    padding: 2px 4px;
+    border: 2px solid #ddd;
+    background: #f8f8f8;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    cursor: text;
+    transition: all 0.2s;
+}
+
+.custom-linewidth-input:focus {
+    outline: none;
+    border-color: #2c5282;
+    border-style: solid;
+    background: rgba(44, 82, 130, 0.05);
+}
+
+.custom-linewidth-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+/* カスタム入力欄のスピナーを常に表示 */
+.custom-linewidth-input::-webkit-inner-spin-button,
+.custom-linewidth-input::-webkit-outer-spin-button {
+    opacity: 1;
+    height: 24px;
+    cursor: pointer;
+}
+
+/* Firefox用 */
+.custom-linewidth-input {
+    -moz-appearance: textfield;
 }
 
 /* カスタム色選択 */

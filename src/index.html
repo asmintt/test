@@ -225,15 +225,14 @@
                             <button class="shape-btn" data-shape="none">選択解除</button>
                         </div>
 
-                        <!-- 枠線の太さ選択（5段階プリセット） -->
+                        <!-- 枠線の太さ選択 -->
                         <div class="shape-linewidth-panel-section">
                             <label>枠線の太さ:</label>
-                            <div class="shape-linewidth-panel">
-                                <button class="shape-linewidth-btn" data-linewidth="2" title="極細" disabled>2px</button>
-                                <button class="shape-linewidth-btn" data-linewidth="3" title="細" disabled>3px</button>
-                                <button class="shape-linewidth-btn active" data-linewidth="5" title="標準" disabled>5px</button>
-                                <button class="shape-linewidth-btn" data-linewidth="7" title="太" disabled>7px</button>
-                                <button class="shape-linewidth-btn" data-linewidth="10" title="極太" disabled>10px</button>
+                            <div class="shape-linewidth-panel-compact">
+                                <button class="shape-linewidth-btn-compact active" data-linewidth="1" disabled>1</button>
+                                <button class="shape-linewidth-btn-compact" data-linewidth="3" disabled>3</button>
+                                <button class="shape-linewidth-btn-compact" data-linewidth="5" disabled>5</button>
+                                <input type="number" id="customLineWidth" class="custom-linewidth-input" min="1" max="50" value="1" disabled>
                             </div>
                         </div>
 
