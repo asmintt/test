@@ -136,6 +136,33 @@ body {
     font-weight: 600;
 }
 
+/* 統合セクションのスタイル */
+.color-palette-section,
+.shape-section,
+.annotation-section,
+.detail-section {
+    padding: 15px 0;
+}
+
+.color-palette-section h3,
+.shape-section h3,
+.annotation-section h3,
+.detail-section h3 {
+    font-size: 0.9rem;
+    color: #2c5282;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+/* 区切り線（最初のセクション以外） */
+.shape-section,
+.annotation-section:not(:first-child),
+.detail-section {
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+    margin-top: 10px;
+}
+
 /* 折りたたみセクション */
 details summary {
     cursor: pointer;
@@ -1233,7 +1260,8 @@ details:not([open]) summary h2::before {
 }
 
 .text-align-btn,
-.detail-text-align-btn {
+.detail-text-align-btn,
+.shared-text-align-btn {
     padding: 8px 12px;
     border: 2px solid #ddd;
     border-radius: 6px;
@@ -1246,22 +1274,41 @@ details:not([open]) summary h2::before {
 }
 
 .text-align-btn:hover:not(:disabled),
-.detail-text-align-btn:hover:not(:disabled) {
+.detail-text-align-btn:hover:not(:disabled),
+.shared-text-align-btn:hover:not(:disabled) {
     border-color: #2c5282;
     background: rgba(44, 82, 130, 0.05);
 }
 
 .text-align-btn.active,
-.detail-text-align-btn.active {
+.detail-text-align-btn.active,
+.shared-text-align-btn.active {
     border-color: #2c5282;
     background: rgba(44, 82, 130, 0.1);
     color: #2c5282;
 }
 
 .text-align-btn:disabled,
-.detail-text-align-btn:disabled {
+.detail-text-align-btn:disabled,
+.shared-text-align-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* カスタム設定のサブセクション見出し */
+.custom-subsection-header {
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 10px;
+    margin-top: 6px;
+    font-weight: 600;
+}
+
+/* カスタム設定の区切り線 */
+.custom-divider {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 5px 0;
 }
 
 /* 登録ボタン */
@@ -1449,6 +1496,39 @@ details:not([open]) summary h2::before {
     background: #2c5282;
     color: white;
     border-color: #2c5282;
+}
+
+/* 方向矢印ボタン（shape-btnと組み合わせて使用） */
+.direction-arrow-btn {
+    font-weight: 600;
+}
+
+.direction-arrow-left {
+    color: #1976D2; /* 青 */
+}
+
+.direction-arrow-left:hover {
+    color: #1565C0;
+    background-color: #E3F2FD; /* 薄い青背景 */
+}
+
+.direction-arrow-left.active {
+    color: #0D47A1; /* より濃い青 */
+    background-color: #BBDEFB; /* 青背景 */
+}
+
+.direction-arrow-right {
+    color: #FF9800; /* 橙 */
+}
+
+.direction-arrow-right:hover {
+    color: #F57C00;
+    background-color: #FFF3E0; /* 薄い橙背景 */
+}
+
+.direction-arrow-right.active {
+    color: #E65100; /* より濃い橙 */
+    background-color: #FFE0B2; /* 橙背景 */
 }
 
 .color-picker-row {

@@ -10,6 +10,7 @@ class ShapeAnnotationManager {
         this.shapeColorButtons = document.querySelectorAll('.shape-color-btn');
         this.shapeLineWidthButtons = document.querySelectorAll('.shape-linewidth-btn');
         this.customColor = document.getElementById('shapeCustomColor');
+        this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
         this.shapeList = document.getElementById('shapeList');
         this.addShapeContinueBtn = document.getElementById('addShapeContinueBtn');
         this.addShapeNewBtn = document.getElementById('addShapeNewBtn');
@@ -29,6 +30,9 @@ class ShapeAnnotationManager {
 
         // 現在の図形タイプ
         this.currentShapeType = null;
+
+        // テキスト付き矢印フラグ（direction-arrow-btnクラスを持つボタンからの選択）
+        this.isTextIncludedArrow = false;
 
         // 描画中の状態
         this.isDrawing = false;
@@ -58,6 +62,8 @@ class ShapeAnnotationManager {
         // 図形選択ボタン
         this.shapeButtons.forEach(btn => {
             btn.addEventListener('click', () => {
+                // direction-arrow-btnクラスを持つ場合はテキスト付き矢印
+                this.isTextIncludedArrow = btn.classList.contains('direction-arrow-btn');
                 this.selectShape(btn.dataset.shape);
                 this.updateButtonStates(btn);
             });
@@ -146,6 +152,24 @@ class ShapeAnnotationManager {
      * 図形コントロール（色・太さ）の初期化
      */
     initShapeControls() {
+        // 共通プリセットボタン（説明/要点/注意/登録）
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        presetButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const bgColor = button.getAttribute('data-bg-color');
+                if (bgColor) {
+                    this.selectedShapeColor = bgColor;
+                    console.log('共通プリセットボタンから図形色を設定:', bgColor);
+
+                    // pendingShapes（確定前の図形）の最後の図形の色を更新
+                    if (this.pendingShapes.length > 0) {
+                        this.pendingShapes[this.pendingShapes.length - 1].color = bgColor;
+                        this.redrawShapes(); // リアルタイムプレビュー更新
+                    }
+                }
+            });
+        });
+
         // 6色パネルボタン
         this.shapeColorButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -156,8 +180,41 @@ class ShapeAnnotationManager {
 
         // カスタムカラーピッカー
         if (this.customColor) {
-            this.customColor.addEventListener('change', () => {
-                this.selectCustomColor();
+            // ダブルクリックでカラーピッカーを開く
+            this.customColor.addEventListener('dblclick', () => {
+                const input = document.createElement('input');
+                input.type = 'color';
+                input.value = this.selectedShapeColor;
+                input.addEventListener('change', () => {
+                    this.selectedShapeColor = input.value;
+                    this.selectCustomColor();
+                });
+                input.click();
+            });
+        }
+
+        // 共通カスタムボタンのダブルクリック → カスタム設定を開く
+        if (this.sharedCustomPresetBtn) {
+            this.sharedCustomPresetBtn.addEventListener('dblclick', () => {
+                const customSettings = document.getElementById('sharedCustomSettings');
+                if (customSettings) {
+                    customSettings.open = true; // detailsを開く
+                }
+            });
+        }
+
+        // 統一カスタム設定の背景色変更イベント
+        const sharedBgColor = document.getElementById('sharedCustomBgColor');
+        if (sharedBgColor) {
+            sharedBgColor.addEventListener('change', () => {
+                this.selectedShapeColor = sharedBgColor.value;
+                console.log('統一カスタム設定から図形色を設定:', this.selectedShapeColor);
+
+                // pendingShapes（確定前の図形）の最後の図形の色を更新
+                if (this.pendingShapes.length > 0) {
+                    this.pendingShapes[this.pendingShapes.length - 1].color = this.selectedShapeColor;
+                    this.redrawShapes(); // リアルタイムプレビュー更新
+                }
             });
         }
 
@@ -182,9 +239,6 @@ class ShapeAnnotationManager {
         this.shapeColorButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
 
-        // カスタムカラーピッカーを同期
-        if (this.customColor) this.customColor.value = color;
-
         // pendingShapes（確定前の図形）の最後の図形の色を更新
         if (this.pendingShapes.length > 0) {
             this.pendingShapes[this.pendingShapes.length - 1].color = color;
@@ -196,14 +250,12 @@ class ShapeAnnotationManager {
      * カスタム色を選択
      */
     selectCustomColor() {
-        this.selectedShapeColor = this.customColor.value;
-
         // パネルボタンのactive状態を解除
         this.shapeColorButtons.forEach(btn => btn.classList.remove('active'));
 
         // pendingShapes（確定前の図形）の最後の図形の色を更新
         if (this.pendingShapes.length > 0) {
-            this.pendingShapes[this.pendingShapes.length - 1].color = this.customColor.value;
+            this.pendingShapes[this.pendingShapes.length - 1].color = this.selectedShapeColor;
             this.redrawShapes(); // リアルタイムプレビュー更新
         }
     }
@@ -257,12 +309,20 @@ class ShapeAnnotationManager {
         } else if (shapeType === 'none') {
             // 図形選択を解除
             this.currentShapeType = null;
+            this.isTextIncludedArrow = false;
             this.canvas.style.cursor = 'default';
             // 全ての選択を解除
             this.pendingShapes.forEach(s => s.selected = false);
             this.redrawCanvas();
+        } else if (shapeType === 'arrow-left' || shapeType === 'arrow-right' ||
+                   shapeType === 'arrow-up' || shapeType === 'arrow-down') {
+            // 方向矢印モード（C案：クリック配置）
+            this.currentShapeType = shapeType;
+            this.canvas.style.cursor = 'crosshair';
+            console.log('方向矢印モードに入りました:', shapeType, 'テキスト付き:', this.isTextIncludedArrow);
         } else {
             this.currentShapeType = shapeType;
+            this.isTextIncludedArrow = false;  // 矢印以外を選択した時はリセット
             this.canvas.style.cursor = 'crosshair';
         }
     }
@@ -298,6 +358,14 @@ class ShapeAnnotationManager {
             e.preventDefault();
             e.stopPropagation();
             this.selectShapeAtPosition(clickX, clickY);
+            return;
+        }
+
+        // 方向矢印モードの場合、クリック一発で配置
+        if (this.currentShapeType === 'arrow-left' || this.currentShapeType === 'arrow-right' ||
+            this.currentShapeType === 'arrow-up' || this.currentShapeType === 'arrow-down') {
+            console.log('方向矢印をクリック位置に配置します');
+            this.placeArrowAtClick(clickX, clickY);
             return;
         }
 
@@ -370,17 +438,40 @@ class ShapeAnnotationManager {
      * @param {MouseEvent} e - マウスイベント
      */
     onMouseMove(e) {
-        if (!this.isDrawing) return;
-
         const rect = this.canvas.getBoundingClientRect();
         const currentX = e.clientX - rect.left;
         const currentY = e.clientY - rect.top;
+
+        // 方向矢印モードの場合、マウス位置にプレビュー表示
+        if (this.currentShapeType === 'arrow-left' || this.currentShapeType === 'arrow-right' ||
+            this.currentShapeType === 'arrow-up' || this.currentShapeType === 'arrow-down') {
+            // 既存の図形を再描画
+            this.redrawShapes();
+
+            // プレビュー矢印を半透明で描画
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.5;
+
+            if (this.isTextIncludedArrow) {
+                // テキスト付き矢印
+                this.drawTextIncludedArrow(currentX, currentY, this.currentShapeType, this.selectedShapeColor, this.selectedLineWidth);
+            } else {
+                // 記号のみ矢印
+                this.drawArrow(currentX, currentY, this.currentShapeType, this.selectedShapeColor, this.selectedLineWidth);
+            }
+
+            this.ctx.restore();
+            return;
+        }
+
+        // ドラッグ中でない場合は何もしない
+        if (!this.isDrawing) return;
 
         // 既存の図形を再描画
         this.redrawShapes();
 
         // プレビュー図形を描画
-        this.drawShape(this.currentShapeType, this.startX, this.startY, currentX, currentY, this.selectedShapeColor, this.selectedLineWidth);
+        this.drawShape(this.currentShapeType, this.startX, this.startY, currentX, currentY, this.selectedShapeColor, this.selectedLineWidth, this.isTextIncludedArrow);
     }
 
     /**
@@ -495,6 +586,48 @@ class ShapeAnnotationManager {
     }
 
     /**
+     * 方向矢印をクリック位置に配置（C案）
+     * @param {number} x - クリックX座標
+     * @param {number} y - クリックY座標
+     */
+    placeArrowAtClick(x, y) {
+        // 現在の動画時刻を取得
+        const currentTime = videoPlayer ? videoPlayer.getCurrentTime() : 0;
+
+        // 矢印データを作成
+        const arrow = {
+            time: currentTime,
+            type: this.currentShapeType,
+            x1: x,
+            y1: y,
+            x2: x,
+            y2: y,
+            color: this.selectedShapeColor,
+            lineWidth: this.selectedLineWidth,
+            canvasWidth: this.canvas.width,
+            canvasHeight: this.canvas.height,
+            continueFromPrevious: false,
+            isTextIncluded: this.isTextIncludedArrow  // テキスト付き矢印フラグを保存
+        };
+
+        // shapesに直接追加（確定）
+        this.shapes.push(arrow);
+        console.log('方向矢印を配置しました:', arrow);
+
+        // 時刻順にソート
+        this.sortShapes();
+
+        // リストを更新
+        this.updateShapeList();
+
+        // コールバック実行
+        this.notifyChange();
+
+        // 再描画
+        this.redrawShapes();
+    }
+
+    /**
      * 選択された図形を削除
      */
     deleteSelectedShapes() {
@@ -579,8 +712,9 @@ class ShapeAnnotationManager {
      * @param {number} y2 - 終了Y座標
      * @param {string} color - 色
      * @param {number} lineWidth - 枠線の太さ（デフォルト: this.selectedLineWidth）
+     * @param {boolean} isTextIncluded - テキスト付き矢印かどうか
      */
-    drawShape(type, x1, y1, x2, y2, color, lineWidth = this.selectedLineWidth) {
+    drawShape(type, x1, y1, x2, y2, color, lineWidth = this.selectedLineWidth, isTextIncluded = false) {
         this.ctx.strokeStyle = color;
         this.ctx.lineWidth = lineWidth;
         this.ctx.fillStyle = 'transparent';
@@ -602,7 +736,11 @@ class ShapeAnnotationManager {
             case 'arrow-up':
             case 'arrow-down':
             case 'arrow':  // 後方互換性
-                this.drawArrow(x2, y2, type, color);
+                if (isTextIncluded) {
+                    this.drawTextIncludedArrow(x2, y2, type, color, lineWidth);
+                } else {
+                    this.drawArrow(x2, y2, type, color, lineWidth);
+                }
                 break;
         }
     }
@@ -613,10 +751,11 @@ class ShapeAnnotationManager {
      * @param {number} y - Y座標
      * @param {string} arrowType - 矢印のタイプ
      * @param {string} color - 色
+     * @param {number} lineWidth - 枠線の太さ
      */
-    drawArrow(x, y, arrowType, color) {
+    drawArrow(x, y, arrowType, color, lineWidth = null) {
         // lineWidthをフォントサイズに変換
-        const currentLineWidth = this.ctx.lineWidth || this.selectedLineWidth;
+        const currentLineWidth = lineWidth || this.ctx.lineWidth || this.selectedLineWidth;
         const fontSize = 16 + (currentLineWidth * 4.8);
 
         // 矢印のタイプに応じてUnicode記号を選択
@@ -632,6 +771,44 @@ class ShapeAnnotationManager {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(arrowSymbol, x, y);
+    }
+
+    /**
+     * テキスト付き矢印を描画（背景色なし）
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     * @param {string} arrowType - 矢印のタイプ
+     * @param {string} color - 色
+     * @param {number} lineWidth - 枠線の太さ
+     */
+    drawTextIncludedArrow(x, y, arrowType, color, lineWidth = null) {
+        const currentLineWidth = lineWidth || this.ctx.lineWidth || this.selectedLineWidth;
+        const fontSize = 16 + (currentLineWidth * 4.8);
+
+        // 矢印タイプに応じてテキストと色を決定
+        let text = '';
+        let textColor = '';
+
+        if (arrowType === 'arrow-left') {
+            text = '⬅ 左';
+            textColor = '#1976D2'; // 青
+        } else if (arrowType === 'arrow-right') {
+            text = '右 ➡';
+            textColor = '#FF9800'; // 橙
+        } else if (arrowType === 'arrow-up') {
+            text = '⬆ 上';
+            textColor = '#4CAF50'; // 緑
+        } else if (arrowType === 'arrow-down') {
+            text = '⬇ 下';
+            textColor = '#F44336'; // 赤
+        }
+
+        // テキストを描画（背景なし）
+        this.ctx.font = `${fontSize}px sans-serif`;
+        this.ctx.fillStyle = textColor;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(text, x, y);
     }
 
     /**
@@ -716,7 +893,8 @@ class ShapeAnnotationManager {
 
                 // 後方互換性: lineWidthがない場合はデフォルト値5を使用
                 const lineWidth = shape.lineWidth || 5;
-                this.drawShape(shape.type, x1, y1, x2, y2, shape.color, lineWidth);
+                const isTextIncluded = shape.isTextIncluded || false;
+                this.drawShape(shape.type, x1, y1, x2, y2, shape.color, lineWidth, isTextIncluded);
             });
         }
 
@@ -736,7 +914,8 @@ class ShapeAnnotationManager {
                 shape.x2,
                 shape.y2,
                 shape.color,  // 元の色のまま
-                shape.lineWidth || this.selectedLineWidth
+                shape.lineWidth || this.selectedLineWidth,
+                shape.isTextIncluded || false
             );
 
             if (shape.selected) {
@@ -841,9 +1020,6 @@ class ShapeAnnotationManager {
             // すべてのパネルボタンを非アクティブ化
             this.shapeColorButtons.forEach(btn => btn.classList.remove('active'));
         }
-
-        // カスタムカラーピッカーを同期
-        if (this.customColor) this.customColor.value = shape.color;
 
         // 枠線の太さを設定（後方互換性）
         this.selectedLineWidth = shape.lineWidth || 5;
