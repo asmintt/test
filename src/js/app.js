@@ -35,9 +35,6 @@ class App {
 
         this.isReady = true;
         console.log('MovieFrameSnap Lite 起動完了');
-
-        // テスト用の動画を自動読み込み（開発用）
-        this.loadTestVideo();
     }
 
     /**
@@ -249,22 +246,6 @@ class App {
         // 範囲再生の終了判定
         if (rangeSelector) {
             rangeSelector.checkRangePlayback(currentTime);
-        }
-    }
-
-    /**
-     * テスト用の動画を自動読み込み（開発用）
-     */
-    loadTestVideo() {
-        const testVideoPath = '/Users/takahashiasami/Desktop/インストラクター紹介ショート__2025-12-31/インストラクター紹介ショート_.mov';
-        const testVideoUrl = `file://${testVideoPath}`;
-
-        console.log('テスト動画を読み込み中:', testVideoPath);
-
-        // 動画プレイヤーに動画をセット
-        if (videoPlayer) {
-            videoPlayer.loadVideo(testVideoUrl);
-            videoPlayer.setProjectTitle('インストラクター紹介ショート_');
         }
     }
 }
