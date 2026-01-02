@@ -501,6 +501,58 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
 }
 
 /**
+ * 指定時刻で表示すべき図形を取得（continueFromPreviousを考慮）
+ * @param {Array} shapes - 図形データの配列
+ * @param {number} currentTime - 現在時刻（秒）
+ * @returns {Array} 有効な図形の配列
+ */
+function getActiveShapesAtTime(shapes, currentTime) {
+    if (!shapes || shapes.length === 0) return [];
+
+    const activeShapes = [];
+
+    // 現在時刻以前の図形を逆順で走査
+    for (let i = shapes.length - 1; i >= 0; i--) {
+        const shape = shapes[i];
+
+        // 現在時刻より未来の図形はスキップ
+        if (shape.time > currentTime) continue;
+
+        // 「図形なし」が見つかったらそれ以降の図形を無効化
+        if (shape.type === '') {
+            break;
+        }
+
+        // 図形を追加
+        activeShapes.push(shape);
+
+        // 継続フラグがfalseの場合、これ以上前の図形は表示しない
+        if (shape.continueFromPrevious === false) {
+            break;
+        }
+
+        // 継続フラグがundefined（古いデータ）の場合、同じタイムスタンプのみ表示（後方互換性）
+        if (shape.continueFromPrevious === undefined) {
+            const currentShapeTime = shape.time;
+            // 同じタイムスタンプの図形をすべて追加
+            for (let j = i - 1; j >= 0; j--) {
+                if (shapes[j].time > currentTime) continue;
+                if (shapes[j].type === '') break;
+                if (shapes[j].time === currentShapeTime) {
+                    activeShapes.push(shapes[j]);
+                } else {
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    // 逆順で追加したので、元の順序に戻す
+    return activeShapes.reverse();
+}
+
+/**
  * テキスト注釈、図形アノテーション、詳細テキスト、方向矢印を統合したフィルタチェーンを構築
  * @param {Array} annotations - テキスト注釈データの配列
  * @param {Array} shapes - 図形アノテーションデータの配列
@@ -556,20 +608,28 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
     let filterIndex = 0;
 
     // 2. 図形アノテーションを追加（テキストより先に描画 = 背面）
+    // continueFromPreviousを考慮した表示時間を計算
     validShapes.forEach((shape, index) => {
         // 図形の表示開始時刻（トリミング開始時刻を基準とした相対時刻）
         const displayStartTime = Math.max(0, shape.time - trimStartTime);
 
-        // 次の図形または動画終了までの時間を計算
+        // 表示終了時刻を計算
         let displayEndTime = trimDuration;
 
         // 元の配列から次の図形を探す
         const currentIndex = shapes.indexOf(shape);
         for (let i = currentIndex + 1; i < shapes.length; i++) {
-            if (shapes[i].time > shape.time) {
-                // 時刻が異なる次の図形が来たら、そこで終了
-                // （同じ時刻の図形は同時表示される）
-                displayEndTime = Math.max(displayStartTime, Math.min(trimDuration, shapes[i].time - trimStartTime));
+            const nextShape = shapes[i];
+
+            // 「図形なし」が来たら、そこで終了
+            if (nextShape.type === '') {
+                displayEndTime = Math.max(displayStartTime, Math.min(trimDuration, nextShape.time - trimStartTime));
+                break;
+            }
+
+            // 次の図形の continueFromPrevious が false の場合、そこで終了
+            if (nextShape.continueFromPrevious === false) {
+                displayEndTime = Math.max(displayStartTime, Math.min(trimDuration, nextShape.time - trimStartTime));
                 break;
             }
         }
@@ -647,31 +707,49 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             const x2 = Math.round(shape.x2 * scaleX);
             const y2 = Math.round(shape.y2 * scaleY);
 
-            // lineWidthをフォントサイズに変換
+            // lineWidthをフォントサイズに変換（プレビューと同じ計算式）
             const lineWidth = shape.lineWidth || 5;
-            const baseFontSize = 16 + (lineWidth * 4.8);
+            const baseFontSize = 16 + (lineWidth * 3.0);
             const fontSize = Math.round(baseFontSize * Math.min(scaleX, scaleY));
 
-            // 矢印のタイプに応じてUnicode記号を選択
-            let arrowSymbol = '➡';  // デフォルト：右向き
-            if (shape.type === 'arrow-left') arrowSymbol = '⬅';
-            else if (shape.type === 'arrow-up') arrowSymbol = '⬆';
-            else if (shape.type === 'arrow-down') arrowSymbol = '⬇';
-            else if (shape.type === 'arrow' || shape.type === 'arrow-right') arrowSymbol = '➡';
+            // テキスト付き矢印かどうかで、表示内容と色を決定
+            let arrowText = '';
+            let arrowColor = '';
 
-            // 矢印絵文字を表示するためのフォントファイル
-            // オプション1: Apple Color Emoji（カラー絵文字、fontcolorは効かない可能性あり）
-            // const arrowFontFile = '/System/Library/Fonts/Apple Color Emoji.ttc';
-            // オプション2: ヒラギノ角ゴシック（矢印絵文字をサポート、fontcolorが効く）
+            if (shape.isTextIncluded) {
+                // テキスト付き矢印（プレビューと同じテキストと色）
+                if (shape.type === 'arrow-left') {
+                    arrowText = '⬅ 左';
+                    arrowColor = '#1976D2'; // 青
+                } else if (shape.type === 'arrow-right') {
+                    arrowText = '右 ➡';
+                    arrowColor = '#FF9800'; // 橙
+                } else if (shape.type === 'arrow-up') {
+                    arrowText = '⬆ 上';
+                    arrowColor = '#4CAF50'; // 緑
+                } else if (shape.type === 'arrow-down') {
+                    arrowText = '⬇ 下';
+                    arrowColor = '#F44336'; // 赤
+                }
+            } else {
+                // 記号のみ矢印
+                if (shape.type === 'arrow-left') arrowText = '⬅';
+                else if (shape.type === 'arrow-up') arrowText = '⬆';
+                else if (shape.type === 'arrow-down') arrowText = '⬇';
+                else if (shape.type === 'arrow' || shape.type === 'arrow-right') arrowText = '➡';
+                arrowColor = shape.color;
+            }
+
+            // フォントファイル（ヒラギノ角ゴシック）
             const arrowFontFile = '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc';
 
             filterObj = {
                 filter: 'drawtext',
                 options: {
-                    text: arrowSymbol,
+                    text: arrowText,
                     fontfile: arrowFontFile,
                     fontsize: fontSize,
-                    fontcolor: shape.color,
+                    fontcolor: arrowColor,
                     x: x2 - Math.round((baseFontSize / 2) * scaleX),
                     y: y2 - Math.round((baseFontSize / 2) * scaleY),
                     enable: `between(t,${displayStartTime},${displayEndTime})`

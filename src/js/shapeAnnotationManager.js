@@ -908,8 +908,8 @@ class ShapeAnnotationManager {
         else if (arrowType === 'arrow-down') arrowSymbol = '⬇';
         else if (arrowType === 'arrow' || arrowType === 'arrow-right') arrowSymbol = '➡';
 
-        // テキストとして描画
-        this.ctx.font = `${fontSize}px sans-serif`;
+        // テキストとして描画（ダウンロード動画と同じフォントを使用）
+        this.ctx.font = `${fontSize}px 'Hiragino Kaku Gothic ProN', sans-serif`;
         this.ctx.fillStyle = color;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
@@ -946,8 +946,8 @@ class ShapeAnnotationManager {
             textColor = '#F44336'; // 赤
         }
 
-        // テキストを描画（背景なし）
-        this.ctx.font = `${fontSize}px sans-serif`;
+        // テキストを描画（背景なし、ダウンロード動画と同じフォントを使用）
+        this.ctx.font = `${fontSize}px 'Hiragino Kaku Gothic ProN', sans-serif`;
         this.ctx.fillStyle = textColor;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
