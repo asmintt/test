@@ -236,10 +236,17 @@
                             </div>
                         </div>
 
-                        <div class="shape-buttons-row">
+                        <!-- 通常モード用ボタン -->
+                        <div class="shape-buttons-row" id="normalModeButtons">
                             <button id="addShapeContinueBtn" class="btn-compact" disabled>続けて追加</button>
                             <button id="addShapeNewBtn" class="btn-compact" disabled>新規</button>
                             <button id="addNoShapeBtn" class="btn-compact" disabled>表示終了</button>
+                        </div>
+
+                        <!-- 修正モード用ボタン（最初は非表示） -->
+                        <div class="shape-buttons-row" id="editModeButtons" style="display: none;">
+                            <button id="confirmEditBtn" class="btn-compact">修正更新</button>
+                            <button id="cancelEditBtn" class="btn-compact">修正破棄</button>
                         </div>
 
                         <!-- 図形リスト -->

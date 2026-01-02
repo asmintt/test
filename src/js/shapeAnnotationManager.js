@@ -18,6 +18,12 @@ class ShapeAnnotationManager {
         this.addNoShapeBtn = document.getElementById('addNoShapeBtn');
         this.shapeCurrentTime = document.getElementById('shapeCurrentTime');
 
+        // 修正モード用ボタン
+        this.normalModeButtons = document.getElementById('normalModeButtons');
+        this.editModeButtons = document.getElementById('editModeButtons');
+        this.confirmEditBtn = document.getElementById('confirmEditBtn');
+        this.cancelEditBtn = document.getElementById('cancelEditBtn');
+
         // 時刻調整ボタン（サイドバーの統合ボタン）
         this.timeAdjustShapeButtons = document.querySelectorAll('[data-video-adjust]');
         this.syncShapeTimeBtn = document.getElementById('syncVideoTime');
@@ -46,6 +52,11 @@ class ShapeAnnotationManager {
         // 図形データ（配列）
         // 各図形: { time, type, x1, y1, x2, y2, color }
         this.shapes = [];
+
+        // 修正モード用の状態
+        this.isEditMode = false;              // 修正モード中かどうか
+        this.originalShapes = null;           // 修正前の図形データ（修正破棄用）
+        this.editModeContinueFromPrevious = null; // 修正前の continueFromPrevious の値
 
         // テキスト注釈エリアの高さ
         this.textAreaHeight = 150;
@@ -110,6 +121,20 @@ class ShapeAnnotationManager {
         if (this.addNoShapeBtn) {
             this.addNoShapeBtn.addEventListener('click', () => {
                 this.addNoShape();
+            });
+        }
+
+        // 「修正更新」ボタン
+        if (this.confirmEditBtn) {
+            this.confirmEditBtn.addEventListener('click', () => {
+                this.confirmEdit();
+            });
+        }
+
+        // 「修正破棄」ボタン
+        if (this.cancelEditBtn) {
+            this.cancelEditBtn.addEventListener('click', () => {
+                this.cancelEdit();
             });
         }
 
@@ -419,31 +444,47 @@ class ShapeAnnotationManager {
     }
 
     /**
-     * クリック位置にある図形を選択
+     * クリック位置にある図形を選択（未確定・確定済み両方）
      * @param {number} x - クリックX座標
      * @param {number} y - クリックY座標
      */
     selectShapeAtPosition(x, y) {
         console.log('=== selectShapeAtPosition 呼び出し ===');
         console.log('クリック位置:', x, y);
-        console.log('pendingShapes:', this.pendingShapes);
+        console.log('pendingShapes:', this.pendingShapes.length);
+        console.log('shapes:', this.shapes.length);
 
         let shapeFound = false;
 
-        // pendingShapes を逆順で検索（後から描画された図形を優先）
+        // まず pendingShapes を逆順で検索（後から描画された図形を優先）
         for (let i = this.pendingShapes.length - 1; i >= 0; i--) {
             const shape = this.pendingShapes[i];
 
             // 図形の境界ボックスを計算
-            const minX = Math.min(shape.x1, shape.x2);
-            const maxX = Math.max(shape.x1, shape.x2);
-            const minY = Math.min(shape.y1, shape.y2);
-            const maxY = Math.max(shape.y1, shape.y2);
+            let minX = Math.min(shape.x1, shape.x2);
+            let maxX = Math.max(shape.x1, shape.x2);
+            let minY = Math.min(shape.y1, shape.y2);
+            let maxY = Math.max(shape.y1, shape.y2);
+
+            // 矢印図形の場合、描画サイズを元に境界ボックスを計算
+            if (shape.type === 'arrow-left' || shape.type === 'arrow-right' ||
+                shape.type === 'arrow-up' || shape.type === 'arrow-down' || shape.type === 'arrow') {
+                const currentLineWidth = shape.lineWidth || 5;
+                const fontSize = 16 + (currentLineWidth * 3.0);
+
+                // テキスト付き矢印は約3倍、記号のみは約1.5倍のサイズ
+                const arrowSize = shape.isTextIncluded ? fontSize * 3 : fontSize * 1.5;
+
+                minX = shape.x1 - arrowSize / 2;
+                maxX = shape.x1 + arrowSize / 2;
+                minY = shape.y1 - arrowSize / 2;
+                maxY = shape.y1 + arrowSize / 2;
+            }
 
             // マージン（クリックしやすくするため）
             const margin = 10;
 
-            console.log(`図形 ${i}: 境界 (${minX}, ${minY}) - (${maxX}, ${maxY}), マージン込み: (${minX - margin}, ${minY - margin}) - (${maxX + margin}, ${maxY + margin})`);
+            console.log(`未確定図形 ${i}: 境界 (${minX}, ${minY}) - (${maxX}, ${maxY})`);
 
             // クリック位置が図形の範囲内か判定
             if (x >= minX - margin && x <= maxX + margin &&
@@ -452,18 +493,79 @@ class ShapeAnnotationManager {
                 shape.selected = !shape.selected;
                 shapeFound = true;
                 if (shape.selected) {
-                    console.log('✓ 図形を選択しました:', shape);
+                    console.log('✓ 未確定図形を選択しました:', shape);
                 } else {
-                    console.log('✓ 図形の選択を解除しました:', shape);
+                    console.log('✓ 未確定図形の選択を解除しました:', shape);
                 }
                 break;
+            }
+        }
+
+        // pendingShapesで見つからなかった場合、確定済み図形（shapes）を検索
+        if (!shapeFound && videoPlayer) {
+            const currentTime = videoPlayer.getCurrentTime();
+            const activeShapes = this.getActiveShapesAtTime(currentTime);
+
+            // activeShapesを逆順で検索（後から描画された図形を優先）
+            for (let i = activeShapes.length - 1; i >= 0; i--) {
+                const shape = activeShapes[i];
+
+                // スケール係数を計算（図形保存時のキャンバスサイズと現在のキャンバスサイズの比率）
+                let minX = Math.min(shape.x1, shape.x2);
+                let maxX = Math.max(shape.x1, shape.x2);
+                let minY = Math.min(shape.y1, shape.y2);
+                let maxY = Math.max(shape.y1, shape.y2);
+
+                // 矢印図形の場合、描画サイズを元に境界ボックスを計算
+                if (shape.type === 'arrow-left' || shape.type === 'arrow-right' ||
+                    shape.type === 'arrow-up' || shape.type === 'arrow-down' || shape.type === 'arrow') {
+                    const currentLineWidth = shape.lineWidth || 5;
+                    const fontSize = 16 + (currentLineWidth * 3.0);
+
+                    // テキスト付き矢印は約3倍、記号のみは約1.5倍のサイズ
+                    const arrowSize = shape.isTextIncluded ? fontSize * 3 : fontSize * 1.5;
+
+                    minX = shape.x1 - arrowSize / 2;
+                    maxX = shape.x1 + arrowSize / 2;
+                    minY = shape.y1 - arrowSize / 2;
+                    maxY = shape.y1 + arrowSize / 2;
+                }
+
+                if (shape.canvasWidth && shape.canvasHeight) {
+                    const scaleX = this.canvas.width / shape.canvasWidth;
+                    const scaleY = this.canvas.height / shape.canvasHeight;
+                    minX = minX * scaleX;
+                    maxX = maxX * scaleX;
+                    minY = minY * scaleY;
+                    maxY = maxY * scaleY;
+                }
+
+                // マージン
+                const margin = 10;
+
+                console.log(`確定済み図形 ${i}: 境界 (${minX}, ${minY}) - (${maxX}, ${maxY})`);
+
+                // クリック位置が図形の範囲内か判定
+                if (x >= minX - margin && x <= maxX + margin &&
+                    y >= minY - margin && y <= maxY + margin) {
+                    // トグル動作：選択状態を反転
+                    shape.selected = !shape.selected;
+                    shapeFound = true;
+                    if (shape.selected) {
+                        console.log('✓ 確定済み図形を選択しました:', shape);
+                    } else {
+                        console.log('✓ 確定済み図形の選択を解除しました:', shape);
+                    }
+                    break;
+                }
             }
         }
 
         if (!shapeFound) {
             // クリック位置に図形がない場合、全ての選択を解除
             this.pendingShapes.forEach(s => s.selected = false);
-            console.log('図形の選択を解除しました');
+            this.shapes.forEach(s => s.selected = false);
+            console.log('すべての図形の選択を解除しました');
         }
 
         // 再描画
@@ -1036,11 +1138,31 @@ class ShapeAnnotationManager {
     }
 
     /**
-     * 図形を編集
+     * 図形を編集（修正モード）
      * @param {number} index - 編集する図形のインデックス
      */
     editShape(index) {
         const shape = this.shapes[index];
+        const targetTime = shape.time;
+
+        console.log('修正モードに入ります。タイムスタンプ:', targetTime);
+
+        // 同じタイムスタンプの図形を全て取得
+        const sameTimeShapes = this.shapes.filter(s => s.time === targetTime);
+        console.log('同じタイムスタンプの図形数:', sameTimeShapes.length);
+
+        // 元の図形データを保存（修正破棄用）
+        this.originalShapes = JSON.parse(JSON.stringify(sameTimeShapes));
+
+        // 元の continueFromPrevious の値を記憶（最初の図形の値を使用）
+        this.editModeContinueFromPrevious = sameTimeShapes[0].continueFromPrevious;
+
+        // shapes から pendingShapes に移動
+        this.pendingShapes = sameTimeShapes;
+        this.shapes = this.shapes.filter(s => s.time !== targetTime);
+
+        // 修正モードフラグを立てる
+        this.isEditMode = true;
 
         // 色を設定
         this.selectedShapeColor = shape.color;
@@ -1074,6 +1196,11 @@ class ShapeAnnotationManager {
             }
         });
 
+        // カスタム入力欄に反映
+        if (this.customLineWidthInput) {
+            this.customLineWidthInput.value = this.selectedLineWidth;
+        }
+
         // 図形タイプを選択
         const shapeBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === shape.type);
         if (shapeBtn) {
@@ -1081,16 +1208,19 @@ class ShapeAnnotationManager {
             this.updateButtonStates(shapeBtn);
         }
 
-        // 図形を削除（再描画するため）
-        this.shapes.splice(index, 1);
+        // UIを修正モードに切り替え
+        this.showEditModeButtons();
+
+        // 再描画してリストを更新
         this.redrawShapes();
         this.updateShapeList();
-        this.notifyChange();
 
         // 動画の時刻を設定
         if (videoPlayer) {
-            videoPlayer.setCurrentTime(shape.time);
+            videoPlayer.setCurrentTime(targetTime);
         }
+
+        console.log('修正モードに入りました。pendingShapes:', this.pendingShapes.length);
     }
 
     /**
@@ -1238,6 +1368,128 @@ class ShapeAnnotationManager {
      */
     getShapes() {
         return this.shapes;
+    }
+
+    /**
+     * 修正を確定（修正更新）
+     */
+    confirmEdit() {
+        if (!this.isEditMode) {
+            console.warn('修正モードではありません');
+            return;
+        }
+
+        console.log('修正を確定します。pendingShapes:', this.pendingShapes.length);
+
+        // pendingShapes を shapes に移動（元の continueFromPrevious を保持）
+        this.pendingShapes.forEach(shape => {
+            // 元々の図形の continueFromPrevious を保持
+            // 新しく追加された図形も同じ値を使用
+            shape.continueFromPrevious = this.editModeContinueFromPrevious;
+            this.shapes.push(shape);
+        });
+
+        // 状態をクリア
+        this.pendingShapes = [];
+        this.originalShapes = null;
+        this.editModeContinueFromPrevious = null;
+        this.isEditMode = false;
+
+        // 時刻順にソート
+        this.sortShapes();
+
+        // UIを通常モードに戻す
+        this.showNormalModeButtons();
+
+        // 再描画してリストを更新
+        this.redrawShapes();
+        this.updateShapeList();
+
+        // コールバック実行
+        this.notifyChange();
+
+        // 図形選択を解除
+        this.selectShape('none');
+
+        // 「選択解除」ボタンをアクティブにする
+        const noneBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === 'none');
+        if (noneBtn) {
+            this.updateButtonStates(noneBtn);
+        }
+
+        console.log('修正を確定しました。shapes:', this.shapes.length);
+    }
+
+    /**
+     * 修正を破棄（修正破棄）
+     */
+    cancelEdit() {
+        if (!this.isEditMode) {
+            console.warn('修正モードではありません');
+            return;
+        }
+
+        console.log('修正を破棄します');
+
+        // 元の図形データを復元
+        if (this.originalShapes) {
+            this.originalShapes.forEach(shape => {
+                this.shapes.push(shape);
+            });
+        }
+
+        // 状態をクリア
+        this.pendingShapes = [];
+        this.originalShapes = null;
+        this.editModeContinueFromPrevious = null;
+        this.isEditMode = false;
+
+        // 時刻順にソート
+        this.sortShapes();
+
+        // UIを通常モードに戻す
+        this.showNormalModeButtons();
+
+        // 再描画してリストを更新
+        this.redrawShapes();
+        this.updateShapeList();
+
+        // 図形選択を解除
+        this.selectShape('none');
+
+        // 「選択解除」ボタンをアクティブにする
+        const noneBtn = Array.from(this.shapeButtons).find(btn => btn.dataset.shape === 'none');
+        if (noneBtn) {
+            this.updateButtonStates(noneBtn);
+        }
+
+        console.log('修正を破棄しました。shapes:', this.shapes.length);
+    }
+
+    /**
+     * 修正モードのボタンを表示
+     */
+    showEditModeButtons() {
+        if (this.normalModeButtons) {
+            this.normalModeButtons.style.display = 'none';
+        }
+        if (this.editModeButtons) {
+            this.editModeButtons.style.display = 'flex';
+        }
+        console.log('修正モードのUIに切り替えました');
+    }
+
+    /**
+     * 通常モードのボタンを表示
+     */
+    showNormalModeButtons() {
+        if (this.normalModeButtons) {
+            this.normalModeButtons.style.display = 'flex';
+        }
+        if (this.editModeButtons) {
+            this.editModeButtons.style.display = 'none';
+        }
+        console.log('通常モードのUIに切り替えました');
     }
 }
 
