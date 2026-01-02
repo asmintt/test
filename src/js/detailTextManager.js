@@ -6,14 +6,8 @@ class DetailTextManager {
         // DOM要素
         this.detailText = document.getElementById('detailText');
         this.detailFontSelect = document.getElementById('detailFontSelect');
-        this.presetButtons = document.querySelectorAll('.detail-preset-btn');
-        this.customTextColor = document.getElementById('detailCustomTextColor');
-        this.customBgColor = document.getElementById('detailCustomBgColor');
-        this.bgOpacitySlider = document.getElementById('detailBgOpacity');
-        this.bgOpacityValue = document.getElementById('detailBgOpacityValue');
-        this.textAlignButtons = document.querySelectorAll('.detail-text-align-btn');
-        this.saveCustomPresetBtn = document.getElementById('saveDetailCustomPresetBtn');
-        this.customPresetBtn = document.getElementById('detailCustomPresetBtn');
+        this.presetButtons = document.querySelectorAll('.preset-btn'); // 共通プリセットボタンに変更
+        this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
         this.addDetailTextBtn = document.getElementById('addDetailTextBtn');
         this.addNoDetailTextBtn = document.getElementById('addNoDetailTextBtn');
         this.detailTextList = document.getElementById('detailTextList');
@@ -97,27 +91,15 @@ class DetailTextManager {
             });
         }
 
-        // 文字位置ボタンのイベントハンドラ
-        this.textAlignButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const align = button.getAttribute('data-align');
-                this.selectTextAlign(align, button);
-            });
-        });
-
-        // 登録ボタンのイベントハンドラ
-        if (this.saveCustomPresetBtn) {
-            this.saveCustomPresetBtn.addEventListener('click', () => {
-                this.saveCustomPreset();
-            });
-        }
+        // 統一カスタム設定のイベントハンドラ
+        this.initSharedCustomSettings();
     }
 
     /**
      * 配色コントロールの初期化
      */
     initColorControls() {
-        // プリセットボタン
+        // 共通プリセットボタン
         this.presetButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const preset = button.getAttribute('data-preset');
@@ -127,26 +109,12 @@ class DetailTextManager {
             });
         });
 
-        // カスタムカラーピッカー
-        if (this.customTextColor) {
-            this.customTextColor.addEventListener('change', () => {
-                this.selectCustomColors();
-            });
-        }
-
-        if (this.customBgColor) {
-            this.customBgColor.addEventListener('change', () => {
-                this.selectCustomColors();
-            });
-        }
-
-        // 背景透明度スライダー
-        if (this.bgOpacitySlider) {
-            this.bgOpacitySlider.addEventListener('input', () => {
-                const opacity = parseInt(this.bgOpacitySlider.value) / 100;
-                this.selectedBgOpacity = opacity;
-                if (this.bgOpacityValue) {
-                    this.bgOpacityValue.textContent = `${this.bgOpacitySlider.value}%`;
+        // 共通カスタムボタンのダブルクリック → カスタム設定を開く
+        if (this.sharedCustomPresetBtn) {
+            this.sharedCustomPresetBtn.addEventListener('dblclick', () => {
+                const customSettings = document.getElementById('sharedCustomSettings');
+                if (customSettings) {
+                    customSettings.open = true; // detailsを開く
                 }
             });
         }
@@ -160,87 +128,75 @@ class DetailTextManager {
         this.selectedTextColor = textColor;
         this.selectedBgColor = bgColor;
 
-        // 透明度と文字位置も取得
-        const bgOpacity = button.getAttribute('data-bg-opacity');
-        if (bgOpacity) {
-            this.selectedBgOpacity = parseFloat(bgOpacity);
-            if (this.bgOpacitySlider) {
-                this.bgOpacitySlider.value = Math.round(this.selectedBgOpacity * 100);
-            }
-            if (this.bgOpacityValue) {
-                this.bgOpacityValue.textContent = `${Math.round(this.selectedBgOpacity * 100)}%`;
-            }
-        }
-
-        const textAlign = button.getAttribute('data-text-align');
-        if (textAlign) {
-            this.selectedTextAlign = textAlign;
-
-            // 文字位置ボタンのactive状態を更新
-            this.textAlignButtons.forEach(btn => btn.classList.remove('active'));
-            this.textAlignButtons.forEach(btn => {
-                if (btn.getAttribute('data-align') === textAlign) {
-                    btn.classList.add('active');
-                }
-            });
-        }
-
         // プリセットボタンのactive状態を更新
         this.presetButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
 
-        // カスタムカラーピッカーを同期
-        if (this.customTextColor) this.customTextColor.value = textColor;
-        if (this.customBgColor) this.customBgColor.value = bgColor;
+        console.log('詳細テキストプリセット選択:', { preset, textColor, bgColor });
     }
 
     /**
-     * カスタム色を選択
+     * 統一カスタム設定の初期化
      */
-    selectCustomColors() {
-        this.selectedTextColor = this.customTextColor.value;
-        this.selectedBgColor = this.customBgColor.value;
+    initSharedCustomSettings() {
+        const sharedBgColor = document.getElementById('sharedCustomBgColor');
+        const sharedTextColor = document.getElementById('sharedCustomTextColor');
+        const sharedTextAlignButtons = document.querySelectorAll('.shared-text-align-btn');
+        const saveSharedCustomBtn = document.getElementById('saveSharedCustomPresetBtn');
 
-        // プリセットボタンのactive状態を解除
-        this.presetButtons.forEach(btn => btn.classList.remove('active'));
-        this.selectedPreset = null;
+        // 背景色変更
+        if (sharedBgColor) {
+            sharedBgColor.addEventListener('change', () => {
+                this.selectedBgColor = sharedBgColor.value;
+            });
+        }
+
+        // 文字色変更
+        if (sharedTextColor) {
+            sharedTextColor.addEventListener('change', () => {
+                this.selectedTextColor = sharedTextColor.value;
+            });
+        }
+
+        // 文字位置ボタン
+        sharedTextAlignButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const align = button.getAttribute('data-align');
+                this.selectedTextAlign = align;
+
+                // アクティブ状態を更新
+                sharedTextAlignButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                console.log('詳細テキスト文字位置変更:', align);
+            });
+        });
+
+        // 登録ボタン
+        if (saveSharedCustomBtn) {
+            saveSharedCustomBtn.addEventListener('click', () => {
+                this.saveSharedCustomPreset();
+            });
+        }
     }
 
     /**
-     * 文字位置を選択
-     * @param {string} align - 文字位置（left/center/right）
-     * @param {HTMLElement} button - クリックされたボタン
+     * 統一カスタムプリセットに登録
      */
-    selectTextAlign(align, button) {
-        this.selectedTextAlign = align;
-
-        // 文字位置ボタンのactive状態を更新
-        this.textAlignButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-
-        console.log(`文字位置を${align}に変更しました`);
-    }
-
-    /**
-     * カスタムプリセットに登録
-     */
-    saveCustomPreset() {
-        if (!this.customPresetBtn) return;
+    saveSharedCustomPreset() {
+        if (!this.sharedCustomPresetBtn) return;
 
         // 現在の設定をカスタムボタンに保存
-        this.customPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
-        this.customPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
-        this.customPresetBtn.setAttribute('data-bg-opacity', this.selectedBgOpacity);
-        this.customPresetBtn.setAttribute('data-text-align', this.selectedTextAlign);
+        this.sharedCustomPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
+        this.sharedCustomPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
 
         // ボタンに色を視覚的に反映
-        this.customPresetBtn.style.color = this.selectedTextColor;
-        this.customPresetBtn.style.backgroundColor = this.selectedBgColor;
+        this.sharedCustomPresetBtn.style.color = this.selectedTextColor;
+        this.sharedCustomPresetBtn.style.backgroundColor = this.selectedBgColor;
 
-        console.log('カスタムプリセットを登録しました:', {
+        console.log('統一カスタムプリセットを登録しました（詳細テキスト）:', {
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
-            bgOpacity: this.selectedBgOpacity,
             textAlign: this.selectedTextAlign
         });
 
@@ -424,19 +380,24 @@ class DetailTextManager {
     enableControls() {
         if (this.detailText) this.detailText.disabled = false;
         if (this.detailFontSelect) this.detailFontSelect.disabled = false;
-        if (this.customTextColor) this.customTextColor.disabled = false;
-        if (this.customBgColor) this.customBgColor.disabled = false;
-        if (this.bgOpacitySlider) this.bgOpacitySlider.disabled = false;
-        if (this.saveCustomPresetBtn) this.saveCustomPresetBtn.disabled = false;
         if (this.addDetailTextBtn) this.addDetailTextBtn.disabled = false;
         if (this.addNoDetailTextBtn) this.addNoDetailTextBtn.disabled = false;
 
         // プリセットボタンを有効化
         this.presetButtons.forEach(button => button.disabled = false);
 
-        // 文字位置ボタンを有効化
-        this.textAlignButtons.forEach(button => button.disabled = false);
+        // 統一カスタム設定のUIを有効化
+        const sharedBgColor = document.getElementById('sharedCustomBgColor');
+        const sharedTextColor = document.getElementById('sharedCustomTextColor');
+        const sharedTextAlignButtons = document.querySelectorAll('.shared-text-align-btn');
+        const saveSharedCustomBtn = document.getElementById('saveSharedCustomPresetBtn');
 
+        if (sharedBgColor) sharedBgColor.disabled = false;
+        if (sharedTextColor) sharedTextColor.disabled = false;
+        sharedTextAlignButtons.forEach(btn => btn.disabled = false);
+        if (saveSharedCustomBtn) saveSharedCustomBtn.disabled = false;
+
+        // 時刻調整ボタンを有効化
         this.timeAdjustButtons.forEach(button => button.disabled = false);
         if (this.syncDetailTimeBtn) this.syncDetailTimeBtn.disabled = false;
         if (this.resetDetailTimeBtn) this.resetDetailTimeBtn.disabled = false;

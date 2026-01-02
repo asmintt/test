@@ -14,6 +14,7 @@ class AnnotationManager {
         this.textAlignButtons = document.querySelectorAll('.text-align-btn');
         this.saveCustomPresetBtn = document.getElementById('saveCustomPresetBtn');
         this.customPresetBtn = document.getElementById('customPresetBtn');
+        this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
         this.addAnnotationBtn = document.getElementById('addAnnotationBtn');
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
         this.annotationList = document.getElementById('annotationList');
@@ -127,6 +128,19 @@ class AnnotationManager {
             });
         });
 
+        // 共通カスタムボタンのダブルクリック → カスタム設定を開く
+        if (this.sharedCustomPresetBtn) {
+            this.sharedCustomPresetBtn.addEventListener('dblclick', () => {
+                const customSettings = document.getElementById('sharedCustomSettings');
+                if (customSettings) {
+                    customSettings.open = true; // detailsを開く
+                }
+            });
+        }
+
+        // 統一カスタム設定のイベントハンドラ
+        this.initSharedCustomSettings();
+
         // カスタムカラーピッカー
         if (this.customTextColor) {
             this.customTextColor.addEventListener('change', () => {
@@ -204,6 +218,72 @@ class AnnotationManager {
     }
 
     /**
+     * 統一カスタム設定の初期化
+     */
+    initSharedCustomSettings() {
+        const sharedBgColor = document.getElementById('sharedCustomBgColor');
+        const sharedTextColor = document.getElementById('sharedCustomTextColor');
+        const sharedTextAlignButtons = document.querySelectorAll('.shared-text-align-btn');
+        const saveSharedCustomBtn = document.getElementById('saveSharedCustomPresetBtn');
+
+        // 背景色変更
+        if (sharedBgColor) {
+            sharedBgColor.addEventListener('change', () => {
+                this.selectedBgColor = sharedBgColor.value;
+            });
+        }
+
+        // 文字色変更
+        if (sharedTextColor) {
+            sharedTextColor.addEventListener('change', () => {
+                this.selectedTextColor = sharedTextColor.value;
+            });
+        }
+
+        // 文字位置ボタン
+        sharedTextAlignButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const align = button.getAttribute('data-align');
+                this.selectedTextAlign = align;
+
+                // アクティブ状態を更新
+                sharedTextAlignButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            });
+        });
+
+        // 登録ボタン
+        if (saveSharedCustomBtn) {
+            saveSharedCustomBtn.addEventListener('click', () => {
+                this.saveSharedCustomPreset();
+            });
+        }
+    }
+
+    /**
+     * 統一カスタムプリセットに登録
+     */
+    saveSharedCustomPreset() {
+        if (!this.sharedCustomPresetBtn) return;
+
+        // 現在の設定をカスタムボタンに保存
+        this.sharedCustomPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
+        this.sharedCustomPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
+
+        // ボタンに色を視覚的に反映
+        this.sharedCustomPresetBtn.style.color = this.selectedTextColor;
+        this.sharedCustomPresetBtn.style.backgroundColor = this.selectedBgColor;
+
+        console.log('統一カスタムプリセットを登録しました:', {
+            textColor: this.selectedTextColor,
+            bgColor: this.selectedBgColor,
+            textAlign: this.selectedTextAlign
+        });
+
+        alert('カスタム設定を登録しました！');
+    }
+
+    /**
      * カスタムプリセットに登録
      */
     saveCustomPreset() {
@@ -253,6 +333,17 @@ class AnnotationManager {
         this.textAlignButtons.forEach(button => {
             button.disabled = false;
         });
+
+        // 統一カスタム設定のUIを有効化
+        const sharedBgColor = document.getElementById('sharedCustomBgColor');
+        const sharedTextColor = document.getElementById('sharedCustomTextColor');
+        const sharedTextAlignButtons = document.querySelectorAll('.shared-text-align-btn');
+        const saveSharedCustomBtn = document.getElementById('saveSharedCustomPresetBtn');
+
+        if (sharedBgColor) sharedBgColor.disabled = false;
+        if (sharedTextColor) sharedTextColor.disabled = false;
+        sharedTextAlignButtons.forEach(btn => btn.disabled = false);
+        if (saveSharedCustomBtn) saveSharedCustomBtn.disabled = false;
 
         // 時刻調整ボタンを有効化
         this.timeAdjustButtons.forEach(button => {
