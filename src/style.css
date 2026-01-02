@@ -830,29 +830,8 @@ details:not([open]) summary h2::before {
 /* 図形ボタンを1行に並べる */
 .shape-buttons-row {
     display: flex;
-    gap: 8px;
-    margin-bottom: 15px;
-    justify-content: center; /* 中央揃え */
-}
-
-.shape-buttons-row .btn {
-    flex: 1;
-    max-width: 180px; /* 最大幅を制限 */
-    font-size: 0.85rem; /* フォントサイズを小さくして改行を防ぐ */
-    white-space: nowrap; /* 改行を防ぐ */
-    padding: 10px 8px; /* パディングを調整 */
-}
-
-/* 図形描画終了ボタン */
-#addNoShapeBtn {
-    max-width: 368px; /* 上のボタン2つ分の幅（180px × 2 + gap 8px） */
-    margin: 0 auto; /* 中央揃え */
-    display: block;
-}
-
-.btn-compact {
-    padding: 10px 12px; /* 少しコンパクトに */
-    font-size: 0.95rem;
+    gap: 4px;
+    margin-bottom: 8px;
 }
 
 /* フォント選択セクション */
@@ -1404,12 +1383,12 @@ details:not([open]) summary h2::before {
 
 .btn-compact {
     flex: 1;
-    padding: 6px 8px;
+    padding: 6px 3px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     background: #f0f0f0;
     color: #333;
     transition: all 0.2s;

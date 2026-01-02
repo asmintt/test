@@ -797,7 +797,7 @@ class ShapeAnnotationManager {
     drawArrow(x, y, arrowType, color, lineWidth = null) {
         // lineWidthをフォントサイズに変換
         const currentLineWidth = lineWidth || this.ctx.lineWidth || this.selectedLineWidth;
-        const fontSize = 16 + (currentLineWidth * 4.8);
+        const fontSize = 16 + (currentLineWidth * 3.0);
 
         // 矢印のタイプに応じてUnicode記号を選択
         let arrowSymbol = '➡';  // デフォルト：右向き
@@ -824,7 +824,7 @@ class ShapeAnnotationManager {
      */
     drawTextIncludedArrow(x, y, arrowType, color, lineWidth = null) {
         const currentLineWidth = lineWidth || this.ctx.lineWidth || this.selectedLineWidth;
-        const fontSize = 16 + (currentLineWidth * 4.8);
+        const fontSize = 16 + (currentLineWidth * 3.0);
 
         // 矢印タイプに応じてテキストと色を決定
         let text = '';
