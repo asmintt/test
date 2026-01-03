@@ -71,6 +71,10 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
+.sidebar-right {
+    padding: 20px 7px; /* 左右パディングをさらに削減 */
+}
+
 /* 左サイドバー：よりコンパクトに */
 .sidebar {
     padding: 15px 12px;
@@ -777,12 +781,12 @@ details:not([open]) summary h2::before {
 
 .two-line-input-section input[type="text"] {
     width: 100%;
-    padding: 6px 1px;
+    padding: 10px 1px;
     border: 1px solid #ddd;
     border-radius: 6px;
     margin-bottom: 8px;
-    font-size: 0.65rem;
-    letter-spacing: -1px;
+    font-size: 0.9rem;
+    letter-spacing: -1.5px;
 }
 
 .two-line-input-section input[type="text"]:focus {
@@ -1938,9 +1942,10 @@ details:not([open]) summary h2::before {
 }
 
 .two-line-input-section.compact input[type="text"] {
-    padding: 5px 8px;
-    font-size: 13px;
-    height: 30px;
+    padding: 10px 1px;
+    font-size: 0.9rem;
+    letter-spacing: -1.5px;
+    height: auto;
 }
 
 .two-line-input-section.compact .input-with-checkbox {
