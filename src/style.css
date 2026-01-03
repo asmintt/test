@@ -881,6 +881,26 @@ details:not([open]) summary h2::before {
     font-size: 0.9rem;
 }
 
+/* セクションヘッダーとプリセットボタンを同じ行に */
+.section-header-with-presets {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.section-header-with-presets h3 {
+    margin: 0;
+    flex-shrink: 0;
+    min-width: 35px;
+}
+
+.preset-buttons-inline {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
 .preset-buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -889,15 +909,18 @@ details:not([open]) summary h2::before {
 
 .preset-btn {
     flex: 1;
-    padding: 8px 12px;
+    padding: 7px 5px;
     border: 2px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     background: white;
     color: #666;
-    font-size: 0.65rem;
+    font-size: 0.58rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .preset-btn:hover:not(:disabled) {
@@ -924,15 +947,15 @@ details:not([open]) summary h2::before {
 }
 
 .preset-btn[data-preset="point"] {
-    background-color: #FFE5E0;
+    background-color: #FF6B6B;
     color: #000000;
-    border: 2px solid #FFAB91;
+    border: 2px solid #FF5252;
 }
 
 .preset-btn[data-preset="caution"] {
-    background-color: #FFF9E6;
+    background-color: #FFD54F;
     color: #000000;
-    border: 2px solid #F4E9B5;
+    border: 2px solid #FFCA28;
 }
 
 /* 選択中の状態 - 太い枠線で強調 */
@@ -1285,6 +1308,50 @@ details:not([open]) summary h2::before {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
+}
+
+/* カスタム設定セクション */
+.custom-settings {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
+.custom-settings summary {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2c5282;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.custom-settings summary::-webkit-details-marker {
+    display: none;
+}
+
+.custom-settings-content {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.custom-settings-content label {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 600;
+}
+
+.custom-settings-content input[type="color"] {
+    width: 100%;
+    height: 35px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .text-align-btn,

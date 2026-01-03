@@ -184,24 +184,17 @@
 
                 <section class="unified-annotation-section">
 
-                    <!-- 配色 (共通) -->
-                    <div class="color-palette-section">
-                        <h3>配色 (共通)</h3>
-                        <div class="color-indicators">
-                            <span>図形: <span id="shapeColorIndicator">🔴</span></span>
-                            <span>注釈: <span id="annotationColorIndicator">🔵</span></span>
-                        </div>
-                        <div class="preset-buttons">
-                            <button class="preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
-                            <button class="preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FFE5E0">要点</button>
-                            <button class="preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFF9E6">注意</button>
-                            <button class="preset-btn" id="sharedCustomPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" title="Wクリックで設定画面に">登録</button>
-                        </div>
-                    </div>
-
                     <!-- 図形 -->
                     <div class="shape-section">
-                        <h3>図形</h3>
+                        <div class="section-header-with-presets">
+                            <h3>図形</h3>
+                            <div class="preset-buttons-inline">
+                                <button class="preset-btn shape-preset-btn active" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
+                                <button class="preset-btn shape-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FF6B6B">要点</button>
+                                <button class="preset-btn shape-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFD54F">注意</button>
+                                <button class="preset-btn shape-preset-btn" id="shapeCustomPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" title="Wクリックで設定画面に">登録</button>
+                            </div>
+                        </div>
 
                         <!-- 1行目: 直線、四角、テキスト付き矢印 -->
                         <div class="shape-selector">
@@ -249,6 +242,16 @@
                             <button id="cancelEditBtn" class="btn-compact">修正破棄</button>
                         </div>
 
+                        <!-- 図形カスタム設定 -->
+                        <details id="shapeCustomSettings" class="custom-settings">
+                            <summary>図形カスタム設定</summary>
+                            <div class="custom-settings-content">
+                                <label>背景色:</label>
+                                <input type="color" id="shapeCustomBgColor" value="#FFFFFF">
+                                <button id="saveShapeCustomBtn" class="btn-compact">登録</button>
+                            </div>
+                        </details>
+
                         <!-- 図形リスト -->
                         <div id="shapeList" class="shape-list">
                             <p class="empty-message">図形が登録されていません</p>
@@ -257,7 +260,15 @@
 
                     <!-- 注釈 -->
                     <div class="annotation-section">
-                        <h3>注釈</h3>
+                        <div class="section-header-with-presets">
+                            <h3>注釈</h3>
+                            <div class="preset-buttons-inline">
+                                <button class="preset-btn annotation-preset-btn" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
+                                <button class="preset-btn annotation-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FF6B6B">要点</button>
+                                <button class="preset-btn annotation-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFD54F">注意</button>
+                                <button class="preset-btn annotation-preset-btn" id="annotationCustomPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" title="Wクリックで設定画面に">登録</button>
+                            </div>
+                        </div>
 
                         <!-- フォント選択（1行圧縮） -->
                         <div class="font-selection-section compact">
@@ -267,6 +278,16 @@
                                 <option value="M PLUS Rounded 1c">丸ゴシック</option>
                                 <option value="Zen Kaku Gothic New">角ゴシック（太）</option>
                             </select>
+                        </div>
+
+                        <!-- 文字配置選択 -->
+                        <div class="text-align-section">
+                            <label>文字配置:</label>
+                            <div class="text-align-buttons">
+                                <button class="text-align-btn active" data-align="left" disabled>左</button>
+                                <button class="text-align-btn" data-align="center" disabled>中央</button>
+                                <button class="text-align-btn" data-align="right" disabled>右</button>
+                            </div>
                         </div>
 
                         <!-- テキスト入力（2行） -->
@@ -282,6 +303,18 @@
 
                         <button id="addAnnotationBtn" class="btn compact" disabled>注釈を追加</button>
                         <button id="addBlankAnnotationBtn" class="btn compact" disabled>注釈表示終了</button>
+
+                        <!-- 注釈カスタム設定 -->
+                        <details id="annotationCustomSettings" class="custom-settings">
+                            <summary>注釈カスタム設定</summary>
+                            <div class="custom-settings-content">
+                                <label>文字色:</label>
+                                <input type="color" id="annotationCustomTextColor" value="#000000">
+                                <label>背景色:</label>
+                                <input type="color" id="annotationCustomBgColor" value="#FFFFFF">
+                                <button id="saveAnnotationCustomBtn" class="btn-compact">登録</button>
+                            </div>
+                        </details>
 
                         <!-- 注釈リスト -->
                         <div id="annotationList" class="annotation-list">

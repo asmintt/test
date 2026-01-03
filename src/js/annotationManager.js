@@ -8,13 +8,10 @@ class AnnotationManager {
         this.annotationText2 = document.getElementById('annotationText2');
         this.annotationText1UseSeq = document.getElementById('annotationText1UseSeq');
         this.textFontSelect = document.getElementById('textFontSelect');
-        this.presetButtons = document.querySelectorAll('.preset-btn');
+        this.presetButtons = document.querySelectorAll('.annotation-preset-btn');
         this.customTextColor = document.getElementById('customTextColor');
         this.customBgColor = document.getElementById('customBgColor');
         this.textAlignButtons = document.querySelectorAll('.text-align-btn');
-        this.saveCustomPresetBtn = document.getElementById('saveCustomPresetBtn');
-        this.customPresetBtn = document.getElementById('customPresetBtn');
-        this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
         this.addAnnotationBtn = document.getElementById('addAnnotationBtn');
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
         this.annotationList = document.getElementById('annotationList');
@@ -105,13 +102,6 @@ class AnnotationManager {
                 this.selectTextAlign(align, button);
             });
         });
-
-        // 登録ボタンのイベントハンドラ
-        if (this.saveCustomPresetBtn) {
-            this.saveCustomPresetBtn.addEventListener('click', () => {
-                this.saveCustomPreset();
-            });
-        }
     }
 
     /**
@@ -128,18 +118,19 @@ class AnnotationManager {
             });
         });
 
-        // 共通カスタムボタンのダブルクリック → カスタム設定を開く
-        if (this.sharedCustomPresetBtn) {
-            this.sharedCustomPresetBtn.addEventListener('dblclick', () => {
-                const customSettings = document.getElementById('sharedCustomSettings');
+        // 注釈カスタムボタンのダブルクリック → カスタム設定を開く
+        const annotationCustomBtn = document.getElementById('annotationCustomPresetBtn');
+        if (annotationCustomBtn) {
+            annotationCustomBtn.addEventListener('dblclick', () => {
+                const customSettings = document.getElementById('annotationCustomSettings');
                 if (customSettings) {
                     customSettings.open = true; // detailsを開く
                 }
             });
         }
 
-        // 統一カスタム設定のイベントハンドラ
-        this.initSharedCustomSettings();
+        // 注釈カスタム設定のイベントハンドラ
+        this.initAnnotationCustomSettings();
 
         // カスタムカラーピッカー
         if (this.customTextColor) {
@@ -218,93 +209,36 @@ class AnnotationManager {
     }
 
     /**
-     * 統一カスタム設定の初期化
+     * 注釈カスタム設定の初期化
      */
-    initSharedCustomSettings() {
-        const sharedBgColor = document.getElementById('sharedCustomBgColor');
-        const sharedTextColor = document.getElementById('sharedCustomTextColor');
-        const sharedTextAlignButtons = document.querySelectorAll('.shared-text-align-btn');
-        const saveSharedCustomBtn = document.getElementById('saveSharedCustomPresetBtn');
+    initAnnotationCustomSettings() {
+        const annotationCustomBtn = document.getElementById('annotationCustomPresetBtn');
+        const annotationCustomTextColor = document.getElementById('annotationCustomTextColor');
+        const annotationCustomBgColor = document.getElementById('annotationCustomBgColor');
+        const saveAnnotationCustomBtn = document.getElementById('saveAnnotationCustomBtn');
 
-        // 背景色変更
-        if (sharedBgColor) {
-            sharedBgColor.addEventListener('change', () => {
-                this.selectedBgColor = sharedBgColor.value;
+        // 注釈カスタム設定の保存ボタン
+        if (saveAnnotationCustomBtn && annotationCustomBtn && annotationCustomTextColor && annotationCustomBgColor) {
+            saveAnnotationCustomBtn.addEventListener('click', () => {
+                const textColor = annotationCustomTextColor.value;
+                const bgColor = annotationCustomBgColor.value;
+
+                // カスタムボタンに色を保存
+                annotationCustomBtn.setAttribute('data-text-color', textColor);
+                annotationCustomBtn.setAttribute('data-bg-color', bgColor);
+                annotationCustomBtn.style.color = textColor;
+                annotationCustomBtn.style.backgroundColor = bgColor;
+
+                // カスタム設定を閉じる
+                const customSettings = document.getElementById('annotationCustomSettings');
+                if (customSettings) {
+                    customSettings.open = false;
+                }
+
+                console.log('注釈カスタム色を登録:', { textColor, bgColor });
+                alert('カスタム色を登録しました！');
             });
         }
-
-        // 文字色変更
-        if (sharedTextColor) {
-            sharedTextColor.addEventListener('change', () => {
-                this.selectedTextColor = sharedTextColor.value;
-            });
-        }
-
-        // 文字位置ボタン
-        sharedTextAlignButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const align = button.getAttribute('data-align');
-                this.selectedTextAlign = align;
-
-                // アクティブ状態を更新
-                sharedTextAlignButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-            });
-        });
-
-        // 登録ボタン
-        if (saveSharedCustomBtn) {
-            saveSharedCustomBtn.addEventListener('click', () => {
-                this.saveSharedCustomPreset();
-            });
-        }
-    }
-
-    /**
-     * 統一カスタムプリセットに登録
-     */
-    saveSharedCustomPreset() {
-        if (!this.sharedCustomPresetBtn) return;
-
-        // 現在の設定をカスタムボタンに保存
-        this.sharedCustomPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
-        this.sharedCustomPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
-
-        // ボタンに色を視覚的に反映
-        this.sharedCustomPresetBtn.style.color = this.selectedTextColor;
-        this.sharedCustomPresetBtn.style.backgroundColor = this.selectedBgColor;
-
-        console.log('統一カスタムプリセットを登録しました:', {
-            textColor: this.selectedTextColor,
-            bgColor: this.selectedBgColor,
-            textAlign: this.selectedTextAlign
-        });
-
-        alert('カスタム設定を登録しました！');
-    }
-
-    /**
-     * カスタムプリセットに登録
-     */
-    saveCustomPreset() {
-        if (!this.customPresetBtn) return;
-
-        // 現在の設定をカスタムボタンに保存
-        this.customPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
-        this.customPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
-        this.customPresetBtn.setAttribute('data-text-align', this.selectedTextAlign);
-
-        // ボタンに色を視覚的に反映
-        this.customPresetBtn.style.color = this.selectedTextColor;
-        this.customPresetBtn.style.backgroundColor = this.selectedBgColor;
-
-        console.log('カスタムプリセットを登録しました:', {
-            textColor: this.selectedTextColor,
-            bgColor: this.selectedBgColor,
-            textAlign: this.selectedTextAlign
-        });
-
-        alert('カスタム設定を登録しました！');
     }
 
     /**

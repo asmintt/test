@@ -194,14 +194,14 @@ class ShapeAnnotationManager {
      * 図形コントロール（色・太さ）の初期化
      */
     initShapeControls() {
-        // 共通プリセットボタン（説明/要点/注意/登録）
-        const presetButtons = document.querySelectorAll('.preset-btn');
+        // 図形用プリセットボタン（説明/要点/注意/登録）
+        const presetButtons = document.querySelectorAll('.shape-preset-btn');
         presetButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const bgColor = button.getAttribute('data-bg-color');
                 if (bgColor) {
                     this.selectedShapeColor = bgColor;
-                    console.log('共通プリセットボタンから図形色を設定:', bgColor);
+                    console.log('図形プリセットボタンから図形色を設定:', bgColor);
 
                     // pendingShapes（確定前の図形）の最後の図形の色を更新
                     if (this.pendingShapes.length > 0) {
@@ -235,28 +235,35 @@ class ShapeAnnotationManager {
             });
         }
 
-        // 共通カスタムボタンのダブルクリック → カスタム設定を開く
-        if (this.sharedCustomPresetBtn) {
-            this.sharedCustomPresetBtn.addEventListener('dblclick', () => {
-                const customSettings = document.getElementById('sharedCustomSettings');
+        // 図形カスタムボタンのダブルクリック → カスタム設定を開く
+        const shapeCustomBtn = document.getElementById('shapeCustomPresetBtn');
+        if (shapeCustomBtn) {
+            shapeCustomBtn.addEventListener('dblclick', () => {
+                const customSettings = document.getElementById('shapeCustomSettings');
                 if (customSettings) {
                     customSettings.open = true; // detailsを開く
                 }
             });
         }
 
-        // 統一カスタム設定の背景色変更イベント
-        const sharedBgColor = document.getElementById('sharedCustomBgColor');
-        if (sharedBgColor) {
-            sharedBgColor.addEventListener('change', () => {
-                this.selectedShapeColor = sharedBgColor.value;
-                console.log('統一カスタム設定から図形色を設定:', this.selectedShapeColor);
+        // 図形カスタム設定の保存ボタン
+        const saveShapeCustomBtn = document.getElementById('saveShapeCustomBtn');
+        const shapeCustomBgColor = document.getElementById('shapeCustomBgColor');
+        if (saveShapeCustomBtn && shapeCustomBtn && shapeCustomBgColor) {
+            saveShapeCustomBtn.addEventListener('click', () => {
+                const bgColor = shapeCustomBgColor.value;
+                // カスタムボタンに色を保存
+                shapeCustomBtn.setAttribute('data-bg-color', bgColor);
+                shapeCustomBtn.style.backgroundColor = bgColor;
 
-                // pendingShapes（確定前の図形）の最後の図形の色を更新
-                if (this.pendingShapes.length > 0) {
-                    this.pendingShapes[this.pendingShapes.length - 1].color = this.selectedShapeColor;
-                    this.redrawShapes(); // リアルタイムプレビュー更新
+                // カスタム設定を閉じる
+                const customSettings = document.getElementById('shapeCustomSettings');
+                if (customSettings) {
+                    customSettings.open = false;
                 }
+
+                console.log('図形カスタム色を登録:', bgColor);
+                alert('カスタム色を登録しました！');
             });
         }
 
