@@ -189,6 +189,28 @@
                     <div id="detailTextDisplay" class="detail-text-display"></div>
                 </div>
 
+                <!-- 履歴エリア（3分割） -->
+                <div class="history-area">
+                    <div class="history-column">
+                        <h3>図形履歴</h3>
+                        <div id="shapeHistoryList" class="history-list">
+                            <p class="empty-message">図形が登録されていません</p>
+                        </div>
+                    </div>
+                    <div class="history-column">
+                        <h3>注釈履歴</h3>
+                        <div id="annotationHistoryList" class="history-list">
+                            <p class="empty-message">注釈が登録されていません</p>
+                        </div>
+                    </div>
+                    <div class="history-column">
+                        <h3>詳細履歴</h3>
+                        <div id="detailHistoryList" class="history-list">
+                            <p class="empty-message">詳細テキストが登録されていません</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- 右サイドバー: 注釈エリア -->
@@ -263,11 +285,6 @@
                                 <button id="saveShapeCustomBtn" class="btn-compact">登録</button>
                             </div>
                         </details>
-
-                        <!-- 図形リスト -->
-                        <div id="shapeList" class="shape-list">
-                            <p class="empty-message">図形が登録されていません</p>
-                        </div>
                     </div>
 
                     <!-- 注釈 -->
@@ -311,7 +328,7 @@
                         </div>
 
                         <button id="addAnnotationBtn" class="btn compact" disabled>注釈を追加</button>
-                        <button id="addBlankAnnotationBtn" class="btn compact" disabled>注釈表示終了</button>
+                        <button id="addBlankAnnotationBtn" class="btn compact" disabled>表示終了</button>
 
                         <!-- 注釈カスタム設定 -->
                         <details id="annotationCustomSettings" class="custom-settings">
@@ -324,11 +341,6 @@
                                 <button id="saveAnnotationCustomBtn" class="btn-compact">登録</button>
                             </div>
                         </details>
-
-                        <!-- 注釈リスト -->
-                        <div id="annotationList" class="annotation-list">
-                            <p class="empty-message">注釈が登録されていません</p>
-                        </div>
                     </div>
 
                     <!-- 詳細テキスト -->
@@ -350,12 +362,7 @@
 
                         <div class="detail-button-row">
                             <button id="addDetailTextBtn" class="btn-compact" disabled>詳細テキストを追加</button>
-                            <button id="addNoDetailTextBtn" class="btn-compact" disabled>詳細テキスト表示終了</button>
-                        </div>
-
-                        <!-- 詳細テキストリスト -->
-                        <div id="detailTextList" class="detail-text-list">
-                            <p class="empty-message">詳細テキストが登録されていません</p>
+                            <button id="addNoDetailTextBtn" class="btn-compact" disabled>表示終了</button>
                         </div>
                     </div>
 

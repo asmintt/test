@@ -692,11 +692,11 @@ details:not([open]) summary h2::before {
 }
 
 .text-annotation-display {
-    min-height: 60px;
+    min-height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 15px 20px;
+    padding: 10px 20px;
     font-weight: bold;
     font-size: 1.3rem;
     text-align: center;
@@ -750,6 +750,157 @@ details:not([open]) summary h2::before {
     display: inline-block;
     padding: 4px 8px;
     border-radius: 3px;
+}
+
+/* ========================================
+   履歴エリア（動画プレビュー下・3分割）
+   ======================================== */
+.history-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.history-column {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e0e0e0;
+    padding-right: 10px;
+}
+
+.history-column:last-child {
+    border-right: none;
+    padding-right: 0;
+}
+
+.history-column h3 {
+    font-size: 0.85rem;
+    color: #2c5282;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e0e0e0;
+    font-weight: 600;
+}
+
+.history-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 150px;
+    padding-right: 4px;
+}
+
+/* 履歴アイテム（コンパクト版） */
+.history-item {
+    background: #f8f8f8;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.history-item:hover {
+    background: #f0f0f0;
+    border-color: #2c5282;
+    box-shadow: 0 1px 4px rgba(44, 82, 130, 0.15);
+}
+
+/* 時刻とボタンを横並びにするヘッダー行 */
+.history-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-time {
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: #2c5282;
+    font-weight: 400;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.history-time:hover {
+    text-decoration: underline;
+}
+
+.history-content {
+    font-size: 0.85rem;
+    line-height: 1.3;
+    color: #333;
+}
+
+.history-buttons {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.history-buttons .btn-edit,
+.history-buttons .btn-delete {
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.history-buttons .btn-edit:hover,
+.history-buttons .btn-delete:hover {
+    background: #e0e0e0;
+}
+
+/* アイコンを削除 */
+.history-buttons .btn-edit::before,
+.history-buttons .btn-delete::before {
+    content: none;
+}
+
+/* 図形アイコン表示 */
+.shape-icons-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.shape-icon {
+    display: inline-block;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    border: 1px solid #ddd;
+    line-height: 1;
+}
+
+/* 履歴リストのスクロールバー */
+.history-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: #2c5282;
+    border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: #2a4365;
 }
 
 /* ========================================

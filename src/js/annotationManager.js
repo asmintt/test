@@ -14,7 +14,7 @@ class AnnotationManager {
         this.textAlignButtons = document.querySelectorAll('.text-align-btn');
         this.addAnnotationBtn = document.getElementById('addAnnotationBtn');
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
-        this.annotationList = document.getElementById('annotationList');
+        this.annotationHistoryList = document.getElementById('annotationHistoryList');
 
         // 時刻調整ボタン（サイドバーの統合ボタン）
         this.timeAdjustButtons = document.querySelectorAll('[data-video-adjust]');
@@ -408,59 +408,86 @@ class AnnotationManager {
      * 注釈リストを描画
      */
     renderAnnotationList() {
-        if (!this.annotationList) return;
+        if (!this.annotationHistoryList) return;
 
         // リストをクリア
-        this.annotationList.innerHTML = '';
+        this.annotationHistoryList.innerHTML = '';
 
         // 注釈がない場合
         if (this.annotations.length === 0) {
             const emptyMsg = document.createElement('p');
             emptyMsg.className = 'empty-message';
             emptyMsg.textContent = '注釈が登録されていません';
-            this.annotationList.appendChild(emptyMsg);
+            this.annotationHistoryList.appendChild(emptyMsg);
             return;
         }
 
         // 各注釈を降順で描画
         for (let i = this.annotations.length - 1; i >= 0; i--) {
-            const item = this.createAnnotationItem(this.annotations[i], i);
-            this.annotationList.appendChild(item);
+            const item = this.createAnnotationHistoryItem(this.annotations[i], i);
+            this.annotationHistoryList.appendChild(item);
         }
     }
 
     /**
-     * 注釈アイテムのHTML要素を作成
+     * 注釈履歴アイテムのHTML要素を作成（コンパクト版）
      * @param {Object} annotation - 注釈オブジェクト
      * @param {number} index - インデックス
      * @returns {HTMLElement} 注釈アイテム要素
      */
-    createAnnotationItem(annotation, index) {
-        // 2行テキストを改行で結合
+    createAnnotationHistoryItem(annotation, index) {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        // ヘッダー行（時刻とボタン）
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'history-item-header';
+
+        // 時刻表示
+        const timeSpan = document.createElement('div');
+        timeSpan.className = 'history-time';
+        timeSpan.textContent = formatTimeWithDecimal(annotation.time);
+        timeSpan.addEventListener('click', () => {
+            if (videoPlayer) {
+                videoPlayer.setCurrentTime(annotation.time);
+            }
+        });
+        headerDiv.appendChild(timeSpan);
+
+        // ボタン
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'history-buttons';
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.textContent = '編集';
+        editBtn.addEventListener('click', () => this.editAnnotation(index));
+        buttonsDiv.appendChild(editBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.textContent = '削除';
+        deleteBtn.addEventListener('click', () => this.deleteAnnotation(index));
+        buttonsDiv.appendChild(deleteBtn);
+
+        headerDiv.appendChild(buttonsDiv);
+        item.appendChild(headerDiv);
+
+        // 注釈テキスト表示
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'history-content';
         const displayText = (annotation.text1 || annotation.text2)
             ? `${annotation.text1 || ''}\n${annotation.text2 || ''}`
-            : '(注釈なし)';
+            : '表示終了';
+        contentDiv.textContent = displayText;
+        contentDiv.style.color = annotation.textColor;
+        contentDiv.style.backgroundColor = annotation.bgColor;
+        contentDiv.style.padding = '2px 6px';
+        contentDiv.style.borderRadius = '3px';
+        contentDiv.style.whiteSpace = 'pre-line';
+        item.appendChild(contentDiv);
 
-        return createListItem({
-            itemClassName: 'annotation-item',
-            time: annotation.time,
-            useDecimalTime: true,
-            onTimeClick: () => {
-                if (videoPlayer) {
-                    videoPlayer.setCurrentTime(annotation.time);
-                }
-            },
-            text: displayText,
-            textStyle: {
-                color: annotation.textColor,
-                backgroundColor: annotation.bgColor,
-                padding: '2px 6px',
-                borderRadius: '3px',
-                whiteSpace: 'pre-line'
-            },
-            onEdit: () => this.editAnnotation(index),
-            onDelete: () => this.deleteAnnotation(index)
-        });
+        return item;
     }
 
     /**

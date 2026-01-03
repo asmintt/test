@@ -12,7 +12,7 @@ class ShapeAnnotationManager {
         this.customLineWidthInput = document.getElementById('customLineWidth');
         this.customColor = document.getElementById('shapeCustomColor');
         this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
-        this.shapeList = document.getElementById('shapeList');
+        this.shapeHistoryList = document.getElementById('shapeHistoryList');
         this.addShapeContinueBtn = document.getElementById('addShapeContinueBtn');
         this.addShapeNewBtn = document.getElementById('addShapeNewBtn');
         this.addNoShapeBtn = document.getElementById('addNoShapeBtn');
@@ -1085,23 +1085,154 @@ class ShapeAnnotationManager {
      * 図形リストを更新
      */
     updateShapeList() {
-        if (!this.shapeList) return;
+        if (!this.shapeHistoryList) return;
 
-        this.shapeList.innerHTML = '';
+        this.shapeHistoryList.innerHTML = '';
 
         if (this.shapes.length === 0) {
             const emptyMsg = document.createElement('p');
             emptyMsg.className = 'empty-message';
             emptyMsg.textContent = '図形が登録されていません';
-            this.shapeList.appendChild(emptyMsg);
+            this.shapeHistoryList.appendChild(emptyMsg);
             return;
         }
 
-        // 降順で表示
-        for (let i = this.shapes.length - 1; i >= 0; i--) {
-            const item = this.createShapeItem(this.shapes[i], i);
-            this.shapeList.appendChild(item);
+        // 時刻ごとにグループ化
+        const groupedByTime = {};
+        this.shapes.forEach((shape, index) => {
+            const timeKey = shape.time.toFixed(1);
+            if (!groupedByTime[timeKey]) {
+                groupedByTime[timeKey] = [];
+            }
+            groupedByTime[timeKey].push({ shape, index });
+        });
+
+        // 時刻の降順でソート
+        const sortedTimes = Object.keys(groupedByTime).sort((a, b) => parseFloat(b) - parseFloat(a));
+
+        // グループ化された図形を表示
+        sortedTimes.forEach(timeKey => {
+            const item = this.createGroupedShapeItem(parseFloat(timeKey), groupedByTime[timeKey]);
+            this.shapeHistoryList.appendChild(item);
+        });
+    }
+
+    /**
+     * グループ化された図形アイテムのHTML要素を作成
+     * @param {number} time - 時刻
+     * @param {Array} shapeGroup - 同じ時刻の図形グループ [{shape, index}, ...]
+     * @returns {HTMLElement} 図形アイテム要素
+     */
+    createGroupedShapeItem(time, shapeGroup) {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        // ヘッダー行（時刻とボタン）
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'history-item-header';
+
+        // 時刻表示
+        const timeSpan = document.createElement('div');
+        timeSpan.className = 'history-time';
+        timeSpan.textContent = formatTimeWithDecimal(time);
+        timeSpan.addEventListener('click', () => {
+            if (videoPlayer) {
+                videoPlayer.setCurrentTime(time);
+            }
+        });
+        headerDiv.appendChild(timeSpan);
+
+        // ボタン
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'history-buttons';
+
+        // 編集ボタン（最初の図形がある場合のみ）
+        const firstShape = shapeGroup[0];
+        if (firstShape.shape.type !== '') {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-edit';
+            editBtn.textContent = '編集';
+            editBtn.addEventListener('click', () => this.editShape(firstShape.index));
+            buttonsDiv.appendChild(editBtn);
         }
+
+        // 削除ボタン
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.textContent = '削除';
+        deleteBtn.addEventListener('click', () => this.deleteShape(firstShape.index));
+        buttonsDiv.appendChild(deleteBtn);
+
+        headerDiv.appendChild(buttonsDiv);
+        item.appendChild(headerDiv);
+
+        // 図形アイコンを横並びで表示
+        const iconsRow = document.createElement('div');
+        iconsRow.className = 'shape-icons-row';
+
+        const typeIcons = {
+            'line': '━',
+            'rectangle': '▭',
+            'arrow-right': '➡',
+            'arrow-left': '⬅',
+            'arrow-up': '⬆',
+            'arrow-down': '⬇',
+            'arrow': '➡',
+            '': ''
+        };
+
+        shapeGroup.forEach(({ shape }) => {
+            const icon = document.createElement('span');
+            icon.className = 'shape-icon';
+
+            if (shape.type === '') {
+                // 図形なし（表示終了）
+                icon.textContent = '表示終了';
+                icon.style.backgroundColor = '#f0f0f0';
+                icon.style.color = '#666';
+            } else if (shape.isTextIncluded) {
+                // テキスト付き矢印の場合はテキスト名のみ表示
+                if (shape.type === 'arrow-left') {
+                    icon.textContent = '左';
+                } else if (shape.type === 'arrow-right') {
+                    icon.textContent = '右';
+                } else {
+                    icon.textContent = typeIcons[shape.type] || shape.type;
+                }
+                icon.style.backgroundColor = shape.color || '#FFFFFF';
+                icon.style.color = this.getContrastColor(shape.color || '#FFFFFF');
+            } else {
+                // 通常の図形は記号を表示
+                icon.textContent = typeIcons[shape.type] || shape.type;
+                icon.style.backgroundColor = shape.color || '#FFFFFF';
+                icon.style.color = this.getContrastColor(shape.color || '#FFFFFF');
+            }
+
+            iconsRow.appendChild(icon);
+        });
+
+        item.appendChild(iconsRow);
+
+        return item;
+    }
+
+    /**
+     * 背景色に対するコントラストの良い文字色を取得
+     * @param {string} bgColor - 背景色（#RRGGBB形式）
+     * @returns {string} 文字色（#000000 または #FFFFFF）
+     */
+    getContrastColor(bgColor) {
+        // #RRGGBB形式から RGB値を抽出
+        const hex = bgColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+
+        // 輝度を計算（YIQ方式）
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+
+        // 輝度が128以上なら黒、未満なら白
+        return (yiq >= 128) ? '#000000' : '#FFFFFF';
     }
 
     /**

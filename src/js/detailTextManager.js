@@ -10,7 +10,7 @@ class DetailTextManager {
         this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
         this.addDetailTextBtn = document.getElementById('addDetailTextBtn');
         this.addNoDetailTextBtn = document.getElementById('addNoDetailTextBtn');
-        this.detailTextList = document.getElementById('detailTextList');
+        this.detailHistoryList = document.getElementById('detailHistoryList');
 
         // 時刻調整ボタン（サイドバーの統合ボタン）
         this.timeAdjustButtons = document.querySelectorAll('[data-video-adjust]');
@@ -293,38 +293,73 @@ class DetailTextManager {
      * 詳細テキストリストをレンダリング
      */
     renderDetailTextList() {
-        if (!this.detailTextList) return;
+        if (!this.detailHistoryList) return;
 
-        this.detailTextList.innerHTML = '';
+        this.detailHistoryList.innerHTML = '';
 
         if (this.detailTexts.length === 0) {
-            this.detailTextList.innerHTML = '<p class="empty-message">詳細テキストが登録されていません</p>';
+            this.detailHistoryList.innerHTML = '<p class="empty-message">詳細テキストが登録されていません</p>';
             return;
         }
 
-        this.detailTexts.forEach((detailTextObj, index) => {
-            const item = createListItem({
-                itemClassName: 'detail-text-item',
-                time: detailTextObj.time,
-                timeClassName: 'detail-text-time',
-                useDecimalTime: false,
-                onTimeClick: () => {
-                    if (videoPlayer) {
-                        videoPlayer.seekTo(detailTextObj.time);
-                    }
-                },
-                text: detailTextObj.text || '（詳細テキストなし）',
-                textClassName: 'detail-text-content',
-                textStyle: {
-                    color: detailTextObj.textColor,
-                    backgroundColor: detailTextObj.bgColor
-                },
-                onEdit: null,
-                onDelete: () => this.deleteDetailText(index)
-            });
+        // 時刻の降順でソート
+        const sortedTexts = [...this.detailTexts].sort((a, b) => b.time - a.time);
 
-            this.detailTextList.appendChild(item);
+        sortedTexts.forEach((detailTextObj, index) => {
+            const item = this.createDetailHistoryItem(detailTextObj, this.detailTexts.indexOf(detailTextObj));
+            this.detailHistoryList.appendChild(item);
         });
+    }
+
+    /**
+     * 詳細テキスト履歴アイテムのHTML要素を作成（コンパクト版）
+     * @param {Object} detailTextObj - 詳細テキストオブジェクト
+     * @param {number} index - インデックス
+     * @returns {HTMLElement} 詳細テキストアイテム要素
+     */
+    createDetailHistoryItem(detailTextObj, index) {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        // ヘッダー行（時刻とボタン）
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'history-item-header';
+
+        // 時刻表示
+        const timeSpan = document.createElement('div');
+        timeSpan.className = 'history-time';
+        timeSpan.textContent = formatTimeWithDecimal(detailTextObj.time);
+        timeSpan.addEventListener('click', () => {
+            if (videoPlayer) {
+                videoPlayer.setCurrentTime(detailTextObj.time);
+            }
+        });
+        headerDiv.appendChild(timeSpan);
+
+        // ボタン
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'history-buttons';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.textContent = '削除';
+        deleteBtn.addEventListener('click', () => this.deleteDetailText(index));
+        buttonsDiv.appendChild(deleteBtn);
+
+        headerDiv.appendChild(buttonsDiv);
+        item.appendChild(headerDiv);
+
+        // 詳細テキスト表示
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'history-content';
+        contentDiv.textContent = detailTextObj.text || '表示終了';
+        contentDiv.style.color = detailTextObj.textColor;
+        contentDiv.style.backgroundColor = detailTextObj.bgColor;
+        contentDiv.style.padding = '2px 6px';
+        contentDiv.style.borderRadius = '3px';
+        item.appendChild(contentDiv);
+
+        return item;
     }
 
     /**
