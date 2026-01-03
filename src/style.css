@@ -650,7 +650,16 @@ details:not([open]) summary h2::before {
 .video-area {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 8px;
+}
+
+/* 動画プレビューと時刻調整ボタンを含む固定コンテナ */
+.video-preview-sticky-container {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f5f7fa;
+    padding-bottom: 0;
 }
 
 .video-wrapper {
@@ -660,9 +669,42 @@ details:not([open]) summary h2::before {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    position: sticky;
-    top: 20px;
-    z-index: 10;
+}
+
+/* 再生時間調整ボタン */
+.video-time-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.video-time-label {
+    font-size: 0.85rem;
+    color: #555;
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.time-adjust-btn {
+    padding: 8px 16px;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.time-adjust-btn:hover:not(:disabled) {
+    background: #e0e0e0;
+}
+
+.time-adjust-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .video-container {
@@ -763,7 +805,6 @@ details:not([open]) summary h2::before {
     border-radius: 12px;
     padding: 15px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    margin-top: 20px;
 }
 
 .history-column {
@@ -782,8 +823,9 @@ details:not([open]) summary h2::before {
     font-size: 0.85rem;
     color: #2c5282;
     margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 2px solid #e0e0e0;
+    padding: 6px 10px;
+    border: 2px solid #2c5282;
+    border-radius: 6px;
     font-weight: 600;
 }
 
@@ -1679,6 +1721,19 @@ details:not([open]) summary h2::before {
     cursor: not-allowed;
 }
 
+/* 履歴に追加するボタン - 青枠線で強調 */
+.btn-add-to-history {
+    background: white;
+    color: #2c5282;
+    border: 2px solid #2c5282;
+    font-weight: 600;
+}
+
+.btn-add-to-history:hover:not(:disabled) {
+    background: #f0f8ff;
+    border-color: #3d6ba8;
+}
+
 .detail-text-list {
     max-height: 450px;
     overflow-y: auto;
@@ -2324,3 +2379,97 @@ details:not([open]) summary h2::before {
     background-color: #cc0000;
 }
 
+/* ========================================
+   カスタム設定モーダル
+   ======================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: modalFadeIn 0.2s;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #2c5282;
+    font-size: 1.1rem;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close-btn:hover {
+    color: #333;
+}
+
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modal-body label {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.modal-body input[type="color"] {
+    width: 100%;
+    height: 50px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-body button {
+    margin-top: 10px;
+}

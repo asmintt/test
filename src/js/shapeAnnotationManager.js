@@ -24,10 +24,8 @@ class ShapeAnnotationManager {
         this.confirmEditBtn = document.getElementById('confirmEditBtn');
         this.cancelEditBtn = document.getElementById('cancelEditBtn');
 
-        // 時刻調整ボタン（サイドバーの統合ボタン）
+        // 時刻調整ボタン
         this.timeAdjustShapeButtons = document.querySelectorAll('[data-video-adjust]');
-        this.syncShapeTimeBtn = document.getElementById('syncVideoTime');
-        this.resetShapeTimeBtn = document.getElementById('resetVideoTime');
 
         // 選択された色
         this.selectedShapeColor = '#FFFFFF'; // デフォルト: 白
@@ -146,20 +144,6 @@ class ShapeAnnotationManager {
             });
         });
 
-        // 現在位置ボタン
-        if (this.syncShapeTimeBtn) {
-            this.syncShapeTimeBtn.addEventListener('click', () => {
-                // 何もしない（既に動画の現在位置が表示されているため）
-            });
-        }
-
-        // リセットボタン
-        if (this.resetShapeTimeBtn) {
-            this.resetShapeTimeBtn.addEventListener('click', () => {
-                this.resetTime();
-            });
-        }
-
         // マウスイベント
         this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -235,35 +219,11 @@ class ShapeAnnotationManager {
             });
         }
 
-        // 図形カスタムボタンのダブルクリック → カスタム設定を開く
+        // 図形カスタムボタンのダブルクリック → モーダルを開く
         const shapeCustomBtn = document.getElementById('shapeCustomPresetBtn');
         if (shapeCustomBtn) {
             shapeCustomBtn.addEventListener('dblclick', () => {
-                const customSettings = document.getElementById('shapeCustomSettings');
-                if (customSettings) {
-                    customSettings.open = true; // detailsを開く
-                }
-            });
-        }
-
-        // 図形カスタム設定の保存ボタン
-        const saveShapeCustomBtn = document.getElementById('saveShapeCustomBtn');
-        const shapeCustomBgColor = document.getElementById('shapeCustomBgColor');
-        if (saveShapeCustomBtn && shapeCustomBtn && shapeCustomBgColor) {
-            saveShapeCustomBtn.addEventListener('click', () => {
-                const bgColor = shapeCustomBgColor.value;
-                // カスタムボタンに色を保存
-                shapeCustomBtn.setAttribute('data-bg-color', bgColor);
-                shapeCustomBtn.style.backgroundColor = bgColor;
-
-                // カスタム設定を閉じる
-                const customSettings = document.getElementById('shapeCustomSettings');
-                if (customSettings) {
-                    customSettings.open = false;
-                }
-
-                console.log('図形カスタム色を登録:', bgColor);
-                alert('カスタム色を登録しました！');
+                this.openCustomSettingsModal();
             });
         }
 
@@ -1425,8 +1385,6 @@ class ShapeAnnotationManager {
         this.timeAdjustShapeButtons.forEach(button => {
             button.disabled = false;
         });
-        if (this.syncShapeTimeBtn) this.syncShapeTimeBtn.disabled = false;
-        if (this.resetShapeTimeBtn) this.resetShapeTimeBtn.disabled = false;
 
         // プロジェクト読み込み中でない場合のみ図形をクリア
         if (projectManager && !projectManager.isLoadingProject) {
@@ -1628,6 +1586,71 @@ class ShapeAnnotationManager {
             this.editModeButtons.style.display = 'none';
         }
         console.log('通常モードのUIに切り替えました');
+    }
+
+    /**
+     * カスタム設定モーダルを開く
+     */
+    openCustomSettingsModal() {
+        const modal = document.getElementById('customSettingsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const shapeCustomBtn = document.getElementById('shapeCustomPresetBtn');
+
+        if (!modal || !modalTitle || !modalBody || !shapeCustomBtn) return;
+
+        // モーダルタイトル
+        modalTitle.textContent = '図形カスタム設定';
+
+        // モーダルコンテンツ
+        const currentColor = shapeCustomBtn.getAttribute('data-bg-color') || '#FFFFFF';
+        modalBody.innerHTML = `
+            <label>背景色:</label>
+            <input type="color" id="shapeCustomBgColorModal" value="${currentColor}">
+            <button id="saveShapeCustomBtnModal" class="btn-primary">登録</button>
+        `;
+
+        // モーダル表示
+        modal.style.display = 'flex';
+
+        // 閉じるボタン
+        const closeBtn = modal.querySelector('.modal-close-btn');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closeModal();
+        }
+
+        // オーバーレイクリックで閉じる
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                this.closeModal();
+            }
+        };
+
+        // 登録ボタン
+        const saveBtn = document.getElementById('saveShapeCustomBtnModal');
+        const colorInput = document.getElementById('shapeCustomBgColorModal');
+        if (saveBtn && colorInput) {
+            saveBtn.onclick = () => {
+                const bgColor = colorInput.value;
+                // カスタムボタンに色を保存
+                shapeCustomBtn.setAttribute('data-bg-color', bgColor);
+                shapeCustomBtn.style.backgroundColor = bgColor;
+
+                console.log('図形カスタム色を登録:', bgColor);
+                alert('カスタム色を登録しました！');
+                this.closeModal();
+            };
+        }
+    }
+
+    /**
+     * モーダルを閉じる
+     */
+    closeModal() {
+        const modal = document.getElementById('customSettingsModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 }
 

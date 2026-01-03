@@ -12,10 +12,8 @@ class DetailTextManager {
         this.addNoDetailTextBtn = document.getElementById('addNoDetailTextBtn');
         this.detailHistoryList = document.getElementById('detailHistoryList');
 
-        // 時刻調整ボタン（サイドバーの統合ボタン）
+        // 時刻調整ボタン
         this.timeAdjustButtons = document.querySelectorAll('[data-video-adjust]');
-        this.syncDetailTimeBtn = document.getElementById('syncVideoTime');
-        this.resetDetailTimeBtn = document.getElementById('resetVideoTime');
 
         // 選択された色とプリセット
         this.selectedTextColor = '#000000'; // デフォルト: 黒
@@ -61,20 +59,6 @@ class DetailTextManager {
                 this.adjustTime(offset);
             });
         });
-
-        // 現在位置ボタン
-        if (this.syncDetailTimeBtn) {
-            this.syncDetailTimeBtn.addEventListener('click', () => {
-                // 何もしない（既に動画の現在位置が表示されているため）
-            });
-        }
-
-        // リセットボタン
-        if (this.resetDetailTimeBtn) {
-            this.resetDetailTimeBtn.addEventListener('click', () => {
-                this.resetTime();
-            });
-        }
 
         // 配色コントロールのイベントハンドラ
         this.initColorControls();
@@ -298,7 +282,7 @@ class DetailTextManager {
         this.detailHistoryList.innerHTML = '';
 
         if (this.detailTexts.length === 0) {
-            this.detailHistoryList.innerHTML = '<p class="empty-message">詳細テキストが登録されていません</p>';
+            this.detailHistoryList.innerHTML = '<p class="empty-message">詳細が登録されていません</p>';
             return;
         }
 
@@ -434,8 +418,6 @@ class DetailTextManager {
 
         // 時刻調整ボタンを有効化
         this.timeAdjustButtons.forEach(button => button.disabled = false);
-        if (this.syncDetailTimeBtn) this.syncDetailTimeBtn.disabled = false;
-        if (this.resetDetailTimeBtn) this.resetDetailTimeBtn.disabled = false;
 
         // 初期フォントを入力フィールドに適用
         if (this.detailText) {

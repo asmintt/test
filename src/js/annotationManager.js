@@ -16,10 +16,8 @@ class AnnotationManager {
         this.addBlankAnnotationBtn = document.getElementById('addBlankAnnotationBtn');
         this.annotationHistoryList = document.getElementById('annotationHistoryList');
 
-        // 時刻調整ボタン（サイドバーの統合ボタン）
+        // 時刻調整ボタン
         this.timeAdjustButtons = document.querySelectorAll('[data-video-adjust]');
-        this.syncAnnotationTimeBtn = document.getElementById('syncVideoTime');
-        this.resetAnnotationTimeBtn = document.getElementById('resetVideoTime');
 
         // 選択された色とフォント
         this.selectedTextColor = '#000000'; // デフォルト: 黒
@@ -62,21 +60,6 @@ class AnnotationManager {
             });
         });
 
-        // 現在位置ボタン
-        if (this.syncAnnotationTimeBtn) {
-            this.syncAnnotationTimeBtn.addEventListener('click', () => {
-                // 何もしない（既に動画の現在位置が表示されているため）
-                // このボタンは主に視覚的な確認のため
-            });
-        }
-
-        // リセットボタン
-        if (this.resetAnnotationTimeBtn) {
-            this.resetAnnotationTimeBtn.addEventListener('click', () => {
-                this.resetTime();
-            });
-        }
-
         // 配色コントロールのイベントハンドラ
         this.initColorControls();
 
@@ -118,19 +101,13 @@ class AnnotationManager {
             });
         });
 
-        // 注釈カスタムボタンのダブルクリック → カスタム設定を開く
+        // 注釈カスタムボタンのダブルクリック → モーダルを開く
         const annotationCustomBtn = document.getElementById('annotationCustomPresetBtn');
         if (annotationCustomBtn) {
             annotationCustomBtn.addEventListener('dblclick', () => {
-                const customSettings = document.getElementById('annotationCustomSettings');
-                if (customSettings) {
-                    customSettings.open = true; // detailsを開く
-                }
+                this.openCustomSettingsModal();
             });
         }
-
-        // 注釈カスタム設定のイベントハンドラ
-        this.initAnnotationCustomSettings();
 
         // カスタムカラーピッカー
         if (this.customTextColor) {
@@ -208,38 +185,6 @@ class AnnotationManager {
         console.log(`文字位置を${align}に変更しました`);
     }
 
-    /**
-     * 注釈カスタム設定の初期化
-     */
-    initAnnotationCustomSettings() {
-        const annotationCustomBtn = document.getElementById('annotationCustomPresetBtn');
-        const annotationCustomTextColor = document.getElementById('annotationCustomTextColor');
-        const annotationCustomBgColor = document.getElementById('annotationCustomBgColor');
-        const saveAnnotationCustomBtn = document.getElementById('saveAnnotationCustomBtn');
-
-        // 注釈カスタム設定の保存ボタン
-        if (saveAnnotationCustomBtn && annotationCustomBtn && annotationCustomTextColor && annotationCustomBgColor) {
-            saveAnnotationCustomBtn.addEventListener('click', () => {
-                const textColor = annotationCustomTextColor.value;
-                const bgColor = annotationCustomBgColor.value;
-
-                // カスタムボタンに色を保存
-                annotationCustomBtn.setAttribute('data-text-color', textColor);
-                annotationCustomBtn.setAttribute('data-bg-color', bgColor);
-                annotationCustomBtn.style.color = textColor;
-                annotationCustomBtn.style.backgroundColor = bgColor;
-
-                // カスタム設定を閉じる
-                const customSettings = document.getElementById('annotationCustomSettings');
-                if (customSettings) {
-                    customSettings.open = false;
-                }
-
-                console.log('注釈カスタム色を登録:', { textColor, bgColor });
-                alert('カスタム色を登録しました！');
-            });
-        }
-    }
 
     /**
      * 動画読み込み時の設定
@@ -283,8 +228,6 @@ class AnnotationManager {
         this.timeAdjustButtons.forEach(button => {
             button.disabled = false;
         });
-        if (this.syncAnnotationTimeBtn) this.syncAnnotationTimeBtn.disabled = false;
-        if (this.resetAnnotationTimeBtn) this.resetAnnotationTimeBtn.disabled = false;
 
         // 初期フォントを入力フィールドに適用
         if (this.annotationText1) {
@@ -653,6 +596,79 @@ class AnnotationManager {
      */
     getAnnotations() {
         return this.annotations;
+    }
+
+    /**
+     * カスタム設定モーダルを開く
+     */
+    openCustomSettingsModal() {
+        const modal = document.getElementById('customSettingsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const annotationCustomBtn = document.getElementById('annotationCustomPresetBtn');
+
+        if (!modal || !modalTitle || !modalBody || !annotationCustomBtn) return;
+
+        // モーダルタイトル
+        modalTitle.textContent = '注釈カスタム設定';
+
+        // モーダルコンテンツ
+        const currentTextColor = annotationCustomBtn.getAttribute('data-text-color') || '#000000';
+        const currentBgColor = annotationCustomBtn.getAttribute('data-bg-color') || '#FFFFFF';
+        modalBody.innerHTML = `
+            <label>文字色:</label>
+            <input type="color" id="annotationCustomTextColorModal" value="${currentTextColor}">
+            <label>背景色:</label>
+            <input type="color" id="annotationCustomBgColorModal" value="${currentBgColor}">
+            <button id="saveAnnotationCustomBtnModal" class="btn-primary">登録</button>
+        `;
+
+        // モーダル表示
+        modal.style.display = 'flex';
+
+        // 閉じるボタン
+        const closeBtn = modal.querySelector('.modal-close-btn');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closeModal();
+        }
+
+        // オーバーレイクリックで閉じる
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                this.closeModal();
+            }
+        };
+
+        // 登録ボタン
+        const saveBtn = document.getElementById('saveAnnotationCustomBtnModal');
+        const textColorInput = document.getElementById('annotationCustomTextColorModal');
+        const bgColorInput = document.getElementById('annotationCustomBgColorModal');
+        if (saveBtn && textColorInput && bgColorInput) {
+            saveBtn.onclick = () => {
+                const textColor = textColorInput.value;
+                const bgColor = bgColorInput.value;
+
+                // カスタムボタンに色を保存
+                annotationCustomBtn.setAttribute('data-text-color', textColor);
+                annotationCustomBtn.setAttribute('data-bg-color', bgColor);
+                annotationCustomBtn.style.color = textColor;
+                annotationCustomBtn.style.backgroundColor = bgColor;
+
+                console.log('注釈カスタム色を登録:', { textColor, bgColor });
+                alert('カスタム色を登録しました！');
+                this.closeModal();
+            };
+        }
+    }
+
+    /**
+     * モーダルを閉じる
+     */
+    closeModal() {
+        const modal = document.getElementById('customSettingsModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 }
 

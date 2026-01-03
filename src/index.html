@@ -50,29 +50,6 @@
                     </div>
                 </section>
 
-                <!-- 再生位置を指定 -->
-                <section class="control-section">
-                    <details open>
-                        <summary><h2>再生位置を指定</h2></summary>
-                        <div class="playback-controls">
-                            <!-- 時刻調整ボタン -->
-                            <div class="time-adjust-controls compact">
-                                <div class="time-adjust-row">
-                                    <button class="btn-tiny" data-video-adjust="10" disabled>+10秒</button>
-                                    <button class="btn-tiny" data-video-adjust="1" disabled>+1秒</button>
-                                    <button class="btn-tiny" data-video-adjust="0.1" disabled>+0.1秒</button>
-                                    <button class="btn-tiny" id="syncVideoTime" disabled>現在位置</button>
-                                </div>
-                                <div class="time-adjust-row">
-                                    <button class="btn-tiny" data-video-adjust="-10" disabled>-10秒</button>
-                                    <button class="btn-tiny" data-video-adjust="-1" disabled>-1秒</button>
-                                    <button class="btn-tiny" data-video-adjust="-0.1" disabled>-0.1秒</button>
-                                    <button class="btn-tiny" id="resetVideoTime" disabled>リセット</button>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                </section>
 
                 <!-- 2. 動画の範囲を指定 -->
                 <section class="control-section">
@@ -179,14 +156,28 @@
             <!-- 中央: 動画プレビューエリア -->
             <div class="video-area">
 
-                <!-- 動画プレビュー -->
-                <div class="video-wrapper">
-                    <div class="video-container">
-                        <video id="videoPlayer" controls></video>
-                        <canvas id="annotationCanvas"></canvas>
+                <!-- 動画プレビューと時刻調整ボタン（固定） -->
+                <div class="video-preview-sticky-container">
+                    <!-- 動画プレビュー -->
+                    <div class="video-wrapper">
+                        <div class="video-container">
+                            <video id="videoPlayer" controls></video>
+                            <canvas id="annotationCanvas"></canvas>
+                        </div>
+                        <div id="textAnnotationDisplay" class="text-annotation-display"></div>
+                        <div id="detailTextDisplay" class="detail-text-display"></div>
                     </div>
-                    <div id="textAnnotationDisplay" class="text-annotation-display"></div>
-                    <div id="detailTextDisplay" class="detail-text-display"></div>
+
+                    <!-- 再生時間調整ボタン -->
+                    <div class="video-time-controls">
+                        <span class="video-time-label">再生位置:</span>
+                        <button class="time-adjust-btn" data-video-adjust="10" disabled>+10秒</button>
+                        <button class="time-adjust-btn" data-video-adjust="1" disabled>+1秒</button>
+                        <button class="time-adjust-btn" data-video-adjust="0.1" disabled>+0.1秒</button>
+                        <button class="time-adjust-btn" data-video-adjust="-0.1" disabled>-0.1秒</button>
+                        <button class="time-adjust-btn" data-video-adjust="-1" disabled>-1秒</button>
+                        <button class="time-adjust-btn" data-video-adjust="-10" disabled>-10秒</button>
+                    </div>
                 </div>
 
                 <!-- 履歴エリア（3分割） -->
@@ -206,7 +197,7 @@
                     <div class="history-column">
                         <h3>詳細履歴</h3>
                         <div id="detailHistoryList" class="history-list">
-                            <p class="empty-message">詳細テキストが登録されていません</p>
+                            <p class="empty-message">詳細が登録されていません</p>
                         </div>
                     </div>
                 </div>
@@ -265,8 +256,8 @@
 
                         <!-- 通常モード用ボタン -->
                         <div class="shape-buttons-row" id="normalModeButtons">
-                            <button id="addShapeContinueBtn" class="btn-compact" disabled>続けて追加</button>
-                            <button id="addShapeNewBtn" class="btn-compact" disabled>新規</button>
+                            <button id="addShapeContinueBtn" class="btn-compact btn-add-to-history" disabled>続けて追加</button>
+                            <button id="addShapeNewBtn" class="btn-compact btn-add-to-history" disabled>新規</button>
                             <button id="addNoShapeBtn" class="btn-compact" disabled>表示終了</button>
                         </div>
 
@@ -275,16 +266,6 @@
                             <button id="confirmEditBtn" class="btn-compact">修正更新</button>
                             <button id="cancelEditBtn" class="btn-compact">修正破棄</button>
                         </div>
-
-                        <!-- 図形カスタム設定 -->
-                        <details id="shapeCustomSettings" class="custom-settings">
-                            <summary>図形カスタム設定</summary>
-                            <div class="custom-settings-content">
-                                <label>背景色:</label>
-                                <input type="color" id="shapeCustomBgColor" value="#FFFFFF">
-                                <button id="saveShapeCustomBtn" class="btn-compact">登録</button>
-                            </div>
-                        </details>
                     </div>
 
                     <!-- 注釈 -->
@@ -327,20 +308,8 @@
                             <input type="text" id="annotationText2" placeholder="２段目（２０文字まで）" maxlength="20" disabled>
                         </div>
 
-                        <button id="addAnnotationBtn" class="btn compact" disabled>注釈を追加</button>
+                        <button id="addAnnotationBtn" class="btn compact btn-add-to-history" disabled>注釈を追加</button>
                         <button id="addBlankAnnotationBtn" class="btn compact" disabled>表示終了</button>
-
-                        <!-- 注釈カスタム設定 -->
-                        <details id="annotationCustomSettings" class="custom-settings">
-                            <summary>注釈カスタム設定</summary>
-                            <div class="custom-settings-content">
-                                <label>文字色:</label>
-                                <input type="color" id="annotationCustomTextColor" value="#000000">
-                                <label>背景色:</label>
-                                <input type="color" id="annotationCustomBgColor" value="#FFFFFF">
-                                <button id="saveAnnotationCustomBtn" class="btn-compact">登録</button>
-                            </div>
-                        </details>
                     </div>
 
                     <!-- 詳細テキスト -->
@@ -361,7 +330,7 @@
                         <input type="text" id="detailText" placeholder="詳細テキスト" disabled>
 
                         <div class="detail-button-row">
-                            <button id="addDetailTextBtn" class="btn-compact" disabled>詳細テキストを追加</button>
+                            <button id="addDetailTextBtn" class="btn-compact btn-add-to-history" disabled>詳細テキストを追加</button>
                             <button id="addNoDetailTextBtn" class="btn-compact" disabled>表示終了</button>
                         </div>
                     </div>
@@ -383,6 +352,19 @@
             </div>
         </footer>
 
+    </div>
+
+    <!-- カスタム設定モーダル -->
+    <div id="customSettingsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">カスタム設定</h3>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 動的にコンテンツを挿入 -->
+            </div>
+        </div>
     </div>
 
     <!-- JavaScriptファイルの読み込み -->
