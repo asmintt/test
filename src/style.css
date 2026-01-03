@@ -777,12 +777,12 @@ details:not([open]) summary h2::before {
 
 .two-line-input-section input[type="text"] {
     width: 100%;
-    padding: 6px 8px;
+    padding: 6px 1px;
     border: 1px solid #ddd;
     border-radius: 6px;
     margin-bottom: 8px;
-    font-size: 0.7rem;
-    letter-spacing: -0.5px;
+    font-size: 0.65rem;
+    letter-spacing: -1px;
 }
 
 .two-line-input-section input[type="text"]:focus {
@@ -797,16 +797,17 @@ details:not([open]) summary h2::before {
     opacity: 0.5;
 }
 
-/* チェックボックス付き入力欄 */
-.input-with-checkbox {
+/* チェックボックスとヘルプテキストの行 */
+.checkbox-help-row {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
 }
 
-.input-with-checkbox input[type="text"] {
-    flex: 1; /* 残りのスペースを埋める */
+.checkbox-help-row .help-text-small {
+    margin: 0;
+    flex: 1;
 }
 
 .seq-checkbox {
@@ -819,13 +820,6 @@ details:not([open]) summary h2::before {
 .seq-checkbox:disabled {
     cursor: not-allowed;
     opacity: 0.5;
-}
-
-/* 2段目の入力欄：チェックボックス幅分インデント、幅も揃える */
-.two-line-input-section > input[type="text"]:last-child {
-    margin-left: 26px; /* checkbox width (18px) + gap (8px) */
-    width: calc(100% - 26px); /* チェックボックス分を引いて、1段目と幅を揃える */
-    box-sizing: border-box;
 }
 
 /* 図形ボタンを1行に並べる */

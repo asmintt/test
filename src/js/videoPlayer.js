@@ -274,6 +274,7 @@ class VideoPlayer {
             this.textAnnotationDisplay.style.color = annotation.textColor;
             this.textAnnotationDisplay.style.backgroundColor = annotation.bgColor;
             this.textAnnotationDisplay.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
+            this.textAnnotationDisplay.style.fontWeight = 'bold';
             this.textAnnotationDisplay.style.fontSize = `${fontSize}px`;
             this.textAnnotationDisplay.style.whiteSpace = 'pre-line';
             this.textAnnotationDisplay.style.textAlign = annotation.textAlign || 'center';
