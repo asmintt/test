@@ -777,11 +777,12 @@ details:not([open]) summary h2::before {
 
 .two-line-input-section input[type="text"] {
     width: 100%;
-    padding: 8px 12px;
+    padding: 6px 8px;
     border: 1px solid #ddd;
     border-radius: 6px;
     margin-bottom: 8px;
-    font-size: 0.9rem;
+    font-size: 0.7rem;
+    letter-spacing: -0.5px;
 }
 
 .two-line-input-section input[type="text"]:focus {

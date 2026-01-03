@@ -16,6 +16,9 @@ class VideoPlayer {
         this.duration = 0;
         this.currentVideoUrl = null; // 現在の動画URL
 
+        // 注釈フォントサイズ用の統一縮小係数
+        this.globalScaleFactor = 1.0;
+
         // コールバック
         this.onLoadedCallback = null;
         this.onTimeUpdateCallback = null;
@@ -220,6 +223,33 @@ class VideoPlayer {
     }
 
     /**
+     * 全注釈の最大文字数を基準に統一フォントサイズの縮小係数を計算
+     */
+    calculateGlobalScaleFactor() {
+        if (!annotationManager) return;
+
+        const allAnnotations = annotationManager.annotations;
+        let globalMaxLength = 10;
+
+        allAnnotations.forEach(ann => {
+            const text1Length = (ann.text1 || '').length;
+            const text2Length = (ann.text2 || '').length;
+            const maxLength = Math.max(text1Length, text2Length);
+            globalMaxLength = Math.max(globalMaxLength, maxLength);
+        });
+
+        // 全注釈で共通の縮小係数を計算
+        let scaleFactor = 1.0;
+        if (globalMaxLength > 10) {
+            scaleFactor = 10 / globalMaxLength;
+            scaleFactor = Math.max(scaleFactor, 0.7); // 最小70%サイズ（最大30%縮小）
+        }
+
+        this.globalScaleFactor = scaleFactor;
+        console.log(`全注釈統一フォントサイズ: 最大${globalMaxLength}文字, 縮小係数=${scaleFactor.toFixed(2)}`);
+    }
+
+    /**
      * テキスト注釈の表示を更新（2行表示）
      * @param {number} currentTime - 現在時刻（秒）
      */
@@ -230,6 +260,12 @@ class VideoPlayer {
         const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
 
         if (annotation && (annotation.text1 || annotation.text2)) {
+            // 表示されている動画の高さの5%をベースにする（ダウンロード動画と同じ比率）
+            const baseSize = Math.floor(this.video.clientHeight * 0.05);
+
+            // 全注釈で統一されたフォントサイズを計算
+            const fontSize = Math.floor(baseSize * this.globalScaleFactor);
+
             // 2行テキストを改行で結合
             const displayText = (annotation.text1 || '') + '\n' + (annotation.text2 || '');
 
@@ -238,7 +274,7 @@ class VideoPlayer {
             this.textAnnotationDisplay.style.color = annotation.textColor;
             this.textAnnotationDisplay.style.backgroundColor = annotation.bgColor;
             this.textAnnotationDisplay.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
-            this.textAnnotationDisplay.style.fontSize = '32px';
+            this.textAnnotationDisplay.style.fontSize = `${fontSize}px`;
             this.textAnnotationDisplay.style.whiteSpace = 'pre-line';
             this.textAnnotationDisplay.style.textAlign = annotation.textAlign || 'center';
             this.textAnnotationDisplay.classList.add('visible');

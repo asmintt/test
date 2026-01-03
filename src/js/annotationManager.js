@@ -363,6 +363,11 @@ class AnnotationManager {
         this.annotationText1.value = '';
         this.annotationText2.value = '';
 
+        // プレビュー画面のフォントサイズを再計算
+        if (videoPlayer && typeof videoPlayer.calculateGlobalScaleFactor === 'function') {
+            videoPlayer.calculateGlobalScaleFactor();
+        }
+
         // コールバック実行
         this.notifyChange();
     }
@@ -518,6 +523,12 @@ class AnnotationManager {
     deleteAnnotation(index) {
         this.annotations.splice(index, 1);
         this.renderAnnotationList();
+
+        // プレビュー画面のフォントサイズを再計算
+        if (videoPlayer && typeof videoPlayer.calculateGlobalScaleFactor === 'function') {
+            videoPlayer.calculateGlobalScaleFactor();
+        }
+
         this.notifyChange();
     }
 
@@ -600,6 +611,12 @@ class AnnotationManager {
 
         this.annotations = annotations;
         this.renderAnnotationList();
+
+        // プレビュー画面のフォントサイズを再計算
+        if (videoPlayer && typeof videoPlayer.calculateGlobalScaleFactor === 'function') {
+            videoPlayer.calculateGlobalScaleFactor();
+        }
+
         console.log(`テキスト注釈を${annotations.length}件読み込みました`);
     }
 
