@@ -90,16 +90,21 @@ body {
 }
 
 .sidebar .control-section {
-    margin-bottom: 15px;
-    padding-bottom: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
 }
 
 .sidebar .control-section h2 {
     font-size: 0.85rem;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .sidebar .file-label {
+    font-size: 0.85rem;
+    padding: 12px;
+}
+
+.sidebar .btn-primary {
     font-size: 0.85rem;
     padding: 12px;
 }
@@ -274,7 +279,7 @@ details summary::-webkit-details-marker {
 
 .start-tab-content {
     display: none;
-    padding-top: 15px;
+    padding-top: 1px;
 }
 
 .start-tab-content.active {
@@ -305,7 +310,7 @@ details:not([open]) summary h2::before {
 
 .file-label {
     display: block;
-    padding: 40px 20px;
+    padding: 25px 20px;
     background: #2c5282;
     color: white;
     text-align: center;
@@ -328,7 +333,7 @@ details:not([open]) summary h2::before {
 }
 
 .file-name {
-    margin-top: 10px;
+    margin-top: 5px;
     font-size: 0.9rem;
     color: #666;
     text-align: center;
@@ -552,6 +557,94 @@ details:not([open]) summary h2::before {
 }
 
 /* ========================================
+   動画設定セクション（左サイドバー）
+   ======================================== */
+.video-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.setting-row label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #555;
+    min-width: 45px;
+    flex-shrink: 0;
+}
+
+.setting-row input[type="text"] {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.setting-row input[type="number"] {
+    width: 70px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.setting-row span {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.checkbox-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.checkbox-row .checkbox-label {
+    font-size: 0.75rem;
+    gap: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-row .checkbox-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+}
+
+.btn-download-video {
+    width: 100%;
+    padding: 12px 20px;
+    background: #2c5282;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+    margin-top: 4px;
+}
+
+.btn-download-video:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(44, 82, 130, 0.4);
+    background: #2a4365;
+}
+
+.btn-download-video:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ========================================
    動画エリア
    ======================================== */
 .video-area {
@@ -657,43 +750,6 @@ details:not([open]) summary h2::before {
     display: inline-block;
     padding: 4px 8px;
     border-radius: 3px;
-}
-
-.video-controls {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-.control-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.control-row:last-child {
-    margin-bottom: 0;
-}
-
-.control-row label {
-    min-width: 80px;
-    font-weight: 600;
-    color: #555;
-}
-
-.control-row input[type="text"],
-.control-row input[type="number"] {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 0.95rem;
-}
-
-.control-row input[type="number"] {
-    max-width: 100px;
 }
 
 /* ========================================
