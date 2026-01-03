@@ -85,6 +85,11 @@ class FrameExtractor {
                 this.drawTextAnnotationOnCanvas(this.extractCtx, currentTime, video);
             }
 
+            // 詳細テキストを含める場合
+            if (this.includeTextAnnotations && this.includeTextAnnotations.checked && detailTextManager) {
+                this.drawDetailTextOnCanvas(this.extractCtx, currentTime, video);
+            }
+
             // タイムスタンプを含める場合
             if (this.includeTimestamp && this.includeTimestamp.checked) {
                 this.drawTimestampOnCanvas(this.extractCtx, currentTime);
@@ -261,55 +266,154 @@ class FrameExtractor {
         if (!annotation || (!annotation.text1 && !annotation.text2)) return;
 
         // テキスト設定
-        const fontSize = Math.floor(video.videoHeight * 0.05); // 動画高さの5%
+        const fontSize = Math.floor(video.videoHeight * APP_CONSTANTS.MAIN_TEXT_FONT_SIZE_RATIO);
         const fontFamily = annotation.font || 'Noto Sans JP';
         ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
         ctx.textBaseline = 'top';
 
-        // テキストサイズを測定（text1とtext2の両方）
+        // 連番の処理
+        let seqNumber = '';
+        if (annotation.useSequenceNumber) {
+            // 時刻順で連番を計算
+            const sortedAnnotations = annotationManager.getAnnotations()
+                .filter(a => a.useSequenceNumber && (a.text1 || a.text2))
+                .sort((a, b) => a.time - b.time);
+            const seqIndex = sortedAnnotations.findIndex(a => a.time === annotation.time);
+            if (seqIndex !== -1) {
+                seqNumber = `(${seqIndex + 1}) `;
+            }
+        }
+
+        // テキストサイズを測定（連番を除いたテキスト）
         const text1 = annotation.text1 || '';
         const text2 = annotation.text2 || '';
         const text1Metrics = ctx.measureText(text1);
         const text2Metrics = ctx.measureText(text2);
-        const maxTextWidth = Math.max(text1Metrics.width, text2Metrics.width);
+        const seqMetrics = ctx.measureText(seqNumber);
+
+        // 連番ありの場合、最大幅を計算
+        const text1WidthWithSeq = seqMetrics.width + text1Metrics.width;
+        const maxTextWidth = Math.max(text1WidthWithSeq, text2Metrics.width);
+
         const lineHeight = fontSize * 1.4;
         const numLines = (text1 ? 1 : 0) + (text2 ? 1 : 0);
         const textHeight = lineHeight * numLines;
 
-        // テキスト配置
+        // テキスト配置の基準位置
         const textAlign = annotation.textAlign || 'center';
-        let textX;
+        let bgX, bgWidth;
+        const seqPadding = 10; // 連番とテキストの間の余白（左寄せ時）
+
         if (textAlign === 'left') {
-            ctx.textAlign = 'left';
-            textX = 40;
+            bgX = 20; // 背景の左端
+            bgWidth = maxTextWidth + 40 + (seqNumber ? seqPadding : 0);
         } else if (textAlign === 'right') {
-            ctx.textAlign = 'left'; // 行頭を揃えるため、左寄せで描画
-            textX = video.videoWidth - maxTextWidth - 40;
-        } else {
-            ctx.textAlign = 'left'; // 行頭を揃えるため、左寄せで描画
-            textX = (video.videoWidth - maxTextWidth) / 2;
+            bgWidth = maxTextWidth + 40;
+            bgX = video.videoWidth - bgWidth - 20;
+        } else { // center
+            bgWidth = maxTextWidth + 40;
+            bgX = (video.videoWidth - bgWidth) / 2;
         }
 
-        // 背景位置
-        const bgX = textX - 20;
         const bgY = 20;
-        const bgWidth = maxTextWidth + 40;
         const bgHeight = textHeight + 20;
 
         // 背景を描画
         ctx.fillStyle = annotation.bgColor;
         ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
 
-        // テキストを描画（行頭を揃える）
+        // テキストを描画
         ctx.fillStyle = annotation.textColor;
+        ctx.textAlign = 'left'; // 常に左寄せで描画
         let yOffset = bgY + 10;
+
         if (text1) {
-            ctx.fillText(text1, textX, yOffset);
+            // 連番は常に左端に固定
+            if (seqNumber) {
+                ctx.fillText(seqNumber, bgX + 20, yOffset);
+            }
+
+            // テキスト本文の位置
+            let text1X;
+            if (textAlign === 'left') {
+                // 左寄せ: 連番 + 余白 + テキスト
+                text1X = bgX + 20 + (seqNumber ? seqMetrics.width + seqPadding : 0);
+            } else if (textAlign === 'right') {
+                // 右寄せ: 連番（左端） + 空白 + テキスト（右寄せ）
+                text1X = bgX + bgWidth - 20 - text1Metrics.width;
+            } else { // center
+                // 中央寄せ: 連番（左端） + 空白 + テキスト（中央）
+                text1X = bgX + (bgWidth - text1Metrics.width) / 2;
+            }
+
+            ctx.fillText(text1, text1X, yOffset);
             yOffset += lineHeight;
         }
+
         if (text2) {
-            ctx.fillText(text2, textX, yOffset);
+            // 2段目の位置（連番は1段目のみ）
+            let text2X;
+            if (textAlign === 'left') {
+                // 左寄せ: 1段目と揃える（連番分のインデント）
+                text2X = bgX + 20 + (seqNumber ? seqMetrics.width + seqPadding : 0);
+            } else if (textAlign === 'right') {
+                text2X = bgX + bgWidth - 20 - text2Metrics.width;
+            } else { // center
+                text2X = bgX + (bgWidth - text2Metrics.width) / 2;
+            }
+
+            ctx.fillText(text2, text2X, yOffset);
         }
+    }
+
+    /**
+     * キャンバスに詳細テキストを描画
+     * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
+     * @param {number} currentTime - 現在時刻
+     * @param {HTMLVideoElement} video - 動画要素
+     */
+    drawDetailTextOnCanvas(ctx, currentTime, video) {
+        if (!detailTextManager) return;
+
+        const detailTexts = detailTextManager.getDetailTexts();
+        const activeDetail = detailTexts.find(d => d.time <= currentTime);
+        if (!activeDetail || !activeDetail.text) return;
+
+        // フォントサイズを動画幅に応じて計算
+        const fontSize = Math.floor(video.videoWidth * APP_CONSTANTS.DETAIL_TEXT_FONT_SIZE_RATIO);
+        const fontFamily = activeDetail.font || 'Noto Sans JP';
+        ctx.font = `600 ${fontSize}px "${fontFamily}", sans-serif`;
+        ctx.textBaseline = 'top';
+
+        // テキストサイズを測定
+        const textMetrics = ctx.measureText(activeDetail.text);
+        const padding = 8;
+        const boxPadding = 20;
+
+        // 位置を計算（動画の左下）
+        const boxX = 40;
+        const boxY = video.videoHeight - 150 - 60; // 注釈エリア（150px）と下余白（60px）を避ける
+        const boxWidth = textMetrics.width + padding * 2;
+        const boxHeight = fontSize + padding * 2;
+
+        // 背景を描画
+        ctx.fillStyle = activeDetail.bgColor;
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        // テキストを描画
+        ctx.fillStyle = activeDetail.textColor;
+        ctx.textAlign = activeDetail.textAlign || 'left';
+
+        let textX;
+        if (activeDetail.textAlign === 'center') {
+            textX = boxX + boxWidth / 2;
+        } else if (activeDetail.textAlign === 'right') {
+            textX = boxX + boxWidth - padding;
+        } else {
+            textX = boxX + padding;
+        }
+
+        ctx.fillText(activeDetail.text, textX, boxY + padding);
     }
 
     /**

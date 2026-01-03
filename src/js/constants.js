@@ -13,8 +13,8 @@ const APP_CONSTANTS = {
 
     // テキスト注釈の設定
     TEXT_AREA_HEIGHT: 150,         // テキスト表示エリアの高さ
-    MAIN_TEXT_FONT_SIZE: 60,       // メインテキストのフォントサイズ
-    DETAIL_TEXT_FONT_SIZE: 16,     // 詳細テキストのフォントサイズ
+    MAIN_TEXT_FONT_SIZE_RATIO: 0.05, // メインテキストのフォントサイズ（動画高さの5%）
+    DETAIL_TEXT_FONT_SIZE_RATIO: 0.015, // 詳細テキストのフォントサイズ（動画幅の1.5%）
 
     // デバッグ設定
     DEBUG_MODE: true,              // デバッグログの有効/無効
