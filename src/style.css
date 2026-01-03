@@ -1293,21 +1293,19 @@ details:not([open]) summary h2::before {
 
 /* 文字位置選択セクション */
 .text-align-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-top: 12px;
+    margin-bottom: 12px;
 }
 
 .text-align-section label {
-    display: block;
+    margin: 0;
+    flex-shrink: 0;
     font-size: 0.85rem;
     color: #666;
-    margin-bottom: 8px;
     font-weight: 600;
-}
-
-.text-align-buttons {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
 }
 
 /* カスタム設定セクション */
@@ -1357,15 +1355,19 @@ details:not([open]) summary h2::before {
 .text-align-btn,
 .detail-text-align-btn,
 .shared-text-align-btn {
-    padding: 8px 12px;
+    flex: 1;
+    padding: 7px 5px;
     border: 2px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     background: white;
-    color: #333;
-    font-size: 0.85rem;
+    color: #666;
+    font-size: 0.58rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .text-align-btn:hover:not(:disabled),
