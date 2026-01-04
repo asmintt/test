@@ -740,8 +740,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
                 arrowColor = shape.color;
             }
 
-            // フォントファイル（ヒラギノ角ゴシック）
-            const arrowFontFile = '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc';
+            // フォントファイル
+            const arrowFontFile = path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
 
             filterObj = {
                 filter: 'drawtext',
@@ -801,13 +801,15 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             }
         }
 
-        // フォント名からシステムフォントファイルパスへのマッピング
+        // フォント名からフォントファイルパスへのマッピング
         const fontMapping = {
-            'Noto Sans JP': '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
-            'M PLUS Rounded 1c': '/System/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc',
-            'Zen Kaku Gothic New': '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc'
+            'Noto Sans JP': path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf'),
+            'M PLUS Rounded 1c': path.join(__dirname, 'src/fonts/MPLUSRounded1c-Bold.ttf'),
+            'Noto Serif JP': path.join(__dirname, 'src/fonts/NotoSerifJP-SemiBold.ttf'),
+            'Klee One': path.join(__dirname, 'src/fonts/KleeOne-SemiBold.ttf'),
+            'Yusei Magic': path.join(__dirname, 'src/fonts/YuseiMagic-Regular.ttf')
         };
-        const fontFile = fontMapping[ann.font] || '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc';
+        const fontFile = fontMapping[ann.font] || path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
 
         const fontSize = 60;
 
@@ -897,11 +899,21 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
         // 動画幅の1.5%をフォントサイズとして計算（APP_CONSTANTS.DETAIL_TEXT_FONT_SIZE_RATIO: 0.015）
         const detailFontSize = Math.floor(videoWidth * 0.015);
 
+        // 詳細テキストのフォントマッピング
+        const detailFontMapping = {
+            'Noto Sans JP': path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf'),
+            'M PLUS Rounded 1c': path.join(__dirname, 'src/fonts/MPLUSRounded1c-Bold.ttf'),
+            'Noto Serif JP': path.join(__dirname, 'src/fonts/NotoSerifJP-SemiBold.ttf'),
+            'Klee One': path.join(__dirname, 'src/fonts/KleeOne-SemiBold.ttf'),
+            'Yusei Magic': path.join(__dirname, 'src/fonts/YuseiMagic-Regular.ttf')
+        };
+        const detailFontFile = detailFontMapping[detail.font] || path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
+
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
-                fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc', // W4 → W6 (太字)
+                fontfile: detailFontFile,
                 fontsize: detailFontSize,
                 fontcolor: detail.textColor || '#000000',
                 box: 1,
@@ -940,8 +952,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
         // テキストを安全にエスケープ（Unicodeなのでエスケープ不要だが念のため）
         const escapedText = arrowText;
 
-        // フォント選択（注釈タブのフォント選択を反映したい場合は将来拡張）
-        const arrowFontFile = '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc';
+        // フォント選択
+        const arrowFontFile = path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
 
         const filterObj = {
             filter: 'drawtext',
