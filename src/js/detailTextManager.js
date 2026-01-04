@@ -65,6 +65,10 @@ class DetailTextManager {
 
         // フォント選択イベント
         if (this.detailFontSelect) {
+            // 初期値をHTMLから読み取る
+            this.selectedFont = this.detailFontSelect.value;
+            console.log('[DEBUG] 詳細テキストフォントの初期値:', this.selectedFont);
+
             this.detailFontSelect.addEventListener('change', () => {
                 this.selectedFont = this.detailFontSelect.value;
 
@@ -250,7 +254,8 @@ class DetailTextManager {
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
             bgOpacity: this.selectedBgOpacity,
-            textAlign: this.selectedTextAlign
+            textAlign: this.selectedTextAlign,
+            font: this.selectedFont
         };
 
         this.detailTexts.push(detailTextObj);
@@ -278,7 +283,8 @@ class DetailTextManager {
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
             bgOpacity: this.selectedBgOpacity,
-            textAlign: this.selectedTextAlign
+            textAlign: this.selectedTextAlign,
+            font: this.selectedFont
         };
 
         this.detailTexts.push(detailTextObj);

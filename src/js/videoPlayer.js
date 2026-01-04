@@ -329,42 +329,23 @@ class VideoPlayer {
 
         if (activeDetailText && activeDetailText.text) {
             // 詳細テキストがある場合は表示
-            // 内側のボックスを作成して背景色を適用
-            const textBox = document.createElement('span');
-            textBox.className = 'detail-text-box';
-            textBox.textContent = activeDetailText.text;
-            textBox.style.color = activeDetailText.textColor;
-
-            // 背景色に70%透明度を適用
-            const bgColor = activeDetailText.bgColor || '#FFFFFF';
-            // RGBAに変換して70%透明度を適用
-            const hexToRgb = (hex) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                return result ? {
-                    r: parseInt(result[1], 16),
-                    g: parseInt(result[2], 16),
-                    b: parseInt(result[3], 16)
-                } : null;
-            };
-            const rgb = hexToRgb(bgColor);
-            if (rgb) {
-                textBox.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`;
-            } else {
-                textBox.style.backgroundColor = bgColor;
-            }
+            this.detailTextDisplay.textContent = activeDetailText.text;
+            this.detailTextDisplay.style.color = activeDetailText.textColor;
+            this.detailTextDisplay.style.backgroundColor = activeDetailText.bgColor;
+            this.detailTextDisplay.style.fontFamily = `"${activeDetailText.font || 'Noto Sans JP'}", sans-serif`;
 
             // 文字位置を適用
             const textAlign = activeDetailText.textAlign || 'left';
+            this.detailTextDisplay.style.textAlign = textAlign;
+
+            // Flexbox用にjustify-contentも設定
             const justifyContent = textAlign === 'left' ? 'flex-start' : (textAlign === 'right' ? 'flex-end' : 'center');
             this.detailTextDisplay.style.justifyContent = justifyContent;
 
-            // コンテナをクリアして新しいボックスを追加
-            this.detailTextDisplay.innerHTML = '';
-            this.detailTextDisplay.appendChild(textBox);
             this.detailTextDisplay.classList.add('visible');
         } else {
             // 詳細テキストがない場合は非表示
-            this.detailTextDisplay.innerHTML = '';
+            this.detailTextDisplay.textContent = '';
             this.detailTextDisplay.classList.remove('visible');
         }
     }

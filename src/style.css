@@ -793,10 +793,6 @@ details:not([open]) summary h2::before {
 
 /* 詳細テキスト表示エリア */
 .detail-text-display {
-    position: absolute;
-    bottom: 120px; /* Positioned above the white annotation area, overlapping video */
-    left: 40px;
-    right: 40px;
     min-height: 35px;
     display: flex;
     align-items: center;
@@ -805,12 +801,10 @@ details:not([open]) summary h2::before {
     font-size: 0.85rem;
     text-align: left;
     font-family: "Hiragino Sans", sans-serif;
-    background: transparent; /* Transparent background to match export overlay */
-    border: none; /* Remove border */
+    background: #1a1a1a;
+    border-top: 2px solid #333;
     opacity: 0;
     transition: opacity 0.3s;
-    pointer-events: none; /* Don't block video interaction */
-    z-index: 5; /* Above video but below controls */
 }
 
 .detail-text-display.visible {
