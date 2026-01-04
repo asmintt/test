@@ -232,10 +232,8 @@ class VideoPlayer {
         let globalMaxLength = 10;
 
         allAnnotations.forEach(ann => {
-            const text1Length = (ann.text1 || '').length;
-            const text2Length = (ann.text2 || '').length;
-            const maxLength = Math.max(text1Length, text2Length);
-            globalMaxLength = Math.max(globalMaxLength, maxLength);
+            const textLength = (ann.text || '').length;
+            globalMaxLength = Math.max(globalMaxLength, textLength);
         });
 
         // 全注釈で共通の縮小係数を計算
@@ -250,7 +248,7 @@ class VideoPlayer {
     }
 
     /**
-     * テキスト注釈の表示を更新（2行表示）
+     * テキスト注釈の表示を更新（1行表示）
      * @param {number} currentTime - 現在時刻（秒）
      */
     updateTextAnnotationDisplay(currentTime) {
@@ -259,25 +257,51 @@ class VideoPlayer {
         // 現在時刻で有効な注釈を取得（継続表示）
         const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
 
-        if (annotation && (annotation.text1 || annotation.text2)) {
+        if (annotation && annotation.text) {
             // 表示されている動画の高さの5%をベースにする（ダウンロード動画と同じ比率）
             const baseSize = Math.floor(this.video.clientHeight * 0.05);
 
             // 全注釈で統一されたフォントサイズを計算
             const fontSize = Math.floor(baseSize * this.globalScaleFactor);
 
-            // 2行テキストを改行で結合
-            const displayText = (annotation.text1 || '') + '\n' + (annotation.text2 || '');
+            // 連番の処理
+            let seqNumber = '';
+            if (annotation.useSequenceNumber) {
+                // 時刻順で連番を計算
+                const sortedAnnotations = annotationManager.getAnnotations()
+                    .filter(a => a.useSequenceNumber && a.text)
+                    .sort((a, b) => a.time - b.time);
 
-            // 注釈がある場合は表示
+                // 現在の注釈のインデックスを探す
+                const seqIndex = sortedAnnotations.findIndex(a =>
+                    Math.abs(a.time - annotation.time) < 0.001 &&
+                    a.text === annotation.text
+                );
+
+                if (seqIndex !== -1) {
+                    seqNumber = `(${seqIndex + 1}) `;
+                }
+            }
+
+            // 単純なテキスト表示
+            const displayText = seqNumber + annotation.text;
             this.textAnnotationDisplay.textContent = displayText;
             this.textAnnotationDisplay.style.color = annotation.textColor;
             this.textAnnotationDisplay.style.backgroundColor = annotation.bgColor;
             this.textAnnotationDisplay.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
             this.textAnnotationDisplay.style.fontWeight = 'bold';
             this.textAnnotationDisplay.style.fontSize = `${fontSize}px`;
-            this.textAnnotationDisplay.style.whiteSpace = 'pre-line';
-            this.textAnnotationDisplay.style.textAlign = annotation.textAlign || 'center';
+
+            // 文字配置を適用
+            const textAlign = annotation.textAlign || 'center';
+            this.textAnnotationDisplay.style.textAlign = textAlign;
+
+            // Flexbox用にjustify-contentも設定
+            const justifyContent = textAlign === 'left' ? 'flex-start' : (textAlign === 'right' ? 'flex-end' : 'center');
+            this.textAnnotationDisplay.style.justifyContent = justifyContent;
+
+            console.log('文字配置設定:', { textAlign, justifyContent });
+
             this.textAnnotationDisplay.classList.add('visible');
         } else {
             // 注釈がない場合は非表示
@@ -311,11 +335,23 @@ class VideoPlayer {
             textBox.textContent = activeDetailText.text;
             textBox.style.color = activeDetailText.textColor;
 
-            // 背景色に透明度を適用
+            // 背景色に70%透明度を適用
             const bgColor = activeDetailText.bgColor || '#FFFFFF';
-            const bgOpacity = activeDetailText.bgOpacity !== undefined ? activeDetailText.bgOpacity : 1.0;
-            textBox.style.backgroundColor = bgColor;
-            textBox.style.opacity = bgOpacity;
+            // RGBAに変換して70%透明度を適用
+            const hexToRgb = (hex) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            };
+            const rgb = hexToRgb(bgColor);
+            if (rgb) {
+                textBox.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`;
+            } else {
+                textBox.style.backgroundColor = bgColor;
+            }
 
             // 文字位置を適用
             const textAlign = activeDetailText.textAlign || 'left';

@@ -263,7 +263,7 @@ class FrameExtractor {
      */
     drawTextAnnotationOnCanvas(ctx, currentTime, video) {
         const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
-        if (!annotation || (!annotation.text1 && !annotation.text2)) return;
+        if (!annotation || !annotation.text) return;
 
         // テキスト設定
         const fontSize = Math.floor(video.videoHeight * APP_CONSTANTS.MAIN_TEXT_FONT_SIZE_RATIO);
@@ -276,42 +276,38 @@ class FrameExtractor {
         if (annotation.useSequenceNumber) {
             // 時刻順で連番を計算
             const sortedAnnotations = annotationManager.getAnnotations()
-                .filter(a => a.useSequenceNumber && (a.text1 || a.text2))
+                .filter(a => a.useSequenceNumber && a.text)
                 .sort((a, b) => a.time - b.time);
-            const seqIndex = sortedAnnotations.findIndex(a => a.time === annotation.time);
+
+            // 現在の注釈のインデックスを探す（時刻の近似比較）
+            const seqIndex = sortedAnnotations.findIndex(a =>
+                Math.abs(a.time - annotation.time) < 0.001 &&
+                a.text === annotation.text
+            );
+
             if (seqIndex !== -1) {
                 seqNumber = `(${seqIndex + 1}) `;
             }
         }
 
-        // テキストサイズを測定（連番を除いたテキスト）
-        const text1 = annotation.text1 || '';
-        const text2 = annotation.text2 || '';
-        const text1Metrics = ctx.measureText(text1);
-        const text2Metrics = ctx.measureText(text2);
-        const seqMetrics = ctx.measureText(seqNumber);
-
-        // 連番ありの場合、最大幅を計算
-        const text1WidthWithSeq = seqMetrics.width + text1Metrics.width;
-        const maxTextWidth = Math.max(text1WidthWithSeq, text2Metrics.width);
+        // 表示するテキスト（連番込み）
+        const displayText = seqNumber + annotation.text;
+        const textMetrics = ctx.measureText(displayText);
+        const textWidth = textMetrics.width;
 
         const lineHeight = fontSize * 1.4;
-        const numLines = (text1 ? 1 : 0) + (text2 ? 1 : 0);
-        const textHeight = lineHeight * numLines;
+        const textHeight = lineHeight;
 
         // テキスト配置の基準位置
         const textAlign = annotation.textAlign || 'center';
         let bgX, bgWidth;
-        const seqPadding = 10; // 連番とテキストの間の余白（左寄せ時）
 
+        bgWidth = textWidth + 40;
         if (textAlign === 'left') {
-            bgX = 20; // 背景の左端
-            bgWidth = maxTextWidth + 40 + (seqNumber ? seqPadding : 0);
+            bgX = 20;
         } else if (textAlign === 'right') {
-            bgWidth = maxTextWidth + 40;
             bgX = video.videoWidth - bgWidth - 20;
         } else { // center
-            bgWidth = maxTextWidth + 40;
             bgX = (video.videoWidth - bgWidth) / 2;
         }
 
@@ -324,46 +320,20 @@ class FrameExtractor {
 
         // テキストを描画
         ctx.fillStyle = annotation.textColor;
-        ctx.textAlign = 'left'; // 常に左寄せで描画
-        let yOffset = bgY + 10;
 
-        if (text1) {
-            // 連番は常に左端に固定
-            if (seqNumber) {
-                ctx.fillText(seqNumber, bgX + 20, yOffset);
-            }
-
-            // テキスト本文の位置
-            let text1X;
-            if (textAlign === 'left') {
-                // 左寄せ: 連番 + 余白 + テキスト
-                text1X = bgX + 20 + (seqNumber ? seqMetrics.width + seqPadding : 0);
-            } else if (textAlign === 'right') {
-                // 右寄せ: 連番（左端） + 空白 + テキスト（右寄せ）
-                text1X = bgX + bgWidth - 20 - text1Metrics.width;
-            } else { // center
-                // 中央寄せ: 連番（左端） + 空白 + テキスト（中央）
-                text1X = bgX + (bgWidth - text1Metrics.width) / 2;
-            }
-
-            ctx.fillText(text1, text1X, yOffset);
-            yOffset += lineHeight;
+        let textX;
+        if (textAlign === 'left') {
+            textX = bgX + 20;
+            ctx.textAlign = 'left';
+        } else if (textAlign === 'right') {
+            textX = bgX + bgWidth - 20;
+            ctx.textAlign = 'right';
+        } else { // center
+            textX = bgX + bgWidth / 2;
+            ctx.textAlign = 'center';
         }
 
-        if (text2) {
-            // 2段目の位置（連番は1段目のみ）
-            let text2X;
-            if (textAlign === 'left') {
-                // 左寄せ: 1段目と揃える（連番分のインデント）
-                text2X = bgX + 20 + (seqNumber ? seqMetrics.width + seqPadding : 0);
-            } else if (textAlign === 'right') {
-                text2X = bgX + bgWidth - 20 - text2Metrics.width;
-            } else { // center
-                text2X = bgX + (bgWidth - text2Metrics.width) / 2;
-            }
-
-            ctx.fillText(text2, text2X, yOffset);
-        }
+        ctx.fillText(displayText, textX, bgY + 10);
     }
 
     /**
@@ -390,14 +360,29 @@ class FrameExtractor {
         const padding = 8;
         const boxPadding = 20;
 
-        // 位置を計算（動画の左下）
+        // 位置を計算（2段目の位置：注釈の下）
         const boxX = 40;
-        const boxY = video.videoHeight - 150 - 60; // 注釈エリア（150px）と下余白（60px）を避ける
         const boxWidth = textMetrics.width + padding * 2;
         const boxHeight = fontSize + padding * 2;
+        const boxY = 90; // 2段目の位置（注釈の下）
 
-        // 背景を描画
-        ctx.fillStyle = activeDetail.bgColor;
+        // 背景を70%透明度で描画
+        const bgColor = activeDetail.bgColor || '#FFFFFF';
+        // RGBAに変換
+        const hexToRgb = (hex) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        };
+        const rgb = hexToRgb(bgColor);
+        if (rgb) {
+            ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`;
+        } else {
+            ctx.fillStyle = bgColor;
+        }
         ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
         // テキストを描画

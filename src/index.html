@@ -298,14 +298,13 @@
                             <button class="text-align-btn" data-align="right" disabled>右</button>
                         </div>
 
-                        <!-- テキスト入力（2行） -->
+                        <!-- テキスト入力 -->
                         <div class="two-line-input-section compact">
                             <div class="checkbox-help-row">
                                 <input type="checkbox" id="annotationText1UseSeq" class="seq-checkbox" disabled>
                                 <p class="help-text-small">連番を自動採番</p>
                             </div>
-                            <input type="text" id="annotationText1" placeholder="１段目（２０文字まで）" maxlength="20" disabled>
-                            <input type="text" id="annotationText2" placeholder="２段目（２０文字まで）" maxlength="20" disabled>
+                            <input type="text" id="annotationText1" placeholder="テキスト（２０文字まで）" maxlength="20" disabled>
                         </div>
 
                         <button id="addAnnotationBtn" class="btn compact btn-add-to-history" disabled>注釈を追加</button>
@@ -324,6 +323,14 @@
                                 <option value="M PLUS Rounded 1c">M PLUS Rounded 1c（丸ゴシック）</option>
                                 <option value="Zen Kaku Gothic New">Zen Kaku Gothic New（角ゴシック）</option>
                             </select>
+                        </div>
+
+                        <!-- 文字配置選択 -->
+                        <div class="text-align-section">
+                            <label>文字配置:</label>
+                            <button class="detail-text-align-btn active" data-align="left" disabled>左</button>
+                            <button class="detail-text-align-btn" data-align="center" disabled>中央</button>
+                            <button class="detail-text-align-btn" data-align="right" disabled>右</button>
                         </div>
 
                         <!-- テキスト入力 -->

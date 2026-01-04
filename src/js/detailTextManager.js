@@ -75,6 +75,9 @@ class DetailTextManager {
             });
         }
 
+        // 文字配置ボタンのイベントハンドラ
+        this.initTextAlignButtons();
+
         // 統一カスタム設定のイベントハンドラ
         this.initSharedCustomSettings();
     }
@@ -117,6 +120,26 @@ class DetailTextManager {
         button.classList.add('active');
 
         console.log('詳細テキストプリセット選択:', { preset, textColor, bgColor });
+    }
+
+    /**
+     * 文字配置ボタンの初期化
+     */
+    initTextAlignButtons() {
+        const textAlignButtons = document.querySelectorAll('.detail-text-align-btn');
+
+        textAlignButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const align = button.getAttribute('data-align');
+                this.selectedTextAlign = align;
+
+                // アクティブ状態を更新
+                textAlignButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                console.log('詳細テキスト文字配置変更:', align);
+            });
+        });
     }
 
     /**
@@ -324,6 +347,12 @@ class DetailTextManager {
         const buttonsDiv = document.createElement('div');
         buttonsDiv.className = 'history-buttons';
 
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.textContent = '編集';
+        editBtn.addEventListener('click', () => this.editDetailText(index));
+        buttonsDiv.appendChild(editBtn);
+
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn-delete';
         deleteBtn.textContent = '削除';
@@ -344,6 +373,51 @@ class DetailTextManager {
         item.appendChild(contentDiv);
 
         return item;
+    }
+
+    /**
+     * 詳細テキストを編集
+     * @param {number} index - 編集する詳細テキストのインデックス
+     */
+    editDetailText(index) {
+        const detailText = this.detailTexts[index];
+
+        // 入力フィールドに現在の値を設定
+        this.detailTextInput.value = detailText.text || '';
+
+        // 色を設定
+        this.selectedTextColor = detailText.textColor;
+        this.selectedBgColor = detailText.bgColor;
+
+        // 文字位置を設定
+        if (detailText.textAlign) {
+            this.selectedTextAlign = detailText.textAlign;
+            const textAlignButtons = document.querySelectorAll('.detail-text-align-btn');
+            textAlignButtons.forEach(btn => {
+                if (btn.getAttribute('data-align') === detailText.textAlign) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // カスタムカラーピッカーを同期
+        if (this.customTextColor) this.customTextColor.value = detailText.textColor;
+        if (this.customBgColor) this.customBgColor.value = detailText.bgColor;
+
+        // 詳細テキストを削除（再追加するため）
+        this.detailTexts.splice(index, 1);
+        this.renderDetailTextList();
+        this.triggerChange();
+
+        // 動画の時刻を設定
+        if (videoPlayer) {
+            videoPlayer.setCurrentTime(detailText.time);
+        }
+
+        // 入力フィールドにフォーカス
+        this.detailTextInput.focus();
     }
 
     /**
@@ -404,6 +478,10 @@ class DetailTextManager {
 
         // プリセットボタンを有効化
         this.presetButtons.forEach(button => button.disabled = false);
+
+        // 文字配置ボタンを有効化
+        const textAlignButtons = document.querySelectorAll('.detail-text-align-btn');
+        textAlignButtons.forEach(btn => btn.disabled = false);
 
         // 統一カスタム設定のUIを有効化
         const sharedBgColor = document.getElementById('sharedCustomBgColor');

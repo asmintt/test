@@ -564,8 +564,8 @@ function getActiveShapesAtTime(shapes, currentTime) {
  * @returns {Array|null} FFmpegのcomplexFilterに渡すフィルタ配列、または null
  */
 function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStartTime, trimDuration, videoScale) {
-    // テキストがある注釈のみをフィルタリング（text1またはtext2がある場合）
-    const textAnnotations = annotations ? annotations.filter(ann => (ann.text1 && ann.text1.trim() !== '') || (ann.text2 && ann.text2.trim() !== '')) : [];
+    // テキストがある注釈のみをフィルタリング
+    const textAnnotations = annotations ? annotations.filter(ann => ann.text && ann.text.trim() !== '') : [];
 
     // 図形がある注釈のみをフィルタリング
     const validShapes = shapes ? shapes.filter(s => s.type !== '') : [];
@@ -782,6 +782,25 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             }
         }
 
+        // 連番の処理
+        let seqNumber = '';
+        if (ann.useSequenceNumber) {
+            // 時刻順で連番を計算
+            const sortedAnnotations = annotations
+                .filter(a => a.useSequenceNumber && a.text && a.text.trim() !== '')
+                .sort((a, b) => a.time - b.time);
+
+            // 現在の注釈のインデックスを探す
+            const seqIndex = sortedAnnotations.findIndex(a =>
+                Math.abs(a.time - ann.time) < 0.001 &&
+                a.text === ann.text
+            );
+
+            if (seqIndex !== -1) {
+                seqNumber = `(${seqIndex + 1}) `;
+            }
+        }
+
         // フォント名からシステムフォントファイルパスへのマッピング
         const fontMapping = {
             'Noto Sans JP': '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
@@ -806,61 +825,32 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             xPosition = '(w-text_w)/2'; // 中央揃え
         }
 
-        // 1段目のテキストがある場合
-        if (ann.text1 && ann.text1.trim() !== '') {
-            const escapedText1 = ann.text1
-                .replace(/\\/g, '\\\\\\\\')
-                .replace(/'/g, "\\\\'")
-                .replace(/:/g, '\\\\:');
+        // テキストに連番を統合
+        const textWithSeq = seqNumber + ann.text;
+        const escapedText = textWithSeq
+            .replace(/\\/g, '\\\\\\\\')
+            .replace(/'/g, "\\\\'")
+            .replace(/:/g, '\\\\:');
 
-            const filterObj1 = {
-                filter: 'drawtext',
-                options: {
-                    text: escapedText1,
-                    fontfile: fontFile,
-                    fontsize: fontSize,
-                    fontcolor: ann.textColor || '#000000',
-                    box: 1,
-                    boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                    boxborderw: 15,
-                    x: xPosition,
-                    y: videoHeight + 20, // 1段目（白い領域の上部）
-                    enable: `between(t,${displayStartTime},${displayEndTime})`
-                },
-                inputs: currentInput
-            };
+        const filterObj = {
+            filter: 'drawtext',
+            options: {
+                text: escapedText,
+                fontfile: fontFile,
+                fontsize: fontSize,
+                fontcolor: ann.textColor || '#000000',
+                box: 1,
+                boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
+                boxborderw: 15,
+                x: xPosition,
+                y: videoHeight + 20, // 1段目（白い領域の上部）
+                enable: `between(t,${displayStartTime},${displayEndTime})`
+            },
+            inputs: currentInput
+        };
 
-            filters.push(filterObj1);
-            filterIndex++;
-        }
-
-        // 2段目のテキストがある場合
-        if (ann.text2 && ann.text2.trim() !== '') {
-            const escapedText2 = ann.text2
-                .replace(/\\/g, '\\\\\\\\')
-                .replace(/'/g, "\\\\'")
-                .replace(/:/g, '\\\\:');
-
-            const filterObj2 = {
-                filter: 'drawtext',
-                options: {
-                    text: escapedText2,
-                    fontfile: fontFile,
-                    fontsize: fontSize,
-                    fontcolor: ann.textColor || '#000000',
-                    box: 1,
-                    boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                    boxborderw: 15,
-                    x: xPosition,
-                    y: videoHeight + 90, // 2段目（白い領域の中央下）
-                    enable: `between(t,${displayStartTime},${displayEndTime})`
-                },
-                inputs: currentInput
-            };
-
-            filters.push(filterObj2);
-            filterIndex++;
-        }
+        filters.push(filterObj);
+        filterIndex++;
     });
 
     // 4. 詳細テキストを追加（メインテキストの下、最下部）
@@ -886,11 +876,12 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             .replace(/'/g, "\\\\'")
             .replace(/:/g, '\\\\:');
 
-        // 動画の実際の高さを取得
+        // 動画の実際の高さと幅を取得
         const videoHeight = videoScale ? videoScale.actualHeight : 1080;
+        const videoWidth = videoScale ? videoScale.actualWidth : 1920;
 
-        // 背景透明度を取得（0.0-1.0、デフォルト1.0）
-        const bgOpacity = detail.bgOpacity !== undefined ? detail.bgOpacity : 1.0;
+        // 背景透明度を70%に固定
+        const bgOpacity = 0.7;
 
         // 文字位置に応じたx座標を計算
         const detailTextAlign = detail.textAlign || 'left';
@@ -903,18 +894,21 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             detailXPosition = '(w-text_w)/2'; // 中央揃え
         }
 
+        // 動画幅の1.5%をフォントサイズとして計算（APP_CONSTANTS.DETAIL_TEXT_FONT_SIZE_RATIO: 0.015）
+        const detailFontSize = Math.floor(videoWidth * 0.015);
+
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
                 fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc', // W4 → W6 (太字)
-                fontsize: 16, // 12 → 16 に変更（数字の歪みを防ぐ）
+                fontsize: detailFontSize,
                 fontcolor: detail.textColor || '#000000',
                 box: 1,
                 boxcolor: `${detail.bgColor || '#ffffff'}@${bgOpacity.toFixed(2)}`,
                 boxborderw: 3,
                 x: detailXPosition,
-                y: videoHeight - 25, // 動画エリアの最下部（白い領域の直前）
+                y: videoHeight + 90, // 2段目の位置（白い領域の中央下）
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },
             inputs: currentInput

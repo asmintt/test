@@ -4,9 +4,8 @@
 class AnnotationManager {
     constructor() {
         // DOM要素
-        this.annotationText1 = document.getElementById('annotationText1');
-        this.annotationText2 = document.getElementById('annotationText2');
-        this.annotationText1UseSeq = document.getElementById('annotationText1UseSeq');
+        this.annotationText = document.getElementById('annotationText1'); // DOM IDは互換性のため保持
+        this.annotationUseSeq = document.getElementById('annotationText1UseSeq');
         this.textFontSelect = document.getElementById('textFontSelect');
         this.presetButtons = document.querySelectorAll('.annotation-preset-btn');
         this.customTextColor = document.getElementById('customTextColor');
@@ -27,7 +26,7 @@ class AnnotationManager {
         this.selectedTextAlign = 'center';  // デフォルト: 中央
 
         // 注釈データ（配列）
-        // 各注釈: { time: 秒数, text1: 1段目テキスト, text2: 2段目テキスト, textColor: 色, bgColor: 色, font: フォント, textAlign: 文字位置 }
+        // 各注釈: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色, font: フォント, textAlign: 文字位置, useSequenceNumber: 連番使用 }
         this.annotations = [];
 
         // コールバック
@@ -69,11 +68,8 @@ class AnnotationManager {
                 this.selectedFont = this.textFontSelect.value;
 
                 // 入力フィールドにフォントを適用（プレビュー）
-                if (this.annotationText1) {
-                    this.annotationText1.style.fontFamily = `"${this.selectedFont}", sans-serif`;
-                }
-                if (this.annotationText2) {
-                    this.annotationText2.style.fontFamily = `"${this.selectedFont}", sans-serif`;
+                if (this.annotationText) {
+                    this.annotationText.style.fontFamily = `"${this.selectedFont}", sans-serif`;
                 }
             });
         }
@@ -85,6 +81,13 @@ class AnnotationManager {
                 this.selectTextAlign(align, button);
             });
         });
+
+        // 初期値をHTMLのactive状態から読み取る
+        const activeTextAlignButton = document.querySelector('.text-align-btn.active');
+        if (activeTextAlignButton) {
+            this.selectedTextAlign = activeTextAlignButton.getAttribute('data-align');
+            console.log('[DEBUG] 文字配置の初期値をHTMLから読み取り:', this.selectedTextAlign);
+        }
     }
 
     /**
@@ -176,7 +179,10 @@ class AnnotationManager {
      * @param {HTMLElement} button - クリックされたボタン
      */
     selectTextAlign(align, button) {
+        console.log(`[DEBUG] selectTextAlign呼び出し: ${align}`);
+        console.log(`[DEBUG] 変更前: this.selectedTextAlign = ${this.selectedTextAlign}`);
         this.selectedTextAlign = align;
+        console.log(`[DEBUG] 変更後: this.selectedTextAlign = ${this.selectedTextAlign}`);
 
         // 文字位置ボタンのactive状態を更新
         this.textAlignButtons.forEach(btn => btn.classList.remove('active'));
@@ -190,11 +196,14 @@ class AnnotationManager {
      * 動画読み込み時の設定
      */
     onVideoLoaded() {
+        console.log('[DEBUG] onVideoLoaded呼び出し');
+        console.log('[DEBUG] this.textAlignButtons =', this.textAlignButtons);
+        console.log('[DEBUG] this.textAlignButtons.length =', this.textAlignButtons.length);
+
         // UIを有効化
         setEnabledMultiple([
-            this.annotationText1,
-            this.annotationText2,
-            this.annotationText1UseSeq,
+            this.annotationText,
+            this.annotationUseSeq,
             this.textFontSelect,
             this.customTextColor,
             this.customBgColor,
@@ -209,7 +218,9 @@ class AnnotationManager {
         });
 
         // 文字位置ボタンを有効化
+        console.log('[DEBUG] 文字位置ボタンを有効化します');
         this.textAlignButtons.forEach(button => {
+            console.log('[DEBUG] ボタン有効化:', button);
             button.disabled = false;
         });
 
@@ -230,11 +241,8 @@ class AnnotationManager {
         });
 
         // 初期フォントを入力フィールドに適用
-        if (this.annotationText1) {
-            this.annotationText1.style.fontFamily = `"${this.selectedFont}", sans-serif`;
-        }
-        if (this.annotationText2) {
-            this.annotationText2.style.fontFamily = `"${this.selectedFont}", sans-serif`;
+        if (this.annotationText) {
+            this.annotationText.style.fontFamily = `"${this.selectedFont}", sans-serif`;
         }
 
         // プロジェクト読み込み中でない場合のみ注釈リストをクリア
@@ -273,27 +281,29 @@ class AnnotationManager {
     addAnnotation() {
         if (!videoPlayer) return;
 
-        const text1 = this.annotationText1.value.trim();
-        const text2 = this.annotationText2.value.trim();
+        const text = this.annotationText.value.trim();
 
-        if (!text1 && !text2) {
+        if (!text) {
             alert('注釈テキストを入力してください');
             return;
         }
 
         const currentTime = videoPlayer.getCurrentTime();
 
+        console.log(`[DEBUG] 注釈追加時の this.selectedTextAlign = ${this.selectedTextAlign}`);
+
         // 注釈オブジェクトを作成
         const annotation = {
             time: currentTime,
-            text1: text1,
-            text2: text2,
+            text: text,
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
             font: this.selectedFont,
             textAlign: this.selectedTextAlign,
-            useSequenceNumber: this.annotationText1UseSeq.checked
+            useSequenceNumber: this.annotationUseSeq.checked
         };
+
+        console.log('[DEBUG] 作成した注釈オブジェクト:', annotation);
 
         // 配列に追加して時刻順にソート
         this.annotations.push(annotation);
@@ -303,8 +313,7 @@ class AnnotationManager {
         this.renderAnnotationList();
 
         // 入力欄をクリア
-        this.annotationText1.value = '';
-        this.annotationText2.value = '';
+        this.annotationText.value = '';
 
         // プレビュー画面のフォントサイズを再計算
         if (videoPlayer && typeof videoPlayer.calculateGlobalScaleFactor === 'function') {
@@ -326,12 +335,12 @@ class AnnotationManager {
         // 空のテキストで注釈を追加
         const annotation = {
             time: currentTime,
-            text1: '',
-            text2: '',
+            text: '',
             textColor: '#000000',
             bgColor: '#ffffff',
             font: this.selectedFont,
-            textAlign: 'center'
+            textAlign: 'center',
+            useSequenceNumber: false
         };
 
         this.annotations.push(annotation);
@@ -419,8 +428,28 @@ class AnnotationManager {
         // 注釈テキスト表示
         const contentDiv = document.createElement('div');
         contentDiv.className = 'history-content';
-        const displayText = (annotation.text1 || annotation.text2)
-            ? `${annotation.text1 || ''}\n${annotation.text2 || ''}`
+
+        // 連番を計算
+        let seqNumber = '';
+        if (annotation.useSequenceNumber && annotation.text) {
+            // 時刻順で連番を計算
+            const sortedAnnotations = this.annotations
+                .filter(a => a.useSequenceNumber && a.text)
+                .sort((a, b) => a.time - b.time);
+
+            // 現在の注釈のインデックスを探す
+            const seqIndex = sortedAnnotations.findIndex(a =>
+                Math.abs(a.time - annotation.time) < 0.001 &&
+                a.text === annotation.text
+            );
+
+            if (seqIndex !== -1) {
+                seqNumber = `(${seqIndex + 1}) `;
+            }
+        }
+
+        const displayText = annotation.text
+            ? `${seqNumber}${annotation.text}`
             : '表示終了';
         contentDiv.textContent = displayText;
         contentDiv.style.color = annotation.textColor;
@@ -441,12 +470,36 @@ class AnnotationManager {
         const annotation = this.annotations[index];
 
         // 入力フィールドに現在の値を設定
-        this.annotationText1.value = annotation.text1 || '';
-        this.annotationText2.value = annotation.text2 || '';
+        this.annotationText.value = annotation.text || '';
 
         // 色を設定
         this.selectedTextColor = annotation.textColor;
         this.selectedBgColor = annotation.bgColor;
+
+        // フォントを設定
+        if (annotation.font) {
+            this.selectedFont = annotation.font;
+            if (this.textFontSelect) {
+                this.textFontSelect.value = annotation.font;
+            }
+        }
+
+        // 文字位置を設定
+        if (annotation.textAlign) {
+            this.selectedTextAlign = annotation.textAlign;
+            this.textAlignButtons.forEach(btn => {
+                if (btn.getAttribute('data-align') === annotation.textAlign) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // 連番チェックボックスを設定
+        if (this.annotationUseSeq) {
+            this.annotationUseSeq.checked = annotation.useSequenceNumber || false;
+        }
 
         // プリセットボタンの状態を更新
         let matchedPreset = false;
@@ -483,7 +536,7 @@ class AnnotationManager {
         }
 
         // 入力フィールドにフォーカス
-        this.annotationText1.focus();
+        this.annotationText.focus();
     }
 
     /**
@@ -542,13 +595,13 @@ class AnnotationManager {
         // 次の注釈を取得
         const nextAnnotation = this.annotations.find(ann => ann.time > currentTime);
 
-        // 次の注釈が「注釈なし」（text1とtext2が両方とも空）の場合は表示しない
-        if (nextAnnotation && !nextAnnotation.text1 && !nextAnnotation.text2 && nextAnnotation.time <= currentTime) {
+        // 次の注釈が「注釈なし」（textが空）の場合は表示しない
+        if (nextAnnotation && !nextAnnotation.text && nextAnnotation.time <= currentTime) {
             return null;
         }
 
         // 現在の注釈が「注釈なし」の場合は表示しない
-        if (!activeAnnotation.text1 && !activeAnnotation.text2) {
+        if (!activeAnnotation.text) {
             return null;
         }
 

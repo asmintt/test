@@ -740,11 +740,9 @@ details:not([open]) summary h2::before {
     min-height: 30px;
     display: flex;
     align-items: center;
-    justify-content: center;
     padding: 10px 20px;
     font-weight: bold;
     font-size: 1.3rem;
-    text-align: center;
     font-family: "Hiragino Sans", sans-serif;
     background: #1a1a1a;
     border-top: 2px solid #333;
@@ -763,7 +761,7 @@ details:not([open]) summary h2::before {
 /* 詳細テキスト表示エリア */
 .detail-text-display {
     position: absolute;
-    bottom: calc(60px + 25px); /* 60px for text-annotation-display + 25px from video bottom */
+    bottom: 120px; /* Positioned above the white annotation area, overlapping video */
     left: 40px;
     right: 40px;
     min-height: 35px;
@@ -823,13 +821,15 @@ details:not([open]) summary h2::before {
 }
 
 .history-column h3 {
-    font-size: 0.85rem;
-    color: #2c5282;
-    margin-bottom: 8px;
-    padding: 6px 10px;
-    border: 2px solid #2c5282;
-    border-radius: 6px;
+    font-size: 1rem;
     font-weight: 600;
+    color: #333;
+    padding: 8px 0;
+    margin-bottom: 12px;
+    border: none;
+    border-bottom: 2px solid #e0e0e0;
+    background: transparent;
+    border-radius: 0;
 }
 
 .history-list {

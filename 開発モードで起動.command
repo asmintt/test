@@ -14,3 +14,8 @@ sleep 1
 # 開発モードで起動
 echo "開発モードで起動中..."
 npm start
+
+# アプリが閉じられたら、このターミナルウィンドウを閉じる
+echo "アプリが終了しました。ターミナルを閉じます..."
+osascript -e 'tell application "Terminal" to close first window' > /dev/null 2>&1 &
+exit
