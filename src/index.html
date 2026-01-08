@@ -315,7 +315,15 @@
 
                     <!-- 詳細テキスト -->
                     <div class="detail-section">
-                        <h3>詳細テキスト</h3>
+                        <div class="section-header-with-presets">
+                            <h3>詳細</h3>
+                            <div class="preset-buttons-inline">
+                                <button class="preset-btn detail-preset-btn" data-preset="explanation" data-text-color="#000000" data-bg-color="#FFFFFF">説明</button>
+                                <button class="preset-btn detail-preset-btn" data-preset="point" data-text-color="#000000" data-bg-color="#FF6B6B">要点</button>
+                                <button class="preset-btn detail-preset-btn" data-preset="caution" data-text-color="#000000" data-bg-color="#FFD54F">注意</button>
+                                <button class="preset-btn detail-preset-btn" id="detailCustomPresetBtn" data-preset="custom" data-text-color="#000000" data-bg-color="#FFFFFF" title="Wクリックで設定画面に">登録</button>
+                            </div>
+                        </div>
 
                         <!-- フォント選択 -->
                         <div class="font-selection-section">

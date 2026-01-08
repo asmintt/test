@@ -258,8 +258,8 @@ class VideoPlayer {
         const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
 
         if (annotation && annotation.text) {
-            // 表示されている動画の高さの5%をベースにする（ダウンロード動画と同じ比率）
-            const baseSize = Math.floor(this.video.clientHeight * 0.05);
+            // プレビュー用の縮小サイズ: 32px
+            const baseSize = 32;
 
             // 全注釈で統一されたフォントサイズを計算
             const fontSize = Math.floor(baseSize * this.globalScaleFactor);
@@ -283,29 +283,31 @@ class VideoPlayer {
                 }
             }
 
-            // 単純なテキスト表示
+            // テキストボックスを作成（テキスト部分のみ背景色）
             const displayText = seqNumber + annotation.text;
-            this.textAnnotationDisplay.textContent = displayText;
-            this.textAnnotationDisplay.style.color = annotation.textColor;
-            this.textAnnotationDisplay.style.backgroundColor = annotation.bgColor;
-            this.textAnnotationDisplay.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
-            this.textAnnotationDisplay.style.fontWeight = 'bold';
-            this.textAnnotationDisplay.style.fontSize = `${fontSize}px`;
+            const textBox = document.createElement('span');
+            textBox.className = 'text-annotation-box';
+            textBox.textContent = displayText;
+            textBox.style.color = annotation.textColor;
+            textBox.style.backgroundColor = annotation.bgColor;
+            textBox.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
+            textBox.style.fontWeight = 'bold';
+            textBox.style.fontSize = `${fontSize}px`;
+            textBox.style.padding = '5px 12px';
+            textBox.style.display = 'inline-block';
 
             // 文字配置を適用
             const textAlign = annotation.textAlign || 'center';
-            this.textAnnotationDisplay.style.textAlign = textAlign;
-
-            // Flexbox用にjustify-contentも設定
             const justifyContent = textAlign === 'left' ? 'flex-start' : (textAlign === 'right' ? 'flex-end' : 'center');
             this.textAnnotationDisplay.style.justifyContent = justifyContent;
 
-            console.log('文字配置設定:', { textAlign, justifyContent });
-
+            // コンテナをクリアして新しいボックスを追加
+            this.textAnnotationDisplay.innerHTML = '';
+            this.textAnnotationDisplay.appendChild(textBox);
             this.textAnnotationDisplay.classList.add('visible');
         } else {
             // 注釈がない場合は非表示
-            this.textAnnotationDisplay.textContent = '';
+            this.textAnnotationDisplay.innerHTML = '';
             this.textAnnotationDisplay.classList.remove('visible');
         }
     }
@@ -329,23 +331,45 @@ class VideoPlayer {
 
         if (activeDetailText && activeDetailText.text) {
             // 詳細テキストがある場合は表示
-            this.detailTextDisplay.textContent = activeDetailText.text;
-            this.detailTextDisplay.style.color = activeDetailText.textColor;
-            this.detailTextDisplay.style.backgroundColor = activeDetailText.bgColor;
-            this.detailTextDisplay.style.fontFamily = `"${activeDetailText.font || 'Noto Sans JP'}", sans-serif`;
+            // テキストボックスを作成（テキスト部分のみ背景色）
+            const textBox = document.createElement('span');
+            textBox.className = 'detail-text-box';
+            textBox.textContent = activeDetailText.text;
+            textBox.style.color = activeDetailText.textColor;
+            textBox.style.fontFamily = `"${activeDetailText.font || 'Noto Sans JP'}", sans-serif`;
+            textBox.style.fontSize = '13px';
+            textBox.style.padding = '4px 12px';
+            textBox.style.display = 'inline-block';
+
+            // 背景色に70%透明度を適用
+            const bgColor = activeDetailText.bgColor || '#FFFFFF';
+            const hexToRgb = (hex) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            };
+            const rgb = hexToRgb(bgColor);
+            if (rgb) {
+                textBox.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`;
+            } else {
+                textBox.style.backgroundColor = bgColor;
+            }
 
             // 文字位置を適用
             const textAlign = activeDetailText.textAlign || 'left';
-            this.detailTextDisplay.style.textAlign = textAlign;
-
-            // Flexbox用にjustify-contentも設定
             const justifyContent = textAlign === 'left' ? 'flex-start' : (textAlign === 'right' ? 'flex-end' : 'center');
             this.detailTextDisplay.style.justifyContent = justifyContent;
 
+            // コンテナをクリアして新しいボックスを追加
+            this.detailTextDisplay.innerHTML = '';
+            this.detailTextDisplay.appendChild(textBox);
             this.detailTextDisplay.classList.add('visible');
         } else {
             // 詳細テキストがない場合は非表示
-            this.detailTextDisplay.textContent = '';
+            this.detailTextDisplay.innerHTML = '';
             this.detailTextDisplay.classList.remove('visible');
         }
     }

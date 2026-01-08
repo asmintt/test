@@ -770,15 +770,15 @@ details:not([open]) summary h2::before {
 }
 
 .text-annotation-display {
-    min-height: 30px;
+    height: 54px;
     display: flex;
     align-items: center;
-    padding: 10px 20px;
+    padding: 5px 0;
     font-weight: bold;
     font-size: 1.3rem;
     font-family: "Hiragino Sans", sans-serif;
-    background: #1a1a1a;
-    border-top: 2px solid #333;
+    background: white;
+    border: none;
     opacity: 0;
     transition: opacity 0.3s;
 }
@@ -793,16 +793,16 @@ details:not([open]) summary h2::before {
 
 /* 詳細テキスト表示エリア */
 .detail-text-display {
-    min-height: 35px;
+    height: 36px;
     display: flex;
     align-items: center;
-    padding: 8px 20px;
+    padding: 4px 0;
     font-weight: 600;
     font-size: 0.85rem;
     text-align: left;
     font-family: "Hiragino Sans", sans-serif;
-    background: #1a1a1a;
-    border-top: 2px solid #333;
+    background: white;
+    border: none;
     opacity: 0;
     transition: opacity 0.3s;
 }

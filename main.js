@@ -419,7 +419,7 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
 
     const filters = [];
     // テキスト表示エリアの高さ（固定値）
-    const textAreaHeight = 150;
+    const textAreaHeight = 110;
 
     // 1. 動画の下に白い領域を追加
     filters.push({
@@ -587,9 +587,13 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
     const scaleY = videoScale ? (videoScale.actualHeight / videoScale.displayHeight) : 1;
     console.log(`座標スケール: X=${scaleX.toFixed(2)}, Y=${scaleY.toFixed(2)}`);
 
+    // 動画の実際の幅と高さを取得
+    const videoWidth = videoScale ? videoScale.actualWidth : 1920;
+    const videoHeight = videoScale ? videoScale.actualHeight : 1080;
+
     const filters = [];
     // テキスト表示エリアの高さ（固定値）
-    const textAreaHeight = 150;
+    const textAreaHeight = 110;
 
     // 1. 動画の下に白い領域を追加
     filters.push({
@@ -811,10 +815,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
         };
         const fontFile = fontMapping[ann.font] || path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
 
-        const fontSize = 60;
-
-        // 動画の実際の高さを取得
-        const videoHeight = videoScale ? videoScale.actualHeight : 1080;
+        // テキストエリア（110px）の43%をフォントサイズに
+        const fontSize = Math.floor(textAreaHeight * 0.43);
 
         // 文字位置に応じたx座標を計算
         const textAlign = ann.textAlign || 'center';
@@ -843,16 +845,14 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
                 fontcolor: ann.textColor || '#000000',
                 box: 1,
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
-                boxborderw: 15,
+                boxborderw: 10,
                 x: xPosition,
-                y: videoHeight + 20, // 1段目（白い領域の上部）
+                y: videoHeight + 8,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
-            },
-            inputs: currentInput
+            }
         };
 
         filters.push(filterObj);
-        filterIndex++;
     });
 
     // 4. 詳細テキストを追加（メインテキストの下、最下部）
@@ -878,10 +878,6 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             .replace(/'/g, "\\\\'")
             .replace(/:/g, '\\\\:');
 
-        // 動画の実際の高さと幅を取得
-        const videoHeight = videoScale ? videoScale.actualHeight : 1080;
-        const videoWidth = videoScale ? videoScale.actualWidth : 1920;
-
         // 背景透明度を70%に固定
         const bgOpacity = 0.7;
 
@@ -896,8 +892,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             detailXPosition = '(w-text_w)/2'; // 中央揃え
         }
 
-        // 動画幅の1.5%をフォントサイズとして計算（APP_CONSTANTS.DETAIL_TEXT_FONT_SIZE_RATIO: 0.015）
-        const detailFontSize = Math.floor(videoWidth * 0.015);
+        // テキストエリア（110px）の17%をフォントサイズに
+        const detailFontSize = Math.floor(textAreaHeight * 0.17);
 
         // 詳細テキストのフォントマッピング
         const detailFontMapping = {
@@ -918,16 +914,14 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
                 fontcolor: detail.textColor || '#000000',
                 box: 1,
                 boxcolor: `${detail.bgColor || '#ffffff'}@${bgOpacity.toFixed(2)}`,
-                boxborderw: 3,
+                boxborderw: 5,
                 x: detailXPosition,
-                y: videoHeight + 90, // 2段目の位置（白い領域の中央下）
+                y: videoHeight + 82,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
-            },
-            inputs: currentInput
+            }
         };
 
         filters.push(filterObj);
-        filterIndex++;
     });
 
     // 5. 方向矢印を追加
@@ -978,6 +972,11 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
         if (i === 0) {
             // 最初のフィルター（pad）は既に出力ラベルを持っている
             continue;
+        }
+
+        // 2番目のフィルター（index=1）はpadフィルタの出力を入力とする
+        if (i === 1) {
+            filters[i].inputs = 'padded';
         }
 
         if (i < filters.length - 1) {

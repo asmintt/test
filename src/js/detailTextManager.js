@@ -6,8 +6,8 @@ class DetailTextManager {
         // DOM要素
         this.detailText = document.getElementById('detailText');
         this.detailFontSelect = document.getElementById('detailFontSelect');
-        this.presetButtons = document.querySelectorAll('.preset-btn'); // 共通プリセットボタンに変更
-        this.sharedCustomPresetBtn = document.getElementById('sharedCustomPresetBtn');
+        this.presetButtons = document.querySelectorAll('.detail-preset-btn'); // 詳細専用プリセットボタン
+        this.detailCustomPresetBtn = document.getElementById('detailCustomPresetBtn');
         this.addDetailTextBtn = document.getElementById('addDetailTextBtn');
         this.addNoDetailTextBtn = document.getElementById('addNoDetailTextBtn');
         this.detailHistoryList = document.getElementById('detailHistoryList');
@@ -100,10 +100,10 @@ class DetailTextManager {
             });
         });
 
-        // 共通カスタムボタンのダブルクリック → カスタム設定を開く
-        if (this.sharedCustomPresetBtn) {
-            this.sharedCustomPresetBtn.addEventListener('dblclick', () => {
-                const customSettings = document.getElementById('sharedCustomSettings');
+        // カスタムボタンのダブルクリック → カスタム設定を開く
+        if (this.detailCustomPresetBtn) {
+            this.detailCustomPresetBtn.addEventListener('dblclick', () => {
+                const customSettings = document.getElementById('detailCustomSettings');
                 if (customSettings) {
                     customSettings.open = true; // detailsを開く
                 }
@@ -195,17 +195,17 @@ class DetailTextManager {
      * 統一カスタムプリセットに登録
      */
     saveSharedCustomPreset() {
-        if (!this.sharedCustomPresetBtn) return;
+        if (!this.detailCustomPresetBtn) return;
 
         // 現在の設定をカスタムボタンに保存
-        this.sharedCustomPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
-        this.sharedCustomPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
+        this.detailCustomPresetBtn.setAttribute('data-text-color', this.selectedTextColor);
+        this.detailCustomPresetBtn.setAttribute('data-bg-color', this.selectedBgColor);
 
         // ボタンに色を視覚的に反映
-        this.sharedCustomPresetBtn.style.color = this.selectedTextColor;
-        this.sharedCustomPresetBtn.style.backgroundColor = this.selectedBgColor;
+        this.detailCustomPresetBtn.style.color = this.selectedTextColor;
+        this.detailCustomPresetBtn.style.backgroundColor = this.selectedBgColor;
 
-        console.log('統一カスタムプリセットを登録しました（詳細テキスト）:', {
+        console.log('詳細カスタムプリセットを登録しました:', {
             textColor: this.selectedTextColor,
             bgColor: this.selectedBgColor,
             textAlign: this.selectedTextAlign
