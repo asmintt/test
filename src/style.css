@@ -2503,3 +2503,17 @@ details:not([open]) summary h2::before {
 .modal-body button {
     margin-top: 10px;
 }
+
+/* ========================================
+   Windows配布版：非表示設定
+   ======================================== */
+
+/* テキスト付き矢印を非表示 */
+.direction-arrow-btn {
+    display: none !important;
+}
+
+/* 詳細テキストセクションを非表示 */
+.detail-section {
+    display: none !important;
+}
