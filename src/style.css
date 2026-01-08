@@ -770,7 +770,7 @@ details:not([open]) summary h2::before {
 }
 
 .text-annotation-display {
-    height: 54px;
+    height: 72px;
     display: flex;
     align-items: center;
     padding: 5px 0;
@@ -793,7 +793,7 @@ details:not([open]) summary h2::before {
 
 /* 詳細テキスト表示エリア */
 .detail-text-display {
-    height: 36px;
+    height: 48px;
     display: flex;
     align-items: center;
     padding: 4px 0;

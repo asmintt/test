@@ -419,7 +419,7 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
 
     const filters = [];
     // テキスト表示エリアの高さ（固定値）
-    const textAreaHeight = 110;
+    const textAreaHeight = 120;
 
     // 1. 動画の下に白い領域を追加
     filters.push({
@@ -593,7 +593,7 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
 
     const filters = [];
     // テキスト表示エリアの高さ（固定値）
-    const textAreaHeight = 110;
+    const textAreaHeight = 120;
 
     // 1. 動画の下に白い領域を追加
     filters.push({
@@ -815,8 +815,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
         };
         const fontFile = fontMapping[ann.font] || path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
 
-        // テキストエリア（110px）の43%をフォントサイズに
-        const fontSize = Math.floor(textAreaHeight * 0.43);
+        // 20文字が収まるフォントサイズを計算（最小32px、最大80px）
+        const fontSize = Math.max(32, Math.min(80, Math.floor(videoWidth / 28)));
 
         // 文字位置に応じたx座標を計算
         const textAlign = ann.textAlign || 'center';
@@ -847,7 +847,7 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
                 boxborderw: 10,
                 x: xPosition,
-                y: videoHeight + 8,
+                y: videoHeight + 10,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             }
         };
@@ -892,8 +892,9 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             detailXPosition = '(w-text_w)/2'; // 中央揃え
         }
 
-        // テキストエリア（110px）の17%をフォントサイズに
-        const detailFontSize = Math.floor(textAreaHeight * 0.17);
+        // 注釈フォントの40%をサイズに（最小13px、最大32px）
+        const annotationFontSize = Math.max(32, Math.min(80, Math.floor(videoWidth / 28)));
+        const detailFontSize = Math.max(13, Math.min(32, Math.floor(annotationFontSize * 0.4)));
 
         // 詳細テキストのフォントマッピング
         const detailFontMapping = {
@@ -916,7 +917,7 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
                 boxcolor: `${detail.bgColor || '#ffffff'}@${bgOpacity.toFixed(2)}`,
                 boxborderw: 5,
                 x: detailXPosition,
-                y: videoHeight + 82,
+                y: videoHeight + 90,
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             }
         };

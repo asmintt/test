@@ -248,6 +248,29 @@ class VideoPlayer {
     }
 
     /**
+     * 動画の実際の表示幅を計算（object-fit: contain考慮）
+     */
+    getActualVideoDisplayWidth() {
+        const videoWidth = this.video.videoWidth;
+        const videoHeight = this.video.videoHeight;
+        const containerWidth = this.video.offsetWidth;
+        const containerHeight = this.video.offsetHeight;
+
+        if (!videoWidth || !videoHeight) return containerWidth;
+
+        const videoAspect = videoWidth / videoHeight;
+        const containerAspect = containerWidth / containerHeight;
+
+        if (videoAspect > containerAspect) {
+            // 動画が横長：幅いっぱい
+            return containerWidth;
+        } else {
+            // 動画が縦長：高さに合わせて幅を計算
+            return containerHeight * videoAspect;
+        }
+    }
+
+    /**
      * テキスト注釈の表示を更新（1行表示）
      * @param {number} currentTime - 現在時刻（秒）
      */
@@ -258,8 +281,15 @@ class VideoPlayer {
         const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
 
         if (annotation && annotation.text) {
-            // プレビュー用の縮小サイズ: 32px
-            const baseSize = 32;
+            // 動画の実際の表示幅を取得
+            const actualDisplayWidth = this.getActualVideoDisplayWidth();
+
+            // プレビュー表示幅に応じたフォントサイズ（20文字が収まるサイズ）
+            const baseSize = Math.max(20, Math.min(50, Math.floor(actualDisplayWidth / 28)));
+
+            // テキストエリアの幅を動画の表示幅に合わせる
+            this.textAnnotationDisplay.style.width = `${actualDisplayWidth}px`;
+            this.textAnnotationDisplay.style.margin = '0 auto';
 
             // 全注釈で統一されたフォントサイズを計算
             const fontSize = Math.floor(baseSize * this.globalScaleFactor);
@@ -293,7 +323,9 @@ class VideoPlayer {
             textBox.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
             textBox.style.fontWeight = 'bold';
             textBox.style.fontSize = `${fontSize}px`;
-            textBox.style.padding = '5px 12px';
+            // フォントサイズに応じたパディング
+            const padding = Math.max(4, Math.floor(fontSize * 0.15));
+            textBox.style.padding = `${padding}px ${padding * 2.4}px`;
             textBox.style.display = 'inline-block';
 
             // 文字配置を適用
@@ -330,15 +362,28 @@ class VideoPlayer {
             , null);
 
         if (activeDetailText && activeDetailText.text) {
+            // 動画の実際の表示幅を取得
+            const actualDisplayWidth = this.getActualVideoDisplayWidth();
+
+            // テキストエリアの幅を動画の表示幅に合わせる
+            this.detailTextDisplay.style.width = `${actualDisplayWidth}px`;
+            this.detailTextDisplay.style.margin = '0 auto';
+
             // 詳細テキストがある場合は表示
             // テキストボックスを作成（テキスト部分のみ背景色）
             const textBox = document.createElement('span');
             textBox.className = 'detail-text-box';
             textBox.textContent = activeDetailText.text;
+            // プレビュー表示幅に応じたフォントサイズ（注釈の40%）
+            const annotationBaseSize = Math.max(20, Math.min(50, Math.floor(actualDisplayWidth / 28)));
+            const detailFontSize = Math.max(8, Math.min(20, Math.floor(annotationBaseSize * 0.4)));
+
             textBox.style.color = activeDetailText.textColor;
             textBox.style.fontFamily = `"${activeDetailText.font || 'Noto Sans JP'}", sans-serif`;
-            textBox.style.fontSize = '13px';
-            textBox.style.padding = '4px 12px';
+            textBox.style.fontSize = `${detailFontSize}px`;
+            // フォントサイズに応じたパディング
+            const detailPadding = Math.max(3, Math.floor(detailFontSize * 0.15));
+            textBox.style.padding = `${detailPadding}px ${detailPadding * 2.4}px`;
             textBox.style.display = 'inline-block';
 
             // 背景色に70%透明度を適用
