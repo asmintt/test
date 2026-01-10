@@ -772,8 +772,8 @@ details:not([open]) summary h2::before {
 .text-annotation-display {
     height: 72px;
     display: flex;
-    align-items: center;
-    padding: 5px 0;
+    align-items: flex-start !important;
+    padding: 10px 0 !important;
     font-weight: bold;
     font-size: 1.3rem;
     font-family: "Hiragino Sans", sans-serif;
@@ -2505,15 +2505,60 @@ details:not([open]) summary h2::before {
 }
 
 /* ========================================
-   Windows配布版：非表示設定
+   折りたたみ式詳細設定
    ======================================== */
-
-/* テキスト付き矢印を非表示 */
-.direction-arrow-btn {
-    display: none !important;
+.annotation-advanced-settings,
+.detail-advanced-settings {
+    margin-bottom: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: #f9f9f9;
 }
 
-/* 詳細テキストセクションを非表示 */
-.detail-section {
-    display: none !important;
+.annotation-advanced-settings summary,
+.detail-advanced-settings summary {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
+
+.annotation-advanced-settings summary::-webkit-details-marker,
+.detail-advanced-settings summary::-webkit-details-marker {
+    display: none;
+}
+
+.annotation-advanced-settings summary::before,
+.detail-advanced-settings summary::before {
+    content: '▶';
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.annotation-advanced-settings[open] summary::before,
+.detail-advanced-settings[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.advanced-settings-content {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.advanced-settings-content .font-selection-section,
+.advanced-settings-content .text-align-section {
+    margin-bottom: 10px;
+}
+
+.advanced-settings-content .text-align-section:last-child {
+    margin-bottom: 0;
+}
+

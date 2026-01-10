@@ -68,11 +68,21 @@ class FrameExtractor {
             const video = videoPlayer.video;
             const currentTime = videoPlayer.getCurrentTime();
 
-            // キャンバスサイズを動画に合わせる
-            this.extractCanvas.width = video.videoWidth;
-            this.extractCanvas.height = video.videoHeight;
+            // 注釈エリアと詳細テキストエリアの高さ
+            const annotationAreaHeight = 72;
+            const detailTextAreaHeight = 48;
 
-            // 動画フレームを描画
+            // テキスト注釈を含める場合は、注釈エリアと詳細テキストエリアを追加
+            let extraHeight = 0;
+            if (this.includeTextAnnotations && this.includeTextAnnotations.checked) {
+                extraHeight = annotationAreaHeight + detailTextAreaHeight;
+            }
+
+            // キャンバスサイズを動画に合わせる（注釈エリアを含む）
+            this.extractCanvas.width = video.videoWidth;
+            this.extractCanvas.height = video.videoHeight + extraHeight;
+
+            // 動画フレームを描画（上部）
             this.extractCtx.drawImage(video, 0, 0);
 
             // 図形アノテーションを含める場合
@@ -92,7 +102,7 @@ class FrameExtractor {
 
             // タイムスタンプを含める場合
             if (this.includeTimestamp && this.includeTimestamp.checked) {
-                this.drawTimestampOnCanvas(this.extractCtx, currentTime);
+                this.drawTimestampOnCanvas(this.extractCtx, currentTime, video);
             }
 
             // 画像として保存（Promiseでラップ）
@@ -199,27 +209,44 @@ class FrameExtractor {
      * @param {HTMLVideoElement} video - 動画要素
      */
     drawShapesOnCanvas(ctx, video) {
-        const shapes = shapeAnnotationManager.getShapes();
-
-        // スケール比率を計算（表示サイズ vs 実際の動画サイズ）
-        const scaleX = video.videoWidth / video.offsetWidth;
-        const scaleY = video.videoHeight / video.offsetHeight;
+        const currentTime = videoPlayer.getCurrentTime();
+        // 現在時刻に表示されるべき図形のみを取得
+        const shapes = shapeAnnotationManager.getActiveShapesAtTime(currentTime);
 
         shapes.forEach(shape => {
-            // 座標をスケール変換
-            const x1 = shape.x1 * scaleX;
-            const y1 = shape.y1 * scaleY;
-            const x2 = shape.x2 * scaleX;
-            const y2 = shape.y2 * scaleY;
+            // 座標をスケール変換（図形保存時のキャンバスサイズ → 動画の実際のサイズ）
+            let x1 = shape.x1;
+            let y1 = shape.y1;
+            let x2 = shape.x2;
+            let y2 = shape.y2;
+            let scaleFactor = 1.0;
+
+            if (shape.canvasWidth && shape.canvasHeight) {
+                const scaleX = video.videoWidth / shape.canvasWidth;
+                const scaleY = video.videoHeight / shape.canvasHeight;
+                x1 = shape.x1 * scaleX;
+                y1 = shape.y1 * scaleY;
+                x2 = shape.x2 * scaleX;
+                y2 = shape.y2 * scaleY;
+                // フォントサイズのスケール係数（平均値を使用）
+                scaleFactor = (scaleX + scaleY) / 2;
+            }
 
             ctx.strokeStyle = shape.color;
             // 後方互換性: lineWidthがない場合はデフォルト値5を使用
-            ctx.lineWidth = shape.lineWidth || 5;
+            const lineWidth = shape.lineWidth || 5;
+            ctx.lineWidth = lineWidth * scaleFactor;
 
-            // 図形タイプに応じた描画メソッドを実行
-            const drawMethod = this.getShapeDrawMethod(shape.type);
-            if (drawMethod) {
-                drawMethod(ctx, x1, y1, x2, y2);
+            // 方向矢印タイプの場合は特別処理
+            if (shape.type === 'arrow-left' || shape.type === 'arrow-right' ||
+                shape.type === 'arrow-up' || shape.type === 'arrow-down') {
+                this.drawDirectionArrowOnCanvas(ctx, x2, y2, shape.type, shape.color, lineWidth, shape.isTextIncluded || false, scaleFactor);
+            } else {
+                // 図形タイプに応じた描画メソッドを実行
+                const drawMethod = this.getShapeDrawMethod(shape.type);
+                if (drawMethod) {
+                    drawMethod(ctx, x1, y1, x2, y2);
+                }
             }
         });
     }
@@ -256,12 +283,76 @@ class FrameExtractor {
     }
 
     /**
+     * キャンバスに方向矢印を描画（記号またはテキスト付き）
+     * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     * @param {string} arrowType - 矢印のタイプ
+     * @param {string} color - 色
+     * @param {number} lineWidth - 枠線の太さ
+     * @param {boolean} isTextIncluded - テキスト付きかどうか
+     * @param {number} scaleFactor - スケール係数
+     */
+    drawDirectionArrowOnCanvas(ctx, x, y, arrowType, color, lineWidth, isTextIncluded, scaleFactor = 1.0) {
+        // lineWidthをフォントサイズに変換（スケール係数を適用）
+        const baseFontSize = 16 + (lineWidth * 3.0);
+        const fontSize = baseFontSize * scaleFactor;
+
+        if (isTextIncluded) {
+            // テキスト付き矢印
+            let text = '';
+            let textColor = '';
+
+            if (arrowType === 'arrow-left') {
+                text = '⬅ 左';
+                textColor = '#1976D2'; // 青
+            } else if (arrowType === 'arrow-right') {
+                text = '右 ➡';
+                textColor = '#FF9800'; // 橙
+            } else if (arrowType === 'arrow-up') {
+                text = '⬆ 上';
+                textColor = '#4CAF50'; // 緑
+            } else if (arrowType === 'arrow-down') {
+                text = '⬇ 下';
+                textColor = '#F44336'; // 赤
+            }
+
+            // テキストを描画
+            ctx.font = `${fontSize}px 'Hiragino Kaku Gothic ProN', sans-serif`;
+            ctx.fillStyle = textColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, y);
+        } else {
+            // 記号のみ矢印
+            let arrowSymbol = '➡';
+            if (arrowType === 'arrow-left') arrowSymbol = '⬅';
+            else if (arrowType === 'arrow-up') arrowSymbol = '⬆';
+            else if (arrowType === 'arrow-down') arrowSymbol = '⬇';
+            else if (arrowType === 'arrow-right') arrowSymbol = '➡';
+
+            // テキストとして描画
+            ctx.font = `${fontSize}px 'Hiragino Kaku Gothic ProN', sans-serif`;
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(arrowSymbol, x, y);
+        }
+    }
+
+    /**
      * キャンバスにテキスト注釈を描画
      * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
      * @param {number} currentTime - 現在時刻
      * @param {HTMLVideoElement} video - 動画要素
      */
     drawTextAnnotationOnCanvas(ctx, currentTime, video) {
+        const annotationAreaHeight = 72;
+
+        // 注釈エリアの背景を白で塗りつぶし（プレビューと同じ）
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, video.videoHeight, video.videoWidth, annotationAreaHeight);
+
         const annotation = annotationManager.getActiveAnnotationAtTime(currentTime);
         if (!annotation || !annotation.text) return;
 
@@ -311,8 +402,9 @@ class FrameExtractor {
             bgX = (video.videoWidth - bgWidth) / 2;
         }
 
-        const bgY = 20;
         const bgHeight = textHeight + 20;
+        // 注釈エリア内に配置（上詰め）
+        const bgY = video.videoHeight + 10;
 
         // 背景を描画
         ctx.fillStyle = annotation.bgColor;
@@ -345,8 +437,15 @@ class FrameExtractor {
     drawDetailTextOnCanvas(ctx, currentTime, video) {
         if (!detailTextManager) return;
 
-        const detailTexts = detailTextManager.getDetailTexts();
-        const activeDetail = detailTexts.find(d => d.time <= currentTime);
+        const annotationAreaHeight = 72;
+        const detailTextAreaHeight = 48;
+
+        // 詳細テキストエリアの背景を白で塗りつぶし（プレビューと同じ）
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, video.videoHeight + annotationAreaHeight, video.videoWidth, detailTextAreaHeight);
+
+        // 現在時刻に表示されるべき詳細テキストを取得
+        const activeDetail = detailTextManager.getActiveDetailTextAtTime(currentTime);
         if (!activeDetail || !activeDetail.text) return;
 
         // フォントサイズを動画幅に応じて計算
@@ -358,13 +457,13 @@ class FrameExtractor {
         // テキストサイズを測定
         const textMetrics = ctx.measureText(activeDetail.text);
         const padding = 8;
-        const boxPadding = 20;
 
-        // 位置を計算（2段目の位置：注釈の下）
+        // 位置を計算（詳細テキストエリア内、左寄せで40pxのマージン）
         const boxX = 40;
         const boxWidth = textMetrics.width + padding * 2;
         const boxHeight = fontSize + padding * 2;
-        const boxY = 90; // 2段目の位置（注釈の下）
+        // 詳細テキストエリア内に配置（垂直中央）
+        const boxY = video.videoHeight + annotationAreaHeight + (detailTextAreaHeight - boxHeight) / 2;
 
         // 背景を70%透明度で描画
         const bgColor = activeDetail.bgColor || '#FFFFFF';
@@ -405,8 +504,9 @@ class FrameExtractor {
      * キャンバスにタイムスタンプを描画
      * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
      * @param {number} currentTime - 現在時刻
+     * @param {HTMLVideoElement} video - 動画要素
      */
-    drawTimestampOnCanvas(ctx, currentTime) {
+    drawTimestampOnCanvas(ctx, currentTime, video) {
         const timestamp = formatTimeWithDecimal(currentTime);
         const fontSize = 30;
 
@@ -417,15 +517,16 @@ class FrameExtractor {
         // 背景（半透明黒）
         const textMetrics = ctx.measureText(timestamp);
         const padding = 10;
-        const bgX = this.extractCanvas.width - textMetrics.width - padding * 2;
-        const bgY = this.extractCanvas.height - fontSize - padding * 2;
+        const bgX = video.videoWidth - textMetrics.width - padding * 2;
+        // 動画フレームの右下に配置
+        const bgY = video.videoHeight - fontSize - padding * 2;
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(bgX, bgY, textMetrics.width + padding * 2, fontSize + padding * 2);
 
         // テキスト（白）
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(timestamp, this.extractCanvas.width - padding, this.extractCanvas.height - padding);
+        ctx.fillText(timestamp, video.videoWidth - padding, video.videoHeight - padding);
     }
 
     /**

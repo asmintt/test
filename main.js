@@ -37,10 +37,9 @@ function createWindow() {
     // 開発モード: キャッシュをクリア
     mainWindow.webContents.session.clearCache().then(() => {
         console.log('キャッシュをクリアしました');
+        // キャッシュクリア後にindex.htmlを読み込む
+        mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
     });
-
-    // index.htmlを読み込む
-    mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
     // 開発者ツールを開く（開発時のみ）
     mainWindow.webContents.openDevTools(); // 開発モード: 自動的に開発者ツールを開く
@@ -666,7 +665,7 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
                 inputs: currentInput
             };
         } else if (shape.type === 'line') {
-            // 直線: drawbox フィルターで水平線または垂直線を描画
+            // 直線: drawbox フィルターで水平線または垂直線、それ以外は複数のdrawboxで近似
             const lineWidth = shape.lineWidth || 5;
 
             // 座標をスケール変換
@@ -675,37 +674,87 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             const x2 = Math.round(shape.x2 * scaleX);
             const y2 = Math.round(shape.y2 * scaleY);
 
-            // 水平線か垂直線かを判定
-            const isHorizontal = Math.abs(y2 - y1) < Math.abs(x2 - x1);
+            // スケール変換した線の太さ
+            const scaledLineWidth = Math.round(lineWidth * Math.min(scaleX, scaleY));
 
-            let x, y, w, h;
-            if (isHorizontal) {
+            // 水平線または垂直線かを判定
+            const dx = Math.abs(x2 - x1);
+            const dy = Math.abs(y2 - y1);
+            const threshold = 10; // 閾値: 10ピクセル以内なら水平/垂直とみなす
+
+            if (dy <= threshold) {
                 // 水平線
-                x = Math.min(x1, x2);
-                y = Math.round((y1 + y2) / 2 - (lineWidth * scaleY) / 2);
-                w = Math.abs(x2 - x1);
-                h = Math.round(lineWidth * scaleY);
-            } else {
-                // 垂直線
-                x = Math.round((x1 + x2) / 2 - (lineWidth * scaleX) / 2);
-                y = Math.min(y1, y2);
-                w = Math.round(lineWidth * scaleX);
-                h = Math.abs(y2 - y1);
-            }
+                const x = Math.min(x1, x2);
+                const y = Math.round((y1 + y2) / 2 - scaledLineWidth / 2);
+                const w = dx;
+                const h = scaledLineWidth;
 
-            filterObj = {
-                filter: 'drawbox',
-                options: {
-                    x: x,
-                    y: y,
-                    w: w,
-                    h: h,
-                    color: shape.color,
-                    t: 'fill',  // 塗りつぶし
-                    enable: `between(t,${displayStartTime},${displayEndTime})`
-                },
-                inputs: currentInput
-            };
+                filterObj = {
+                    filter: 'drawbox',
+                    options: {
+                        x: x,
+                        y: y,
+                        w: w,
+                        h: h,
+                        color: shape.color,
+                        t: 'fill',
+                        enable: `between(t,${displayStartTime},${displayEndTime})`
+                    },
+                    inputs: currentInput
+                };
+            } else if (dx <= threshold) {
+                // 垂直線
+                const x = Math.round((x1 + x2) / 2 - scaledLineWidth / 2);
+                const y = Math.min(y1, y2);
+                const w = scaledLineWidth;
+                const h = dy;
+
+                filterObj = {
+                    filter: 'drawbox',
+                    options: {
+                        x: x,
+                        y: y,
+                        w: w,
+                        h: h,
+                        color: shape.color,
+                        t: 'fill',
+                        enable: `between(t,${displayStartTime},${displayEndTime})`
+                    },
+                    inputs: currentInput
+                };
+            } else {
+                // 斜め線: Bresenhamアルゴリズムで近似（小さなdrawboxを並べる）
+                // 線の長さに応じてステップ数を決定
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const steps = Math.ceil(length / scaledLineWidth);
+
+                // 各ステップで小さな正方形を描画
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    const x = Math.round(x1 + (x2 - x1) * t - scaledLineWidth / 2);
+                    const y = Math.round(y1 + (y2 - y1) * t - scaledLineWidth / 2);
+
+                    const boxFilter = {
+                        filter: 'drawbox',
+                        options: {
+                            x: x,
+                            y: y,
+                            w: scaledLineWidth,
+                            h: scaledLineWidth,
+                            color: shape.color,
+                            t: 'fill',
+                            enable: `between(t,${displayStartTime},${displayEndTime})`
+                        },
+                        inputs: currentInput
+                    };
+
+                    filters.push(boxFilter);
+                    currentInput = `[s${filters.length - 1}]`;
+                }
+
+                // filterObjはnullにして、後でスキップ
+                filterObj = null;
+            }
         } else if (shape.type && shape.type.startsWith('arrow')) {
             // 矢印: Unicode記号で描画
             const x2 = Math.round(shape.x2 * scaleX);

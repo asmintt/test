@@ -445,6 +445,32 @@ class DetailTextManager {
     }
 
     /**
+     * 現在時刻で有効な詳細テキストを取得
+     * @param {number} currentTime - 現在時刻（秒）
+     * @returns {Object|null} 有効な詳細テキスト、なければnull
+     */
+    getActiveDetailTextAtTime(currentTime) {
+        if (this.detailTexts.length === 0) return null;
+
+        // 現在時刻以前の詳細テキストを時刻の降順で取得
+        const validTexts = this.detailTexts
+            .filter(d => d.time <= currentTime)
+            .sort((a, b) => b.time - a.time);
+
+        if (validTexts.length === 0) return null;
+
+        // 最新の詳細テキストを取得
+        const latestText = validTexts[0];
+
+        // テキストが空文字列の場合は「表示終了」マーカーなのでnullを返す
+        if (!latestText.text || latestText.text.trim() === '') {
+            return null;
+        }
+
+        return latestText;
+    }
+
+    /**
      * 詳細テキストデータをクリア
      */
     clearDetailTexts() {

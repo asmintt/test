@@ -285,14 +285,12 @@ class VideoPlayer {
             const actualDisplayWidth = this.getActualVideoDisplayWidth();
 
             // プレビュー表示幅に応じたフォントサイズ（20文字が収まるサイズ）
-            const baseSize = Math.max(20, Math.min(50, Math.floor(actualDisplayWidth / 28)));
+            // 文字数に関係なく固定サイズを使用
+            const fontSize = Math.max(20, Math.min(50, Math.floor(actualDisplayWidth / 28)));
 
             // テキストエリアの幅を動画の表示幅に合わせる
             this.textAnnotationDisplay.style.width = `${actualDisplayWidth}px`;
             this.textAnnotationDisplay.style.margin = '0 auto';
-
-            // 全注釈で統一されたフォントサイズを計算
-            const fontSize = Math.floor(baseSize * this.globalScaleFactor);
 
             // 連番の処理
             let seqNumber = '';
