@@ -284,13 +284,17 @@ class VideoPlayer {
             // 動画の実際の表示幅を取得
             const actualDisplayWidth = this.getActualVideoDisplayWidth();
 
-            // プレビュー表示幅に応じたフォントサイズ（20文字が収まるサイズ）
-            // 文字数に関係なく固定サイズを使用
-            const fontSize = Math.max(20, Math.min(50, Math.floor(actualDisplayWidth / 28)));
-
             // テキストエリアの幅を動画の表示幅に合わせる
             this.textAnnotationDisplay.style.width = `${actualDisplayWidth}px`;
             this.textAnnotationDisplay.style.margin = '0 auto';
+
+            // 連番の有無に関わらず、常に25文字（"(99) " + 20文字）が収まるフォントサイズで統一
+            // 計算式: actualDisplayWidth = 25文字 * fontSize + 左右パディング
+            // パディングは fontSize * 0.15 * 2.4 が左右にそれぞれある
+            // actualDisplayWidth = 25 * fontSize + 2 * (fontSize * 0.15 * 2.4)
+            // actualDisplayWidth = fontSize * (25 + 0.72)
+            // fontSize = actualDisplayWidth / 25.72
+            const fontSize = Math.floor(actualDisplayWidth / 25.72);
 
             // 連番の処理
             let seqNumber = '';
@@ -372,17 +376,22 @@ class VideoPlayer {
             const textBox = document.createElement('span');
             textBox.className = 'detail-text-box';
             textBox.textContent = activeDetailText.text;
-            // プレビュー表示幅に応じたフォントサイズ（注釈の40%）
-            const annotationBaseSize = Math.max(20, Math.min(50, Math.floor(actualDisplayWidth / 28)));
-            const detailFontSize = Math.max(8, Math.min(20, Math.floor(annotationBaseSize * 0.4)));
+
+            // 40文字が収まるフォントサイズを計算（詳細エリア30pxに収まる）
+            const paddingWidth = 6; // 左右パディング合計 3px × 2
+            // 40文字が収まるように逆算: (actualDisplayWidth - padding) / 40文字
+            const maxFontSizeFor40Chars = Math.floor((actualDisplayWidth - paddingWidth) / 40);
+            const maxFontSizeForArea = 20; // 30px - padding上下6px - 余裕4px = 20px
+            const detailFontSize = Math.min(maxFontSizeFor40Chars, maxFontSizeForArea);
 
             textBox.style.color = activeDetailText.textColor;
             textBox.style.fontFamily = `"${activeDetailText.font || 'Noto Sans JP'}", sans-serif`;
             textBox.style.fontSize = `${detailFontSize}px`;
-            // フォントサイズに応じたパディング
-            const detailPadding = Math.max(3, Math.floor(detailFontSize * 0.15));
-            textBox.style.padding = `${detailPadding}px ${detailPadding * 2.4}px`;
+            // 小さいパディング（30pxエリアに収めるため）
+            const detailPadding = 3;
+            textBox.style.padding = `${detailPadding}px ${detailPadding * 2}px`;
             textBox.style.display = 'inline-block';
+            textBox.style.whiteSpace = 'nowrap'; // 1行表示
 
             // 背景色に70%透明度を適用
             const bgColor = activeDetailText.bgColor || '#FFFFFF';

@@ -42,7 +42,7 @@ function createWindow() {
     });
 
     // 開発者ツールを開く（開発時のみ）
-    mainWindow.webContents.openDevTools(); // 開発モード: 自動的に開発者ツールを開く
+    // mainWindow.webContents.openDevTools(); // 開発モード: 自動的に開発者ツールを開く
 
     // ウィンドウが閉じられたときの処理
     mainWindow.on('closed', () => {
@@ -206,6 +206,8 @@ function processOneStep(tempInputPath, outputPath, options) {
                     } catch (e) {
                         console.error('一時ファイル削除エラー:', e);
                     }
+                    console.log('=== ダウンロード動画完成 ===');
+                    console.log('出力ファイル:', outputPath);
                     resolve({ success: true, outputPath });
                 })
                 .on('error', (err) => {
@@ -336,7 +338,9 @@ function processTwoStep(tempInputPath, outputPath, options) {
                             console.error('一時ファイル削除エラー:', e);
                         }
 
-                        resolve({ success: true, outputPath });
+                        console.log('=== ダウンロード動画完成 ===');
+                    console.log('出力ファイル:', outputPath);
+                    resolve({ success: true, outputPath });
                     })
                     .on('error', (err) => {
                         console.error('ステップ2エラー:', err);
@@ -417,8 +421,8 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
     }
 
     const filters = [];
-    // テキスト表示エリアの高さ（固定値）
-    const textAreaHeight = 120;
+    // テキスト表示エリアの高さ（固定値：注釈72px + 詳細60px）
+    const textAreaHeight = 132;
 
     // 1. 動画の下に白い領域を追加
     filters.push({
@@ -467,12 +471,17 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
         // 最後のフィルター以外は出力ラベルを設定
         const isLastFilter = index === textAnnotations.length - 1;
 
+        // 注釈フォントサイズ = videoHeightの5%、ただし25文字が収まるよう制限
+        const annotationBaseFontSize = Math.floor(videoHeight * 0.05);
+        const maxFontSizeFor25Chars = Math.floor(videoWidth / 25.72);
+        const annotationFontSize = Math.min(annotationBaseFontSize, maxFontSizeFor25Chars);
+
         const filterObj = {
             filter: 'drawtext',
             options: {
                 text: escapedText,
                 fontfile: '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc',
-                fontsize: 60,
+                fontsize: annotationFontSize,
                 fontcolor: ann.textColor || '#000000',
                 box: 1,
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
@@ -591,8 +600,8 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
     const videoHeight = videoScale ? videoScale.actualHeight : 1080;
 
     const filters = [];
-    // テキスト表示エリアの高さ（固定値）
-    const textAreaHeight = 120;
+    // テキスト表示エリアの高さ（固定値：注釈72px + 詳細60px）
+    const textAreaHeight = 132;
 
     // 1. 動画の下に白い領域を追加
     filters.push({
@@ -864,8 +873,10 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
         };
         const fontFile = fontMapping[ann.font] || path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
 
-        // 20文字が収まるフォントサイズを計算（最小32px、最大80px）
-        const fontSize = Math.max(32, Math.min(80, Math.floor(videoWidth / 28)));
+        // 注釈フォントサイズ = videoHeightの5%、ただし25文字が収まるよう制限
+        const annotationBaseFontSize = Math.floor(videoHeight * 0.05);
+        const maxFontSizeFor25Chars = Math.floor(videoWidth / 25.72);
+        const fontSize = Math.min(annotationBaseFontSize, maxFontSizeFor25Chars);
 
         // 文字位置に応じたx座標を計算
         const textAlign = ann.textAlign || 'center';
@@ -941,9 +952,38 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
             detailXPosition = '(w-text_w)/2'; // 中央揃え
         }
 
-        // 注釈フォントの40%をサイズに（最小13px、最大32px）
-        const annotationFontSize = Math.max(32, Math.min(80, Math.floor(videoWidth / 28)));
-        const detailFontSize = Math.max(13, Math.min(32, Math.floor(annotationFontSize * 0.4)));
+        // 注釈フォントサイズ = videoHeightの5%、ただし25文字が収まるよう制限
+        const annotationBaseFontSize = Math.floor(videoHeight * 0.05);
+        const maxFontSizeFor25Chars = Math.floor(videoWidth / 25.72);
+        const annotationFontSize = Math.min(annotationBaseFontSize, maxFontSizeFor25Chars);
+
+        // 詳細フォントサイズ = 注釈の60%
+        const detailBaseFontSize = Math.floor(annotationFontSize * 0.6);
+
+        // 詳細テキストエリア（60px）に収まる上限
+        const maxFontSizeForArea = 52; // 60 - 4(上padding) - 4(下padding) = 52
+
+        // 40文字が横幅に収まる上限
+        const availableWidth = videoWidth - 60; // 左40px + 右20px
+        const maxFontSizeFor40Chars = Math.floor(availableWidth / (40 * 0.6));
+
+        // 3つの条件の最小値を取る
+        const detailFontSize = Math.min(
+            detailBaseFontSize,
+            maxFontSizeForArea,
+            maxFontSizeFor40Chars
+        );
+
+        console.log('ダウンロード動画 - 詳細テキストフォントサイズ計算:', {
+            videoHeight,
+            videoWidth,
+            annotationBaseFontSize,
+            annotationFontSize,
+            detailBaseFontSize,
+            maxFontSizeForArea,
+            maxFontSizeFor40Chars,
+            finalDetailFontSize: detailFontSize
+        });
 
         // 詳細テキストのフォントマッピング
         const detailFontMapping = {

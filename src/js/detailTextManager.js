@@ -30,8 +30,8 @@ class DetailTextManager {
         // コールバック
         this.onDetailTextsChangeCallback = null;
 
-        // 最大文字数（動画読み込み時に設定）
-        this.maxCharacters = 100;
+        // 最大文字数（40文字固定）
+        this.maxCharacters = 40;
     }
 
     /**
@@ -483,16 +483,13 @@ class DetailTextManager {
      * 動画読み込み完了時の処理
      */
     onVideoLoaded() {
-        // 最大文字数を計算
-        if (videoPlayer && videoPlayer.video) {
-            const videoWidth = videoPlayer.video.videoWidth;
-            this.maxCharacters = Math.floor((videoWidth - 110) / 16); // フォントサイズ16に対応
+        // 最大文字数を40文字に固定
+        this.maxCharacters = 40;
 
-            // プレースホルダーを更新
-            if (this.detailText) {
-                this.detailText.placeholder = `文字数：${this.maxCharacters}文字まで`;
-                this.detailText.maxLength = this.maxCharacters;
-            }
+        // プレースホルダーを更新
+        if (this.detailText) {
+            this.detailText.placeholder = `詳細テキスト（40文字まで）`;
+            this.detailText.maxLength = 40;
         }
 
         // コントロールを有効化

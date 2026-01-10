@@ -70,7 +70,7 @@ class FrameExtractor {
 
             // 注釈エリアと詳細テキストエリアの高さ
             const annotationAreaHeight = 72;
-            const detailTextAreaHeight = 48;
+            const detailTextAreaHeight = 60;
 
             // テキスト注釈を含める場合は、注釈エリアと詳細テキストエリアを追加
             let extraHeight = 0;
@@ -438,7 +438,7 @@ class FrameExtractor {
         if (!detailTextManager) return;
 
         const annotationAreaHeight = 72;
-        const detailTextAreaHeight = 48;
+        const detailTextAreaHeight = 60;
 
         // 詳細テキストエリアの背景を白で塗りつぶし（プレビューと同じ）
         ctx.fillStyle = 'white';
@@ -448,15 +448,45 @@ class FrameExtractor {
         const activeDetail = detailTextManager.getActiveDetailTextAtTime(currentTime);
         if (!activeDetail || !activeDetail.text) return;
 
-        // フォントサイズを動画幅に応じて計算
-        const fontSize = Math.floor(video.videoWidth * APP_CONSTANTS.DETAIL_TEXT_FONT_SIZE_RATIO);
+        // 注釈フォントサイズを取得
+        const annotationFontSize = Math.floor(video.videoHeight * APP_CONSTANTS.MAIN_TEXT_FONT_SIZE_RATIO);
+
+        // 詳細フォントサイズ = 注釈の60%
+        const detailBaseFontSize = Math.floor(annotationFontSize * 0.6);
+
+        // 詳細テキストエリア（60px）に収まる上限
+        const maxFontSizeForArea = 52; // 60 - 4(上padding) - 4(下padding) = 52
+
+        // 40文字が収まる上限を計算
+        // 利用可能幅 = video.videoWidth - 40(左マージン) - 20(右余白)
+        const availableWidth = video.videoWidth - 60;
+        // 日本語の文字幅は約0.6em（フォントサイズの60%）
+        const maxFontSizeFor40Chars = Math.floor(availableWidth / (40 * 0.6));
+
+        // 3つの条件の最小値を取る
+        const fontSize = Math.min(
+            detailBaseFontSize,           // 注釈の3/4
+            maxFontSizeForArea,            // エリア内に収まる
+            maxFontSizeFor40Chars          // 40文字が収まる
+        );
+
+        // デバッグ用ログ
+        console.log('詳細テキストフォントサイズ計算:', {
+            annotationFontSize,
+            detailBaseFontSize,
+            maxFontSizeForArea,
+            maxFontSizeFor40Chars,
+            finalFontSize: fontSize,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight
+        });
         const fontFamily = activeDetail.font || 'Noto Sans JP';
         ctx.font = `600 ${fontSize}px "${fontFamily}", sans-serif`;
         ctx.textBaseline = 'top';
 
         // テキストサイズを測定
         const textMetrics = ctx.measureText(activeDetail.text);
-        const padding = 8;
+        const padding = 4;
 
         // 位置を計算（詳細テキストエリア内、左寄せで40pxのマージン）
         const boxX = 40;

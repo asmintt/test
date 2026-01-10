@@ -770,10 +770,11 @@ details:not([open]) summary h2::before {
 }
 
 .text-annotation-display {
-    height: 72px;
+    height: 60px;
     display: flex;
-    align-items: flex-start !important;
-    padding: 10px 0 !important;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 0;
     font-weight: bold;
     font-size: 1.3rem;
     font-family: "Hiragino Sans", sans-serif;
@@ -791,12 +792,35 @@ details:not([open]) summary h2::before {
     opacity: 0;
 }
 
+/* 詳細テキスト入力欄 */
+.detail-section input[type="text"] {
+    width: 100%;
+    padding: 10px 1px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    letter-spacing: -1.5px;
+}
+
+.detail-section input[type="text"]:focus {
+    outline: none;
+    border-color: #2c5282;
+    box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+}
+
+.detail-section input[type="text"]:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
 /* 詳細テキスト表示エリア */
 .detail-text-display {
-    height: 48px;
+    height: 30px;
     display: flex;
     align-items: center;
-    padding: 4px 0;
+    padding: 2px 0;
     font-weight: 600;
     font-size: 0.85rem;
     text-align: left;
@@ -805,6 +829,7 @@ details:not([open]) summary h2::before {
     border: none;
     opacity: 0;
     transition: opacity 0.3s;
+    overflow: hidden;
 }
 
 .detail-text-display.visible {
