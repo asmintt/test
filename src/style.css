@@ -91,6 +91,7 @@ body {
     grid-template-columns: 200px 1fr 400px;
     gap: 20px;
     margin-bottom: 30px;
+    align-items: start; /* 各カラムを上揃えにして、自然な高さにする */
 }
 
 /* ========================================
