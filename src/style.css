@@ -189,7 +189,7 @@ body {
 }
 
 .detail-section {
-    padding: 6px 0 0 0; /* 下部パディングを0に */
+    padding: 0; /* 全てのパディングを0に（余白を注釈区切り線に充当） */
 }
 
 .shape-section {
@@ -2919,7 +2919,7 @@ details:not([open]) summary h2::before {
 }
 
 .detail-section {
-    padding: 6px 0 0 0; /* 下部パディングを0に */
+    padding: 0; /* 全てのパディングを0に（余白を注釈区切り線に充当） */
     margin-top: 0; /* 区切り線削除に伴いマージンも0に */
 }
 
