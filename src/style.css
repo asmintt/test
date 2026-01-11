@@ -180,9 +180,12 @@ body {
 }
 
 /* 統合セクションのスタイル */
-.color-palette-section,
-.annotation-section {
+.color-palette-section {
     padding: 6px 0; /* パディング削減（10px→6px） */
+}
+
+.annotation-section {
+    padding: 6px 0 0 0; /* 下部パディングを0に（詳細セクションとの余白削減） */
 }
 
 .detail-section {
@@ -206,8 +209,8 @@ body {
 /* 区切り線（図形以外のセクション） */
 .annotation-section {
     border-top: 1px solid #ddd;
-    padding-top: 3px; /* パディング削減（4px→3px） */
-    margin-top: 3px; /* マージン削減（4px→3px） */
+    padding-top: 6px; /* 増加: 3px→6px（詳細セクション上部の余白を充当） */
+    margin-top: 6px; /* 増加: 3px→6px（詳細セクション上部の余白を充当） */
 }
 
 /* 詳細セクションの区切り線を削除 */
@@ -2911,12 +2914,12 @@ details:not([open]) summary h2::before {
 }
 
 .annotation-section {
-    padding: 3px 0; /* パディング削減（4px→3px） */
-    margin-top: 3px; /* マージン削減（4px→3px） */
+    padding: 6px 0 0 0; /* 下部パディング0、上部パディング6px */
+    margin-top: 6px; /* マージン増加: 3px→6px */
 }
 
 .detail-section {
-    padding: 3px 0 0 0; /* 下部パディングを0に */
+    padding: 6px 0 0 0; /* 下部パディングを0に */
     margin-top: 0; /* 区切り線削除に伴いマージンも0に */
 }
 
