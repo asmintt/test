@@ -204,11 +204,17 @@ body {
 }
 
 /* 区切り線（図形以外のセクション） */
-.annotation-section,
-.detail-section {
+.annotation-section {
     border-top: 1px solid #ddd;
     padding-top: 3px; /* パディング削減（4px→3px） */
     margin-top: 3px; /* マージン削減（4px→3px） */
+}
+
+/* 詳細セクションの区切り線を削除 */
+.detail-section {
+    border-top: none; /* 区切り線削除 */
+    padding-top: 0; /* パディング削除 */
+    margin-top: 0; /* マージン削除 */
 }
 
 /* 折りたたみセクション */
@@ -1078,7 +1084,7 @@ details:not([open]) summary h2::before {
 
 /* 2列入力セクション */
 .two-line-input-section {
-    margin-bottom: 12px;
+    margin-bottom: 4px; /* 削減: 12px→4px（詳細セクションに合わせる） */
 }
 
 .two-line-input-section label {
@@ -1091,10 +1097,10 @@ details:not([open]) summary h2::before {
 
 .two-line-input-section input[type="text"] {
     width: 100%;
-    padding: 10px 1px;
+    padding: 8px 1px; /* 削減: 10px→8px（詳細セクションに合わせる） */
     border: 1px solid #ddd;
     border-radius: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 2px; /* 削減: 8px→2px（詳細セクションに合わせる） */
     font-size: 0.9rem;
     letter-spacing: -1.5px;
 }
@@ -2911,7 +2917,7 @@ details:not([open]) summary h2::before {
 
 .detail-section {
     padding: 3px 0 0 0; /* 下部パディングを0に */
-    margin-top: 3px; /* マージン削減（4px→3px） */
+    margin-top: 0; /* 区切り線削除に伴いマージンも0に */
 }
 
 /* 枠線の太さエリアのマージン削減 */
