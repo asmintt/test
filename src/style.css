@@ -111,12 +111,12 @@ body {
 
 /* 左サイドバー：よりコンパクトに */
 .sidebar {
-    padding: 15px 12px;
+    padding: 10px 12px 4px 12px; /* 上下パディング削減 */
 }
 
 .sidebar .app-title {
-    margin-bottom: 10px;
-    padding-bottom: 10px;
+    margin-bottom: 6px; /* 削減: 10px→6px */
+    padding-bottom: 6px; /* 削減: 10px→6px */
 }
 
 .sidebar .app-title h1 {
@@ -124,8 +124,8 @@ body {
 }
 
 .sidebar .control-section {
-    margin-bottom: 10px;
-    padding-bottom: 6px;
+    margin-bottom: 6px; /* 削減: 10px→6px */
+    padding-bottom: 4px; /* 削減: 6px→4px */
 }
 
 .sidebar .control-section h2 {
@@ -135,7 +135,7 @@ body {
 
 .sidebar .file-label {
     font-size: 0.85rem;
-    padding: 12px;
+    padding: 10px 12px; /* 削減: 12px→10px */
 }
 
 .sidebar .btn-primary {
@@ -285,7 +285,7 @@ details summary::-webkit-details-marker {
 .start-tab-navigation {
     display: flex;
     gap: 0;
-    margin-bottom: 15px;
+    margin-bottom: 8px; /* 削減: 15px→8px */
     border-bottom: 2px solid #e0e0e0;
 }
 
@@ -372,7 +372,7 @@ details:not([open]) summary h2::before {
 }
 
 .file-name {
-    margin-top: 5px;
+    margin-top: 3px; /* 削減: 5px→3px */
     font-size: 0.9rem;
     color: #666;
     text-align: center;
@@ -383,11 +383,11 @@ details:not([open]) summary h2::before {
    ======================================== */
 /* 再生位置コントロール */
 .playback-controls {
-    padding-top: 6px;
+    padding-top: 3px; /* 削減: 6px→3px */
 }
 
 .range-controls {
-    padding-top: 6px;
+    padding-top: 3px; /* 削減: 6px→3px */
 }
 
 .range-slider {
@@ -489,7 +489,7 @@ details:not([open]) summary h2::before {
     flex-direction: row;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 4px; /* 削減: 8px→4px */
 }
 
 .time-input-group.compact-row label {
@@ -520,7 +520,7 @@ details:not([open]) summary h2::before {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin: 8px 0;
+    margin: 4px 0; /* 削減: 8px→4px */
 }
 
 /* 選択範囲表示ボックス（枠付き） */
@@ -578,7 +578,7 @@ details:not([open]) summary h2::before {
 .extract-controls {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px; /* 削減: 12px→6px */
 }
 
 .checkbox-label {
@@ -601,7 +601,7 @@ details:not([open]) summary h2::before {
 .video-settings {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px; /* 削減: 8px→4px */
 }
 
 .setting-row {
@@ -668,7 +668,7 @@ details:not([open]) summary h2::before {
     font-weight: 600;
     font-size: 0.85rem;
     transition: all 0.3s;
-    margin-top: 4px;
+    margin-top: 2px; /* 削減: 4px→2px */
 }
 
 .btn-download-video:hover:not(:disabled) {
