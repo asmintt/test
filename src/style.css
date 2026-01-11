@@ -105,7 +105,7 @@ body {
 }
 
 .sidebar-right {
-    padding: 20px 7px; /* 左右パディングをさらに削減 */
+    padding: 12px 7px; /* 上下パディングを削減（20px→12px） */
 }
 
 /* 左サイドバー：よりコンパクトに */
@@ -182,11 +182,11 @@ body {
 .color-palette-section,
 .annotation-section,
 .detail-section {
-    padding: 10px 0;
+    padding: 6px 0; /* パディング削減（10px→6px） */
 }
 
 .shape-section {
-    padding: 0 0 10px 0;
+    padding: 0 0 6px 0; /* 下パディング削減（10px→6px） */
 }
 
 .color-palette-section h3,
@@ -195,7 +195,7 @@ body {
 .detail-section h3 {
     font-size: 0.9rem;
     color: #2c5282;
-    margin-bottom: 12px;
+    margin-bottom: 6px; /* マージン削減（12px→6px） */
     font-weight: 600;
 }
 
@@ -203,8 +203,8 @@ body {
 .annotation-section,
 .detail-section {
     border-top: 1px solid #ddd;
-    padding-top: 10px;
-    margin-top: 8px;
+    padding-top: 3px; /* パディング削減（4px→3px） */
+    margin-top: 3px; /* マージン削減（4px→3px） */
 }
 
 /* 折りたたみセクション */
@@ -797,10 +797,10 @@ details:not([open]) summary h2::before {
 /* 詳細テキスト入力欄 */
 .detail-section input[type="text"] {
     width: 100%;
-    padding: 10px 1px;
+    padding: 8px 1px; /* パディング削減（10px→8px） */
     border: 1px solid #ddd;
     border-radius: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 2px; /* マージン削減（4px→2px） */
     font-size: 0.9rem;
     letter-spacing: -1.5px;
 }
@@ -1060,7 +1060,7 @@ details:not([open]) summary h2::before {
 .annotation-input-row {
     display: flex;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .annotation-input-row input[type="text"] {
@@ -1205,7 +1205,7 @@ details:not([open]) summary h2::before {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 1px; /* マージン削減（2px→1px） */
 }
 
 .section-header-with-line h3 {
@@ -1227,7 +1227,7 @@ details:not([open]) summary h2::before {
     display: flex;
     gap: 4px;
     flex: 1;
-    margin-bottom: 8px;
+    margin-bottom: 2px; /* マージン削減（4px→2px） */
 }
 
 /* 歯車ボタン（設定ボタン） */
@@ -1299,7 +1299,7 @@ details:not([open]) summary h2::before {
 /* 配色プリセット - 実際の色を表示 */
 .preset-btn[data-preset="explanation"] {
     background-color: #FFFFFF;
-    color: #999;
+    color: #000000;
     border: 2px solid #ddd;
 }
 
@@ -1315,6 +1315,12 @@ details:not([open]) summary h2::before {
     border: 2px solid #FFCA28;
 }
 
+.preset-btn[data-preset="blue"] {
+    background-color: #1976D2;
+    color: #000000;
+    border: 2px solid #1565C0;
+}
+
 /* 選択中の状態 - 太い枠線で強調 */
 .preset-btn[data-preset="explanation"].active {
     border: 3px solid #2c5282;
@@ -1327,6 +1333,11 @@ details:not([open]) summary h2::before {
 }
 
 .preset-btn[data-preset="caution"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+}
+
+.preset-btn[data-preset="blue"].active {
     border: 3px solid #2c5282;
     box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
 }
@@ -1364,7 +1375,7 @@ details:not([open]) summary h2::before {
 /* 詳細タブ配色プリセット - 実際の色を表示 */
 .detail-preset-btn[data-preset="explanation"] {
     background-color: #FFFFFF;
-    color: #999;
+    color: #000000;
     border: 2px solid #ddd;
 }
 
@@ -1380,6 +1391,12 @@ details:not([open]) summary h2::before {
     border: 2px solid #F4E9B5;
 }
 
+.detail-preset-btn[data-preset="blue"] {
+    background-color: #E3F2FD;
+    color: #000000;
+    border: 2px solid #90CAF9;
+}
+
 /* 選択中の状態 - 太い枠線で強調 */
 .detail-preset-btn[data-preset="explanation"].active {
     border: 3px solid #2c5282;
@@ -1392,6 +1409,11 @@ details:not([open]) summary h2::before {
 }
 
 .detail-preset-btn[data-preset="caution"].active {
+    border: 3px solid #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+}
+
+.detail-preset-btn[data-preset="blue"].active {
     border: 3px solid #2c5282;
     box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
 }
@@ -1447,7 +1469,7 @@ details:not([open]) summary h2::before {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 6px; /* マージン削減（12px→6px） */
 }
 
 .shape-linewidth-panel-section label {
@@ -1456,6 +1478,18 @@ details:not([open]) summary h2::before {
     color: #555;
     white-space: nowrap;
     flex-shrink: 0;
+    margin: 0;
+}
+
+/* カラー選択セクション（ラベル行） */
+.color-selection-section {
+    margin-bottom: 1px; /* マージン削減（2px→1px） */
+}
+
+.color-selection-section label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
     margin: 0;
 }
 
@@ -1804,7 +1838,7 @@ details:not([open]) summary h2::before {
 .detail-button-row {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 4px; /* マージン削減（12px→4px） */
 }
 
 .btn-compact {
@@ -1950,7 +1984,7 @@ details:not([open]) summary h2::before {
 .shape-mini-group {
     display: flex;
     gap: 2px;
-    flex: 0 0 50%;
+    flex: 0 0 75%;
 }
 
 .shape-btn {
@@ -1986,6 +2020,14 @@ details:not([open]) summary h2::before {
     font-size: 0.65rem;
     line-height: 1.1;
     padding: 3px 4px;
+}
+
+/* 四角・直線ボタンは記号を大きく表示 */
+.shape-btn[data-shape="rectangle"],
+.shape-btn[data-shape="line"] {
+    padding: 2px;
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
 .shape-btn:hover {
@@ -2621,10 +2663,10 @@ details:not([open]) summary h2::before {
    ======================================== */
 .annotation-advanced-settings,
 .detail-advanced-settings {
-    margin-bottom: 12px;
+    margin-bottom: 6px; /* マージン削減（12px→6px） */
     border: 1px solid #e0e0e0;
     border-radius: 6px;
-    padding: 8px 10px;
+    padding: 6px 8px; /* パディング削減（8px 10px→6px 8px） */
     background: #f9f9f9;
 }
 
@@ -2854,24 +2896,24 @@ details:not([open]) summary h2::before {
 
 /* セクション間のパディング調整 */
 .shape-section {
-    padding: 0 0 10px 0;
+    padding: 0 0 6px 0; /* 下パディング削減（10px→6px） */
     margin-top: 0;
 }
 
 .annotation-section,
 .detail-section {
-    padding: 10px 0;
-    margin-top: 8px;
+    padding: 3px 0; /* パディング削減（4px→3px） */
+    margin-top: 3px; /* マージン削減（4px→3px） */
 }
 
 /* 枠線の太さエリアのマージン削減 */
 .shape-linewidth-panel-section {
-    margin-bottom: 6px;
+    margin-bottom: 2px; /* さらに削減（3px→2px） */
 }
 
 /* 追加ボタン行のマージン削減 */
 .shape-buttons-row {
-    margin-bottom: 4px;
+    margin-bottom: 1px; /* さらに削減（2px→1px） */
 }
 
 /* 図形の「消去」「選択解除」ボタン - 紺色枠線 */
