@@ -2822,6 +2822,27 @@ details:not([open]) summary h2::before {
     border-color: #d32f2f;
 }
 
+/* プリセット追加ボタン */
+.preset-add-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border: 2px dashed #2c5282;
+    border-radius: 6px;
+    background: #f0f7ff;
+    color: #2c5282;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preset-add-btn:hover {
+    background: #e3f2fd;
+    border-color: #1e3a5f;
+    color: #1e3a5f;
+}
+
 /* モーダルフッター */
 .modal-footer {
     display: flex;

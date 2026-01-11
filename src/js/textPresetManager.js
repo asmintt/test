@@ -119,10 +119,9 @@ class TextPresetManager {
     }
 
     /**
-     * プリセットを保存して閉じる
+     * DOM入力値からプリセット配列を更新
      */
-    savePresets() {
-        // モーダル内の入力値を取得
+    updatePresetsFromDOM() {
         const items = this.presetList.querySelectorAll('.preset-item');
         this.presets = [];
 
@@ -137,6 +136,14 @@ class TextPresetManager {
                 });
             }
         });
+    }
+
+    /**
+     * プリセットを保存して閉じる
+     */
+    savePresets() {
+        // モーダル内の入力値を取得
+        this.updatePresetsFromDOM();
 
         // localStorageに保存
         this.savePresetsToStorage();
@@ -157,31 +164,57 @@ class TextPresetManager {
     renderPresetList() {
         this.presetList.innerHTML = '';
 
-        // 10個のスロットを作成
-        for (let i = 0; i < 10; i++) {
-            const preset = this.presets[i] || { text: '', color: '#000000' };
-
+        // 登録済みプリセットを動的に生成
+        this.presets.forEach((preset, index) => {
             const item = document.createElement('div');
             item.className = 'preset-item';
 
             item.innerHTML = `
-                <span class="preset-item-number">${i + 1}.</span>
+                <span class="preset-item-number">${index + 1}.</span>
                 <input type="text" placeholder="テキスト（10文字まで）" maxlength="10" value="${preset.text}">
                 <input type="color" value="${preset.color}">
-                <button class="preset-item-delete" data-index="${i}">削除</button>
+                <button class="preset-item-delete" data-index="${index}">削除</button>
             `;
 
             // 削除ボタンのイベントリスナー
             const deleteBtn = item.querySelector('.preset-item-delete');
             deleteBtn.addEventListener('click', () => {
-                const textInput = item.querySelector('input[type="text"]');
-                const colorInput = item.querySelector('input[type="color"]');
-                textInput.value = '';
-                colorInput.value = '#000000';
+                this.deletePreset(index);
             });
 
             this.presetList.appendChild(item);
-        }
+        });
+
+        // 「追加」ボタン
+        const addBtn = document.createElement('button');
+        addBtn.className = 'preset-add-btn';
+        addBtn.textContent = '＋ 追加';
+        addBtn.addEventListener('click', () => {
+            this.addPreset();
+        });
+
+        this.presetList.appendChild(addBtn);
+    }
+
+    /**
+     * プリセットを追加
+     */
+    addPreset() {
+        // 現在のDOM入力値を配列に反映してから追加
+        this.updatePresetsFromDOM();
+        this.presets.push({ text: '', color: '#000000' });
+        this.renderPresetList();
+    }
+
+    /**
+     * プリセットを削除
+     * @param {number} index - 削除するプリセットのインデックス
+     */
+    deletePreset(index) {
+        // 現在のDOM入力値を配列に反映してから削除
+        this.updatePresetsFromDOM();
+        this.presets.splice(index, 1);
+        this.renderPresetList();
     }
 
     /**
