@@ -198,11 +198,18 @@ body {
 
 .color-palette-section h3,
 .shape-section h3,
-.annotation-section h3,
-.detail-section h3 {
+.annotation-section h3 {
     font-size: 0.9rem;
     color: #2c5282;
     margin-bottom: 6px; /* マージン削減（12px→6px） */
+    font-weight: 600;
+}
+
+.detail-section h3 {
+    font-size: 0.9rem;
+    color: #2c5282;
+    margin-top: 0; /* 上マージンを0に（注釈との余白削減） */
+    margin-bottom: 6px;
     font-weight: 600;
 }
 
