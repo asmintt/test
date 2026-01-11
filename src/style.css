@@ -105,7 +105,7 @@ body {
 }
 
 .sidebar-right {
-    padding: 12px 7px; /* 上下パディングを削減（20px→12px） */
+    padding: 12px 7px 4px 7px; /* 下部パディングをさらに削減（12px→4px） */
 }
 
 /* 左サイドバー：よりコンパクトに */
@@ -180,9 +180,12 @@ body {
 
 /* 統合セクションのスタイル */
 .color-palette-section,
-.annotation-section,
-.detail-section {
+.annotation-section {
     padding: 6px 0; /* パディング削減（10px→6px） */
+}
+
+.detail-section {
+    padding: 6px 0 0 0; /* 下部パディングを0に */
 }
 
 .shape-section {
@@ -2900,9 +2903,13 @@ details:not([open]) summary h2::before {
     margin-top: 0;
 }
 
-.annotation-section,
-.detail-section {
+.annotation-section {
     padding: 3px 0; /* パディング削減（4px→3px） */
+    margin-top: 3px; /* マージン削減（4px→3px） */
+}
+
+.detail-section {
+    padding: 3px 0 0 0; /* 下部パディングを0に */
     margin-top: 3px; /* マージン削減（4px→3px） */
 }
 
