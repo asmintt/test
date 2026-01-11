@@ -27,6 +27,11 @@ class DetailTextManager {
         // 各詳細テキスト: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色, bgOpacity: 透明度, textAlign: 文字位置 }
         this.detailTexts = [];
 
+        // 編集モード
+        this.isEditMode = false;
+        this.editingIndex = -1;
+        this.originalDetailText = null;
+
         // コールバック
         this.onDetailTextsChangeCallback = null;
 
@@ -258,7 +263,20 @@ class DetailTextManager {
             font: this.selectedFont
         };
 
-        this.detailTexts.push(detailTextObj);
+        // 編集モードの場合は上書き更新
+        if (this.isEditMode && this.editingIndex >= 0) {
+            console.log('編集モード: 詳細テキストを上書き更新します。インデックス:', this.editingIndex);
+            this.detailTexts[this.editingIndex] = detailTextObj;
+
+            // 編集モードを解除
+            this.isEditMode = false;
+            this.editingIndex = -1;
+            this.originalDetailText = null;
+        } else {
+            // 新規追加
+            this.detailTexts.push(detailTextObj);
+        }
+
         this.sortDetailTexts();
         this.renderDetailTextList();
         this.triggerChange();
@@ -388,8 +406,15 @@ class DetailTextManager {
     editDetailText(index) {
         const detailText = this.detailTexts[index];
 
+        // 編集モードに入る
+        this.isEditMode = true;
+        this.editingIndex = index;
+        this.originalDetailText = JSON.parse(JSON.stringify(detailText));
+
+        console.log('詳細テキスト編集モードに入ります。インデックス:', index);
+
         // 入力フィールドに現在の値を設定
-        this.detailTextInput.value = detailText.text || '';
+        this.detailText.value = detailText.text || '';
 
         // 色を設定
         this.selectedTextColor = detailText.textColor;
@@ -412,18 +437,13 @@ class DetailTextManager {
         if (this.customTextColor) this.customTextColor.value = detailText.textColor;
         if (this.customBgColor) this.customBgColor.value = detailText.bgColor;
 
-        // 詳細テキストを削除（再追加するため）
-        this.detailTexts.splice(index, 1);
-        this.renderDetailTextList();
-        this.triggerChange();
-
         // 動画の時刻を設定
         if (videoPlayer) {
             videoPlayer.setCurrentTime(detailText.time);
         }
 
         // 入力フィールドにフォーカス
-        this.detailTextInput.focus();
+        this.detailText.focus();
     }
 
     /**

@@ -325,9 +325,10 @@ class VideoPlayer {
             textBox.style.fontFamily = `"${annotation.font || 'Noto Sans JP'}", sans-serif`;
             textBox.style.fontWeight = 'bold';
             textBox.style.fontSize = `${fontSize}px`;
-            // フォントサイズに応じたパディング
+            // フォントサイズに応じたパディング（上2px、左右は計算、下は4px）
             const padding = Math.max(4, Math.floor(fontSize * 0.15));
-            textBox.style.padding = `${padding}px ${padding * 2.4}px`;
+            const horizontalPadding = Math.floor(padding * 2.4);
+            textBox.style.padding = `2px ${horizontalPadding}px 4px ${horizontalPadding}px`;
             textBox.style.display = 'inline-block';
 
             // 文字配置を適用
@@ -387,9 +388,8 @@ class VideoPlayer {
             textBox.style.color = activeDetailText.textColor;
             textBox.style.fontFamily = `"${activeDetailText.font || 'Noto Sans JP'}", sans-serif`;
             textBox.style.fontSize = `${detailFontSize}px`;
-            // 小さいパディング（30pxエリアに収めるため）
-            const detailPadding = 3;
-            textBox.style.padding = `${detailPadding}px ${detailPadding * 2}px`;
+            // 小さいパディング（30pxエリアに収めるため）上2px、左右6px、下3px
+            textBox.style.padding = `2px 6px 3px 6px`;
             textBox.style.display = 'inline-block';
             textBox.style.whiteSpace = 'nowrap'; // 1行表示
 

@@ -97,6 +97,43 @@ class App {
             projectManager.init();
             console.log('✓ ProjectManager initialized');
         }
+
+        // テキストプリセットマネージャー
+        if (typeof TextPresetManager !== 'undefined') {
+            textPresetManager = new TextPresetManager();
+            textPresetManager.init();
+            console.log('✓ TextPresetManager initialized');
+        }
+
+        // 歯車ボタンのイベントリスナーを追加
+        this.setupSettingsButtons();
+    }
+
+    /**
+     * 歯車ボタンのイベントリスナーを設定
+     */
+    setupSettingsButtons() {
+        // 注釈の詳細設定ボタン
+        const annotationSettingsBtn = document.getElementById('annotationSettingsBtn');
+        if (annotationSettingsBtn) {
+            annotationSettingsBtn.addEventListener('click', () => {
+                const details = document.querySelector('.annotation-advanced-settings');
+                if (details) {
+                    details.open = !details.open;
+                }
+            });
+        }
+
+        // 詳細の詳細設定ボタン
+        const detailSettingsBtn = document.getElementById('detailSettingsBtn');
+        if (detailSettingsBtn) {
+            detailSettingsBtn.addEventListener('click', () => {
+                const details = document.querySelector('.detail-advanced-settings');
+                if (details) {
+                    details.open = !details.open;
+                }
+            });
+        }
     }
 
     /**

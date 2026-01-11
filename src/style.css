@@ -180,10 +180,13 @@ body {
 
 /* 統合セクションのスタイル */
 .color-palette-section,
-.shape-section,
 .annotation-section,
 .detail-section {
-    padding: 15px 0;
+    padding: 10px 0;
+}
+
+.shape-section {
+    padding: 0 0 10px 0;
 }
 
 .color-palette-section h3,
@@ -196,13 +199,12 @@ body {
     font-weight: 600;
 }
 
-/* 区切り線（最初のセクション以外） */
-.shape-section,
-.annotation-section:not(:first-child),
+/* 区切り線（図形以外のセクション） */
+.annotation-section,
 .detail-section {
     border-top: 1px solid #ddd;
-    padding-top: 15px;
-    margin-top: 10px;
+    padding-top: 10px;
+    margin-top: 8px;
 }
 
 /* 折りたたみセクション */
@@ -1198,10 +1200,62 @@ details:not([open]) summary h2::before {
     min-width: 35px;
 }
 
+/* 見出しと区切り線を同じ行に配置 */
+.section-header-with-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.section-header-with-line h3 {
+    margin: 0;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    color: #2c5282;
+    font-weight: 600;
+}
+
+.section-header-with-line hr {
+    flex: 1;
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 0;
+}
+
 .preset-buttons-inline {
     display: flex;
     gap: 4px;
     flex: 1;
+    margin-bottom: 8px;
+}
+
+/* 歯車ボタン（設定ボタン） */
+.btn-settings-gear {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    padding: 2px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    color: #666;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-settings-gear:hover {
+    border-color: #2c5282;
+    background: rgba(44, 82, 130, 0.05);
+    color: #2c5282;
+}
+
+.btn-settings-gear:active {
+    background: rgba(44, 82, 130, 0.1);
 }
 
 .preset-buttons {
@@ -1212,11 +1266,11 @@ details:not([open]) summary h2::before {
 
 .preset-btn {
     flex: 1;
-    padding: 7px 5px;
+    padding: 5px 4px;
     border: 2px solid #ddd;
     border-radius: 4px;
     background: white;
-    color: #666;
+    color: #999;
     font-size: 0.58rem;
     font-weight: 600;
     cursor: pointer;
@@ -1245,7 +1299,7 @@ details:not([open]) summary h2::before {
 /* 配色プリセット - 実際の色を表示 */
 .preset-btn[data-preset="explanation"] {
     background-color: #FFFFFF;
-    color: #000000;
+    color: #999;
     border: 2px solid #ddd;
 }
 
@@ -1280,12 +1334,12 @@ details:not([open]) summary h2::before {
 /* 詳細タブのプリセットボタン（注釈タブと同じスタイル） */
 .detail-preset-btn {
     flex: 1;
-    padding: 8px 12px;
+    padding: 5px 4px;
     border: 2px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     background: white;
-    color: #666;
-    font-size: 0.65rem;
+    color: #999;
+    font-size: 0.58rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -1310,7 +1364,7 @@ details:not([open]) summary h2::before {
 /* 詳細タブ配色プリセット - 実際の色を表示 */
 .detail-preset-btn[data-preset="explanation"] {
     background-color: #FFFFFF;
-    color: #000000;
+    color: #999;
     border: 2px solid #ddd;
 }
 
@@ -1882,8 +1936,21 @@ details:not([open]) summary h2::before {
 .shape-selector {
     display: flex;
     gap: 4px;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
     flex-wrap: nowrap;
+}
+
+/* 混在サイズ行（矢印ミニ + 通常ボタン） */
+.shape-selector-mixed {
+    display: flex;
+    gap: 4px;
+}
+
+/* 矢印ミニグループ */
+.shape-mini-group {
+    display: flex;
+    gap: 2px;
+    flex: 0 0 50%;
 }
 
 .shape-btn {
@@ -1899,6 +1966,26 @@ details:not([open]) summary h2::before {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* 矢印ボタン（各12.5%の横幅） */
+.shape-btn-mini {
+    padding: 5px 4px;
+    font-size: 0.85rem;
+    min-width: 0;
+    flex: 1;
+}
+
+/* 通常ボタン（消去・選択解除、各25%） */
+.shape-selector-mixed > .shape-btn {
+    flex: 0 0 25%;
+}
+
+/* 2行表示ボタン */
+.shape-btn-multiline {
+    font-size: 0.65rem;
+    line-height: 1.1;
+    padding: 3px 4px;
 }
 
 .shape-btn:hover {
@@ -2587,3 +2674,193 @@ details:not([open]) summary h2::before {
     margin-bottom: 0;
 }
 
+
+/* ============================================
+   テキストプリセット機能
+   ============================================ */
+
+/* テキストプリセットセクション */
+.text-preset-section {
+    margin-bottom: 8px;
+}
+
+.text-preset-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.text-preset-header span {
+    font-size: 0.75rem;
+    color: #555;
+    font-weight: 600;
+}
+
+/* プリセットボタンのラッパー（歯車 + ボタン群） */
+.text-preset-buttons-wrapper {
+    display: flex;
+    gap: 4px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+/* 歯車アイコンボタン（プリセット管理） */
+.btn-manage-preset-icon {
+    flex: 0 0 auto;
+    padding: 2px;
+    font-size: 1.3rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: #f5f5f5;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 32px;
+    min-width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-manage-preset-icon:hover {
+    border-color: #2c5282;
+    background: rgba(44, 82, 130, 0.05);
+    color: #2c5282;
+}
+
+/* テキストプリセットボタン */
+.text-preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    max-height: 80px;
+    overflow-y: auto;
+}
+
+.text-preset-btn {
+    padding: 5px 8px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    background: #f5f5f5;
+    color: #333;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.text-preset-btn:hover {
+    background: #e8e8e8;
+}
+
+.text-preset-btn.active {
+    background: #2c5282;
+    color: white;
+    border-color: #2c5282;
+}
+
+/* テキストプリセット管理モーダル */
+.text-preset-manager {
+    padding: 10px;
+}
+
+.preset-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.preset-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #f9f9f9;
+}
+
+.preset-item-number {
+    font-weight: 600;
+    color: #666;
+    min-width: 20px;
+}
+
+.preset-item input[type="text"] {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.preset-item input[type="color"] {
+    width: 40px;
+    height: 32px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.preset-item-delete {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    color: #d32f2f;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.preset-item-delete:hover {
+    background: #ffebee;
+    border-color: #d32f2f;
+}
+
+/* モーダルフッター */
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+/* セクション間のパディング調整 */
+.shape-section {
+    padding: 0 0 10px 0;
+    margin-top: 0;
+}
+
+.annotation-section,
+.detail-section {
+    padding: 10px 0;
+    margin-top: 8px;
+}
+
+/* 枠線の太さエリアのマージン削減 */
+.shape-linewidth-panel-section {
+    margin-bottom: 6px;
+}
+
+/* 追加ボタン行のマージン削減 */
+.shape-buttons-row {
+    margin-bottom: 4px;
+}
+
+/* 図形の「消去」「選択解除」ボタン - 紺色枠線 */
+.shape-btn[data-shape="erase"],
+.shape-btn[data-shape="none"] {
+    border: 2px solid #2c5282;
+}
+
+/* 注釈の「注釈を追加」「表示終了」ボタン - 紺色枠線 */
+#addAnnotationBtn,
+#addBlankAnnotationBtn {
+    border: 2px solid #2c5282;
+}

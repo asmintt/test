@@ -29,6 +29,11 @@ class AnnotationManager {
         // 各注釈: { time: 秒数, text: テキスト, textColor: 色, bgColor: 色, font: フォント, textAlign: 文字位置, useSequenceNumber: 連番使用 }
         this.annotations = [];
 
+        // 編集モード
+        this.isEditMode = false;
+        this.editingIndex = -1;
+        this.originalAnnotation = null;
+
         // コールバック
         this.onAnnotationsChangeCallback = null;
     }
@@ -305,8 +310,20 @@ class AnnotationManager {
 
         console.log('[DEBUG] 作成した注釈オブジェクト:', annotation);
 
-        // 配列に追加して時刻順にソート
-        this.annotations.push(annotation);
+        // 編集モードの場合は上書き更新
+        if (this.isEditMode && this.editingIndex >= 0) {
+            console.log('編集モード: 注釈を上書き更新します。インデックス:', this.editingIndex);
+            this.annotations[this.editingIndex] = annotation;
+
+            // 編集モードを解除
+            this.isEditMode = false;
+            this.editingIndex = -1;
+            this.originalAnnotation = null;
+        } else {
+            // 新規追加
+            this.annotations.push(annotation);
+        }
+
         this.sortAnnotations();
 
         // リストを再描画
@@ -469,6 +486,13 @@ class AnnotationManager {
     editAnnotation(index) {
         const annotation = this.annotations[index];
 
+        // 編集モードに入る
+        this.isEditMode = true;
+        this.editingIndex = index;
+        this.originalAnnotation = JSON.parse(JSON.stringify(annotation));
+
+        console.log('注釈編集モードに入ります。インデックス:', index);
+
         // 入力フィールドに現在の値を設定
         this.annotationText.value = annotation.text || '';
 
@@ -524,11 +548,6 @@ class AnnotationManager {
         // カスタムカラーピッカーを同期
         if (this.customTextColor) this.customTextColor.value = annotation.textColor;
         if (this.customBgColor) this.customBgColor.value = annotation.bgColor;
-
-        // 注釈を削除（再追加するため）
-        this.annotations.splice(index, 1);
-        this.renderAnnotationList();
-        this.notifyChange();
 
         // 動画の時刻を設定
         if (videoPlayer) {

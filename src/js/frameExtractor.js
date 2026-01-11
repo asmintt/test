@@ -7,7 +7,6 @@ class FrameExtractor {
         this.extractFrameBtn = document.getElementById('extractFrameBtn');
         this.includeTimestamp = document.getElementById('includeTimestamp');
         this.includeShapes = document.getElementById('includeShapes');
-        this.includeTextAnnotations = document.getElementById('includeTextAnnotations');
         this.imageGallery = document.getElementById('imageGallery');
         this.clearAllImagesBtn = document.getElementById('clearAllImagesBtn');
 
@@ -51,7 +50,7 @@ class FrameExtractor {
     }
 
     /**
-     * 現在位置のフレームを抽出
+     * 現在位置のフレームを抽出（html2canvasを使用）
      */
     async extractCurrentFrame() {
         if (!videoPlayer || !videoPlayer.video) {
@@ -65,49 +64,32 @@ class FrameExtractor {
         }
 
         try {
-            const video = videoPlayer.video;
             const currentTime = videoPlayer.getCurrentTime();
 
-            // 注釈エリアと詳細テキストエリアの高さ
-            const annotationAreaHeight = 72;
-            const detailTextAreaHeight = 60;
-
-            // テキスト注釈を含める場合は、注釈エリアと詳細テキストエリアを追加
-            let extraHeight = 0;
-            if (this.includeTextAnnotations && this.includeTextAnnotations.checked) {
-                extraHeight = annotationAreaHeight + detailTextAreaHeight;
+            // video-wrapperをキャプチャ（動画、図形、注釈、詳細を含む）
+            const videoWrapper = document.querySelector('.video-wrapper');
+            if (!videoWrapper) {
+                throw new Error('プレビューエリアが見つかりません');
             }
 
-            // キャンバスサイズを動画に合わせる（注釈エリアを含む）
-            this.extractCanvas.width = video.videoWidth;
-            this.extractCanvas.height = video.videoHeight + extraHeight;
+            // html2canvasでプレビューエリアをキャプチャ
+            const canvas = await html2canvas(videoWrapper, {
+                allowTaint: true,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                scale: 1 // 実際のサイズでキャプチャ
+            });
 
-            // 動画フレームを描画（上部）
-            this.extractCtx.drawImage(video, 0, 0);
-
-            // 図形アノテーションを含める場合
-            if (this.includeShapes && this.includeShapes.checked && shapeAnnotationManager) {
-                this.drawShapesOnCanvas(this.extractCtx, video);
-            }
-
-            // テキスト注釈を含める場合
-            if (this.includeTextAnnotations && this.includeTextAnnotations.checked && annotationManager) {
-                this.drawTextAnnotationOnCanvas(this.extractCtx, currentTime, video);
-            }
-
-            // 詳細テキストを含める場合
-            if (this.includeTextAnnotations && this.includeTextAnnotations.checked && detailTextManager) {
-                this.drawDetailTextOnCanvas(this.extractCtx, currentTime, video);
-            }
-
-            // タイムスタンプを含める場合
+            // タイムスタンプを含める場合は手動で追加
             if (this.includeTimestamp && this.includeTimestamp.checked) {
-                this.drawTimestampOnCanvas(this.extractCtx, currentTime, video);
+                const ctx = canvas.getContext('2d');
+                const video = videoPlayer.video;
+                this.drawTimestampOnCanvas(ctx, currentTime, video);
             }
 
             // 画像として保存（Promiseでラップ）
             await new Promise((resolve, reject) => {
-                this.extractCanvas.toBlob((blob) => {
+                canvas.toBlob((blob) => {
                     if (!blob) {
                         reject(new Error('画像の生成に失敗しました'));
                         return;
@@ -241,6 +223,9 @@ class FrameExtractor {
             if (shape.type === 'arrow-left' || shape.type === 'arrow-right' ||
                 shape.type === 'arrow-up' || shape.type === 'arrow-down') {
                 this.drawDirectionArrowOnCanvas(ctx, x2, y2, shape.type, shape.color, lineWidth, shape.isTextIncluded || false, scaleFactor);
+            } else if (shape.type === 'text') {
+                // テキストタイプの場合
+                this.drawTextOnCanvas(ctx, x2, y2, shape.text, shape.color, lineWidth, scaleFactor);
             } else {
                 // 図形タイプに応じた描画メソッドを実行
                 const drawMethod = this.getShapeDrawMethod(shape.type);
@@ -338,6 +323,29 @@ class FrameExtractor {
             ctx.textBaseline = 'middle';
             ctx.fillText(arrowSymbol, x, y);
         }
+    }
+
+    /**
+     * キャンバスにテキストプリセットを描画
+     * @param {CanvasRenderingContext2D} ctx - キャンバスコンテキスト
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     * @param {string} text - テキスト内容
+     * @param {string} color - 色
+     * @param {number} lineWidth - 枠線の太さ（フォントサイズの基準）
+     * @param {number} scaleFactor - スケール係数
+     */
+    drawTextOnCanvas(ctx, x, y, text, color, lineWidth, scaleFactor = 1.0) {
+        // lineWidthをフォントサイズに変換（スケール係数を適用）
+        const baseFontSize = 16 + (lineWidth * 3.0);
+        const fontSize = baseFontSize * scaleFactor;
+
+        // テキストを描画
+        ctx.font = `${fontSize}px 'Hiragino Kaku Gothic ProN', sans-serif`;
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text || '', x, y);
     }
 
     /**

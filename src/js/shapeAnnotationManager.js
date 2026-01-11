@@ -36,6 +36,9 @@ class ShapeAnnotationManager {
         // 現在の図形タイプ
         this.currentShapeType = null;
 
+        // テキストプリセット（textPresetManagerから取得）
+        this.selectedTextPreset = null;
+
         // テキスト付き矢印フラグ（direction-arrow-btnクラスを持つボタンからの選択）
         this.isTextIncludedArrow = false;
 
@@ -398,6 +401,13 @@ class ShapeAnnotationManager {
             return;
         }
 
+        // テキストモードの場合、クリック一発で配置
+        if (this.currentShapeType === 'text') {
+            console.log('テキストをクリック位置に配置します');
+            this.placeTextAtClick(clickX, clickY);
+            return;
+        }
+
         // 図形描画モードでない場合
         if (!this.currentShapeType) {
             console.log('図形描画モードではありません');
@@ -738,6 +748,55 @@ class ShapeAnnotationManager {
     }
 
     /**
+     * クリック位置にテキストを配置（未確定）
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     */
+    placeTextAtClick(x, y) {
+        // テキストプリセットが選択されているか確認
+        if (!this.selectedTextPreset) {
+            console.warn('テキストプリセットが選択されていません');
+            return;
+        }
+
+        // 現在の動画時刻を取得
+        const currentTime = videoPlayer ? videoPlayer.getCurrentTime() : 0;
+
+        // テキストデータを作成
+        const textShape = {
+            time: currentTime,
+            type: 'text',
+            x1: x,
+            y1: y,
+            x2: x,
+            y2: y,
+            color: this.selectedShapeColor,
+            lineWidth: this.selectedLineWidth,
+            canvasWidth: this.canvas.width,
+            canvasHeight: this.canvas.height,
+            continueFromPrevious: false,
+            text: this.selectedTextPreset.text  // テキスト内容を保存
+        };
+
+        // pendingShapesに追加（一時保存）
+        this.pendingShapes.push(textShape);
+        console.log('テキストを配置しました（未確定）:', textShape);
+        console.log('現在の未確定図形数:', this.pendingShapes.length);
+
+        // 追加ボタンを有効化
+        if (this.addShapeContinueBtn) {
+            setEnabled(this.addShapeContinueBtn, true);
+        }
+        if (this.addShapeNewBtn) {
+            setEnabled(this.addShapeNewBtn, true);
+        }
+        console.log('追加ボタンを有効化しました');
+
+        // 再描画
+        this.redrawShapes();
+    }
+
+    /**
      * 選択された図形を削除
      */
     deleteSelectedShapes() {
@@ -824,7 +883,7 @@ class ShapeAnnotationManager {
      * @param {number} lineWidth - 枠線の太さ（デフォルト: this.selectedLineWidth）
      * @param {boolean} isTextIncluded - テキスト付き矢印かどうか
      */
-    drawShape(type, x1, y1, x2, y2, color, lineWidth = this.selectedLineWidth, isTextIncluded = false) {
+    drawShape(type, x1, y1, x2, y2, color, lineWidth = this.selectedLineWidth, isTextIncluded = false, textContent = null) {
         this.ctx.strokeStyle = color;
         this.ctx.lineWidth = lineWidth;
         this.ctx.fillStyle = 'transparent';
@@ -851,6 +910,10 @@ class ShapeAnnotationManager {
                 } else {
                     this.drawArrow(x2, y2, type, color, lineWidth);
                 }
+                break;
+
+            case 'text':
+                this.drawText(x2, y2, color, lineWidth, textContent);
                 break;
         }
     }
@@ -918,6 +981,33 @@ class ShapeAnnotationManager {
         this.ctx.fillStyle = textColor;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(text, x, y);
+    }
+
+    /**
+     * テキストを描画（プリセットテキスト）
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     * @param {string} color - 色
+     * @param {number} lineWidth - 枠線の太さ（フォントサイズの基準）
+     * @param {string} textContent - 表示するテキスト内容
+     */
+    drawText(x, y, color, lineWidth = null, textContent = null) {
+        const currentLineWidth = lineWidth || this.ctx.lineWidth || this.selectedLineWidth;
+        const fontSize = 16 + (currentLineWidth * 3.0);
+
+        // テキストを描画
+        this.ctx.font = `${fontSize}px 'Hiragino Kaku Gothic ProN', sans-serif`;
+        this.ctx.fillStyle = color;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+
+        // テキスト内容を取得
+        let text = textContent || '';
+        if (!text && this.selectedTextPreset) {
+            text = this.selectedTextPreset.text;
+        }
+
         this.ctx.fillText(text, x, y);
     }
 
@@ -1004,7 +1094,8 @@ class ShapeAnnotationManager {
                 // 後方互換性: lineWidthがない場合はデフォルト値5を使用
                 const lineWidth = shape.lineWidth || 5;
                 const isTextIncluded = shape.isTextIncluded || false;
-                this.drawShape(shape.type, x1, y1, x2, y2, shape.color, lineWidth, isTextIncluded);
+                const textContent = shape.text || null;
+                this.drawShape(shape.type, x1, y1, x2, y2, shape.color, lineWidth, isTextIncluded, textContent);
             });
         }
 
@@ -1025,7 +1116,8 @@ class ShapeAnnotationManager {
                 shape.y2,
                 shape.color,  // 元の色のまま
                 shape.lineWidth || this.selectedLineWidth,
-                shape.isTextIncluded || false
+                shape.isTextIncluded || false,
+                shape.text || null
             );
 
             if (shape.selected) {
@@ -1138,6 +1230,7 @@ class ShapeAnnotationManager {
             'arrow-up': '⬆',
             'arrow-down': '⬇',
             'arrow': '➡',
+            'text': 'T',
             '': ''
         };
 
@@ -1150,6 +1243,11 @@ class ShapeAnnotationManager {
                 icon.textContent = '表示終了';
                 icon.style.backgroundColor = '#f0f0f0';
                 icon.style.color = '#666';
+            } else if (shape.type === 'text') {
+                // テキスト型の場合は実際のテキスト内容を表示
+                icon.textContent = shape.text || 'テキスト';
+                icon.style.backgroundColor = shape.color || '#FFFFFF';
+                icon.style.color = this.getContrastColor(shape.color || '#FFFFFF');
             } else if (shape.isTextIncluded) {
                 // テキスト付き矢印の場合はテキスト名のみ表示
                 if (shape.type === 'arrow-left') {

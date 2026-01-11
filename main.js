@@ -487,7 +487,7 @@ function buildAnnotationFilters(annotations, trimStartTime, trimDuration) {
                 boxcolor: `${ann.bgColor || '#ffffff'}@1.0`,
                 boxborderw: 15,
                 x: '(w-text_w)/2', // 常に中央揃え
-                y: `h-${textAreaHeight/2}-text_h/2`,
+                y: `h-${textAreaHeight/2 + 13}-text_h/2`, // 上のパディングを2pxにするため13px上に移動
                 enable: `between(t,${displayStartTime},${displayEndTime})`
             },
             inputs: currentInput
@@ -812,6 +812,39 @@ function buildCombinedFilters(annotations, shapes, detailTexts, arrows, trimStar
                     fontfile: arrowFontFile,
                     fontsize: fontSize,
                     fontcolor: arrowColor,
+                    x: x2 - Math.round((baseFontSize / 2) * scaleX),
+                    y: y2 - Math.round((baseFontSize / 2) * scaleY),
+                    enable: `between(t,${displayStartTime},${displayEndTime})`
+                },
+                inputs: currentInput
+            };
+        } else if (shape.type === 'text') {
+            // テキストプリセット: drawtextフィルター
+            const x2 = Math.round(shape.x2 * scaleX);
+            const y2 = Math.round(shape.y2 * scaleY);
+
+            // lineWidthをフォントサイズに変換（矢印と同じ計算式）
+            const lineWidth = shape.lineWidth || 5;
+            const baseFontSize = 16 + (lineWidth * 3.0);
+            const fontSize = Math.round(baseFontSize * Math.min(scaleX, scaleY));
+
+            // テキストをエスケープ
+            const textContent = shape.text || '';
+            const escapedText = textContent
+                .replace(/\\/g, '\\\\\\\\')
+                .replace(/'/g, "\\\\'")
+                .replace(/:/g, '\\\\:');
+
+            // フォントファイル
+            const textFontFile = path.join(__dirname, 'src/fonts/NotoSansJP-Bold.ttf');
+
+            filterObj = {
+                filter: 'drawtext',
+                options: {
+                    text: escapedText,
+                    fontfile: textFontFile,
+                    fontsize: fontSize,
+                    fontcolor: shape.color || '#FF0000',
                     x: x2 - Math.round((baseFontSize / 2) * scaleX),
                     y: y2 - Math.round((baseFontSize / 2) * scaleY),
                     enable: `between(t,${displayStartTime},${displayEndTime})`
